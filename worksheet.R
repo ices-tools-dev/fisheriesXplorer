@@ -100,13 +100,18 @@ library(shiny)
 library(crosstalk)
 library(plotly)
 library(leaflet)
+library(shinyWidgets)
 
 # Creates the "filter link" between the controls and plots
 dat <- SharedData$new(dplyr::sample_n(diamonds, 1000))
+data <- data.frame(c(2021,2022, 2023, 2024))
+names(data) <- "Year"
+
 
 # Sidebar elements (e.g., filter controls)
 filters <- list(
   filter_select("cut", "Cut", dat, ~cut)
+#   filter_select("year", "Year", dat, ~Year)
 #   filter_select("color", "Color", dat, ~color),
 #   filter_select("clarity", "Clarity", dat, ~clarity)
 )
@@ -133,7 +138,17 @@ accordion_filters <- accordion(
     "Overview selection", 
     icon = bsicons::bs_icon("hand-index-thumb"),
     imageOutput("myImage"),
-    !!!filters
+    virtualSelectInput(
+      inputId = "selected_years",
+      label = "Assessment Year:",
+      choices = data$Year,
+      selected = 2023,
+      multiple = FALSE,
+      width = "100%",
+      search = TRUE,
+      optionsCount = 5
+    )
+    # !!!filters
   ),
   accordion_panel(
     "Mixed fisheries", 
