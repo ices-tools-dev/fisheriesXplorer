@@ -95,6 +95,8 @@ shinyApp(
 )
 
 ################################################################
+### WORKING EXAMPLE
+
 library(bslib)
 library(shiny)
 library(crosstalk)
@@ -117,19 +119,19 @@ filters <- list(
 )
 
 # plotly visuals
-plots <- list(
-  plot_ly(dat) |> add_histogram(x = ~price),
-  plot_ly(dat) |> add_histogram(x = ~carat),
-  plot_ly(dat) |> add_histogram(x = ~cut, color = ~clarity)
-)
-plots <- lapply(plots, \(x) config(x, displayModeBar = FALSE))
+# plots <- list(
+#   plot_ly(dat) |> add_histogram(x = ~price),
+#   plot_ly(dat) |> add_histogram(x = ~carat),
+#   plot_ly(dat) |> add_histogram(x = ~cut, color = ~clarity)
+# )
+# plots <- lapply(plots, \(x) config(x, displayModeBar = FALSE))
 
-# map filter and visual
-quake_dat <- SharedData$new(quakes)
-map_filter <- filter_slider("mag", "Magnitude", quake_dat, ~mag)
-map_quakes <- leaflet(quake_dat) |>
-  addTiles() |>
-  addCircleMarkers()
+# # map filter and visual
+# quake_dat <- SharedData$new(quakes)
+# map_filter <- filter_slider("mag", "Magnitude", quake_dat, ~mag)
+# map_quakes <- leaflet(quake_dat) |>
+#   addTiles() |>
+#   addCircleMarkers()
 
 
 
@@ -151,10 +153,29 @@ accordion_filters <- accordion(
     # !!!filters
   ),
   accordion_panel(
+    "Map", 
+    icon = bsicons::bs_icon("sliders"),
+    virtualSelectInput(
+      inputId = "map",
+      label = "Layers:",
+      choices = c("Bathimetry", "ICES Areas"),      
+      multiple = TRUE,
+      width = "100%"      
+    )    
+  ),
+  accordion_panel(
     "Mixed fisheries", 
     icon = bsicons::bs_icon("sliders"),
-    filter_slider("depth", "Depth", dat, ~depth)
-    # filter_slider("table", "Table", dat, ~table)
+    virtualSelectInput(
+      inputId = "mixFish",
+      label = "Sections:",
+      choices = c("Headline", "Effort", "Landings"),
+      selected = "Headline",
+      multiple = FALSE,
+      width = "100%",
+      search = TRUE,
+      optionsCount = 5
+    )
   ),
   accordion_panel(
     "Bycatch", 
@@ -193,7 +214,8 @@ shinyApp(
     #     "input.nav === 'Page 2'",
     #     "Page 2 sidebar"
     #   )
-    )
+    ),
+    imageOutput("map1")
     # nav_panel("Page 1", "Page 1 contents"),
     # nav_panel("Page 2", "Page 2 contents")
   ),
@@ -203,7 +225,41 @@ shinyApp(
               list(src = "map.png", width = "100%")
           },
           deleteFile = FALSE
+      ) 
+
+      output$map1 <- renderImage(
+          {
+              list(src = "map_bath.png", width = "100%")
+          },
+          deleteFile = FALSE
       )
       # no server logic required
   }
 )
+
+
+
+# UI logic
+ui <- page_fluid(
+  card(
+    max_height = 200,
+    full_screen = TRUE,
+    card_header("A dynamically rendered plot"),
+    plotOutput("plot_id")
+  )
+)
+
+# Server logic
+server <- function(input, output, session) {
+  output$plot_id <- renderPlot({
+    info <- getCurrentOutputInfo()
+    if (info$height() > 600) {
+      # code for "large" plot
+    } else {
+      # code for "small" plot
+    }
+  })
+}
+
+shinyApp(ui, server)
+
