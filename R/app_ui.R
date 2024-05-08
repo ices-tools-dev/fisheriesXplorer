@@ -11,13 +11,12 @@ app_ui <- function(request) {
     navbarPage(title = "FisheriesXplorer", id = "nav-page",
                tabPanel("Home", id = "home",
                         mod_landing_page_ui("landing_page_1")),
-               tabPanel("Home2", id = "home2", 
-                        mod_landing_page_ui("landing_page_2")),
-               tabPanel("Mixed Fisheres"),
-               tabPanel("Bycatch"),
+               tabPanel("Overview"),
                tabPanel("Stock Status",
                         mod_stock_status_ui("stock_status_1")),
-               tabPanel("VMS"),
+               tabPanel("Mixed Fisheries"),
+               tabPanel("VMS", mod_vms_ui("vms_1")),
+               tabPanel("Bycatch"),
                tabPanel("Other")
     )
   )
