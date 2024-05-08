@@ -16,7 +16,7 @@ app_ui <- function(request) {
                         mod_stock_status_ui("stock_status_1")),
                tabPanel("Mixed Fisheries"),
                tabPanel("VMS", mod_vms_ui("vms_1")),
-               tabPanel("Bycatch"),
+               tabPanel("Bycatch", mod_bycatch_ui("bycatch_1")),
                tabPanel("Other")
     )
   )
