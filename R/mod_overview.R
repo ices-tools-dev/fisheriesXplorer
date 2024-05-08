@@ -13,12 +13,17 @@ mod_overview_ui <- function(id){
     tabsetPanel(type = "hidden", 
                 id=ns("overview"),
                 tabPanel("Map tab", value=ns("tab_map"),
-                         card(imageOutput(ns("map"))),
-                         actionButton("Next", ns("map2text"))
-                         ),
-                tabPanel("Text tab", value = ns("tab_topic"))
-                
+                         card(imageOutput(ns("map")))
+                         )),
+    tabsetPanel(
+        tabPanel("Executive Summary",
+                 textOutput(ns("executive_summary"))),
+        tabPanel("Introduction",
+                 textOutput(ns("introduction"))),
+        tabPanel("Who is Fishing",
+                 textOutput(ns("who_is_fishing")))
     )
+                    
   )
 }
     
@@ -34,6 +39,16 @@ mod_overview_server <- function(id){
     list(src = path)
     }, deleteFile = F)
   
+    
+    output$executive_summary <- renderText({
+      select_text(texts,"overview","executive_summary")
+    })
+    output$introduction <- renderText({
+      select_text(texts,"overview","introduction")
+    })
+    output$who_is_fishing <- renderText({
+      select_text(texts,"overview","who_is_fishing")
+    })
   })
 }
     
