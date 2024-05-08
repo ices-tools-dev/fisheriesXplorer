@@ -10,14 +10,16 @@ app_ui <- function(request) {
     golem_add_external_resources(),
     navbarPage(title = "FisheriesXplorer", id = "nav-page",
                tabPanel("Home", id = "home",
-                        mod_landing_page_ui("landing_page_1")),
-               tabPanel("Overview"),
+                        mod_navigation_page_ui("navigation_page_1")),
+               tabPanel("Overview", 
+                        mod_overview_ui("overview_1")),
+               tabPanel("Landings", 
+                        mod_landings_ui("landings_1")),
                tabPanel("Stock Status",
                         mod_stock_status_ui("stock_status_1")),
                tabPanel("Mixed Fisheries"),
                tabPanel("VMS", mod_vms_ui("vms_1")),
-               tabPanel("Bycatch", mod_bycatch_ui("bycatch_1")),
-               tabPanel("Other")
+               tabPanel("Bycatch", mod_bycatch_ui("bycatch_1"))
     )
   )
 }
