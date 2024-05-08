@@ -15,7 +15,8 @@ app_ui <- function(request) {
                         mod_landing_page_ui("landing_page_2")),
                tabPanel("Mixed Fisheres"),
                tabPanel("Bycatch"),
-               tabPanel("Stock Status"),
+               tabPanel("Stock Status",
+                        mod_stock_status_ui("stock_status_1")),
                tabPanel("VMS"),
                tabPanel("Other")
     )

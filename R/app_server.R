@@ -9,4 +9,5 @@ app_server <- function(input, output, session) {
   mod_landing_page_server("landing_page_1", parent_session = session)
   
   mod_landing_page_server("landing_page_2")
+  mod_stock_status_server("stock_status_1")
 }
