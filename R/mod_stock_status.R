@@ -23,7 +23,16 @@ mod_stock_status_ui <- function(id){
                                         "Crustacean" = "crustacean",
                                         "Demersal" = "demersal",
                                         "Pelagic" = "pelagic")),
-               card(imageOutput(ns("status_group"))))
+               card(imageOutput(ns("status_group")))),
+      tabPanel("Kobe-CLD",
+               radioButtons(ns("status_kobe_cld_selector"), "Select group",
+                            choices = c("Top 10 Stocks" = "all_stocks",
+                                        "Benthic" = "benthic",
+                                        "Demersal" = "demersal",
+                                        "Crustacean" = "crustacean",
+                                        "Pelagic" = "pelagic")),
+               card(imageOutput(ns("status_kobe")),
+                    imageOutput(ns("status_cld"))))
       
     )
  
@@ -48,6 +57,20 @@ mod_stock_status_server <- function(id){
       path <- file.path(paste0("inst/app/www/stock_status_", input$status_group_selector, ".png"))
       list(src = path)
     }, deleteFile = F)
+     
+     output$status_kobe <- renderImage({
+      req(!is.null(input$status_kobe_cld_selector))
+      path <- file.path(paste0("inst/app/www/stock_status_", input$status_kobe_cld_selector, "_kobe.png"))
+      list(src = path)
+    }, deleteFile = F)
+    
+      output$status_cld <- renderImage({
+      req(!is.null(input$status_kobe_cld_selector))
+      path <- file.path(paste0("inst/app/www/stock_status_", input$status_kobe_cld_selector, "_cld.png"))
+      list(src = path)
+    }, deleteFile = F)
+  
+     
   })
 }
     
