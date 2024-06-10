@@ -3,12 +3,13 @@
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
 #' @import shiny
+#' @importFrom desc desc_get_version
 #' @noRd
 app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
-    navbarPage(title = "FisheriesXplorer", id = "nav-page",
+    navbarPage( title = paste0("FisheriesXplorer, v", desc_get_version()), id = "nav-page",
                tabPanel("Home", id = "home",
                         mod_navigation_page_ui("navigation_page_1")),
                tabPanel("Overview", 

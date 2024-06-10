@@ -10,7 +10,7 @@
 mod_vms_ui <- function(id){
   ns <- NS(id)
   tagList(
-    radioButtons(ns("vms_layer_selector"), "Select water column level where fishing occurs",
+    radioButtons(ns("vms_layer_selector"), "Select level of fishing benthic impact",
                  choices = c("Surface" = "surface", "Bottom" = "bottom")),
     card(imageOutput(ns("vms_layer")))
   )

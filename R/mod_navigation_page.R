@@ -1,4 +1,4 @@
-#' navigation_page UI Function
+#' landing_page UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -15,7 +15,7 @@ mod_navigation_page_ui <- function(id){
   tagList(
     card("Check out the FisheriesXplorer app! Select your area of interest!", width = 12),
     tabsetPanel(type = "hidden", 
-                id=ns("navigation_page"),
+                id=ns("landing_page"),
        tabPanel("Map Tab", value=ns("tab_map"),
           card("Select an ecoregion",
                 leafletOutput(ns("map"))),
@@ -31,7 +31,7 @@ mod_navigation_page_ui <- function(id){
           card("Overview", id= ns("overview-btn"), class = "btn action-button"),
           card("Landings", id= ns("landings-btn"), class = "btn action-button"),
           card("Stock status", id= ns("stock_status-btn"), class = "btn action-button"),
-          card("Mixfish", id= ns("mixfish-btn"), class = "btn action-button"),
+          card("Mixed Fisheries", id= ns("mixfish-btn"), class = "btn action-button"),
           card("VMS", id= ns("vms-btn"), class = "btn action-button"),
           card("Bycatch", id= ns("bycatch-btn"), class = "btn action-button")
                  
@@ -40,7 +40,7 @@ mod_navigation_page_ui <- function(id){
   )
 }
     
-#' navigation_page Server Functions
+#' landing_page Server Functions
 #'
 #' @noRd 
 mod_navigation_page_server <- function(id, parent_session){
@@ -52,8 +52,8 @@ mod_navigation_page_server <- function(id, parent_session){
       map_ecoregion(eco_shape, map_shape)
     })
     
-    proxy_map <- leafletProxy("map")
-    
+    proxy_map <- leafletProxy("map", parent_session)
+
     # create empty vector to hold all click ids
     selected_1 <- reactiveValues(groups = vector())
     
@@ -62,7 +62,6 @@ mod_navigation_page_server <- function(id, parent_session){
       req(!is.null(input$map_shape_click$id))
       if (input$map_shape_click$group == "Eco_regions") {
         selected_1$groups <- c(selected_1$groups, input$map_shape_click$id)
-        
         proxy_map %>%
           showGroup(group = input$map_shape_click$id)
       }
@@ -93,34 +92,34 @@ mod_navigation_page_server <- function(id, parent_session){
                      
                    }
                    
-                   updateTabsetPanel(session = session, "navigation_page", selected = ns("tab_topic"))
+                   updateTabsetPanel(session = session, "landing_page", selected = ns("tab_topic"))
                  },
                  ignoreNULL = FALSE
     )
     
     
     observeEvent(input[["overview-btn"]],{
-      updateTabsetPanel(session, "navigation_page", selected = ns("tab_map"))
+      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")
     })
     observeEvent(input[["landings-btn"]],{
-      updateTabsetPanel(session, "navigation_page", selected = ns("tab_map"))
+      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Landings")
     })
     observeEvent(input[["stock_status-btn"]],{
-      updateTabsetPanel(session, "navigation_page", selected = ns("tab_map"))
+      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Stock Status")
     })
     observeEvent(input[["mixfish-btn"]],{
-      updateTabsetPanel(session, "navigation_page", selected = ns("tab_map"))
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Mixed Fisheres")
+      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+      updateNavbarPage(session = parent_session, "nav-page", selected = "Mixed Fisheries")
     })
     observeEvent(input[["vms-btn"]],{
-      updateTabsetPanel(session, "navigation_page", selected = ns("tab_map"))
+      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "VMS")
     })
     observeEvent(input[["bycatch-btn"]],{
-      updateTabsetPanel(session, "navigation_page", selected = ns("tab_map"))
+      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Bycatch")
     })
     

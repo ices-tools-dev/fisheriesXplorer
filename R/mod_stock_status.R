@@ -8,6 +8,9 @@
 #'
 #' @importFrom shiny NS tagList 
 #' @importFrom bslib card_image
+#' @importFrom icesFO plot_CLD_bar plot_kobe
+#' @importFrom dplyr filter
+#' 
 mod_stock_status_ui <- function(id){
   ns <- NS(id)
   tagList(
@@ -42,7 +45,7 @@ mod_stock_status_ui <- function(id){
 #' stock_status Server Functions
 #'
 #' @noRd 
-mod_stock_status_server <- function(id){
+mod_stock_status_server <- function(id, cap_year, cap_month){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -58,17 +61,32 @@ mod_stock_status_server <- function(id){
       list(src = path)
     }, deleteFile = F)
      
-     output$status_kobe <- renderImage({
+     kobe_cld_data <- reactive({
+       
+       #stopifnot(sum(is.na(current_catches$FisheriesGuild)) ==0)
+       
+       if(input$status_kobe_cld_selector == "all_stocks") {
+         guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+       } else {
+         guild <- input$status_kobe_cld_selector
+       }
+        tmp <- current_catches %>% filter(FisheriesGuild %in% guild)
+       
+     })
+     
+     output$status_kobe <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
-      path <- file.path(paste0("inst/app/www/stock_status_", input$status_kobe_cld_selector, "_kobe.png"))
-      list(src = path)
-    }, deleteFile = F)
+      
+       plot_kobe(kobe_cld_data(), guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
+        
+    })
     
-      output$status_cld <- renderImage({
+      output$status_cld <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
-      path <- file.path(paste0("inst/app/www/stock_status_", input$status_kobe_cld_selector, "_cld.png"))
-      list(src = path)
-    }, deleteFile = F)
+      
+        plot_CLD_bar(kobe_cld_data(), guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
+        
+    })
   
      
   })

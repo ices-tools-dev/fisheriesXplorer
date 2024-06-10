@@ -1,20 +1,25 @@
 Package: fisheriesXplorer
-Title: An Amazing Shiny App
+Title: An interactive tool for viewing ICES Fishery Overviews
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "firstname",
-           family = "lastname",
+    person(given = "Neil",
+           family = "Maginnis",
            role = c("aut", "cre"),
-           email = "your@email.com")
+           email = "neilm@ices.dk")
 Description: What the package does (one paragraph).
-License: What license is it under?
+License: GPL-3
 Imports: 
     bslib,
     config (>= 0.3.2),
+    desc,
     golem (>= 0.4.1),
+    icesFO,
     leaflet,
     magrittr,
+    pkgload,
+    sf,
     shiny (>= 1.8.0)
+Remotes: ices-tools-prod/icesFO@5f4d888
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.1
