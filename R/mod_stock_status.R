@@ -9,7 +9,7 @@
 #' @importFrom shiny NS tagList 
 #' @importFrom bslib card_image
 #' @importFrom icesFO plot_CLD_bar plot_kobe plot_stock_trends plot_status_prop_pies plot_GES_pies
-#' @importFrom dplyr filter top_n
+#' @importFrom dplyr filter slice_max
 #' 
 mod_stock_status_ui <- function(id){
   ns <- NS(id)
@@ -26,7 +26,7 @@ mod_stock_status_ui <- function(id){
                                         "Crustacean" = "crustacean",
                                         "Demersal" = "demersal",
                                         "Pelagic" = "pelagic")),
-               card(imageOutput(ns("status_trends")))),
+               card(plotOutput(ns("status_trends")))),
       tabPanel("Kobe-CLD",
                radioButtons(ns("status_kobe_cld_selector"), "Select group",
                             choices = c("All Stocks" = "All",
@@ -35,8 +35,13 @@ mod_stock_status_ui <- function(id){
                                         "Crustacean" = "crustacean",
                                         "Pelagic" = "pelagic")),
                uiOutput(ns("slider")),
-               card(imageOutput(ns("status_kobe")),
-                    imageOutput(ns("status_cld"))))
+               card(plotOutput(ns("status_kobe")),
+                    plotOutput(ns("status_cld")))),
+      tabPanel("Stock status Lookup",
+               selectInput(ns("stock_status_selector"), "Select stock to view status", choices = "A stock"), 
+               radioButtons(ns("stock_status_indicator_selector"), "Select status indicator",
+                            choices = c("MSY / PA" = "ices", "GES" = "ges")),
+               plotOutput("stock_status"))
       
     )
  

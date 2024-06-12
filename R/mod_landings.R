@@ -7,28 +7,60 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
+#' @importFrom icesFO plot_discard_trends plot_discard_current
 mod_landings_ui <- function(id){
   ns <- NS(id)
   tagList(
- 
-    radioButtons(ns("landings_layer_selector"), "Select water column level where fishing occurs",
-                 choices = c("Main" = "main", "Category" = "category", "Country" = "country", "Gear" = "gear")),
-    card(imageOutput(ns("landings_layer")))
+    tabsetPanel(
+      tabPanel("Landings",
+        radioButtons(ns("landings_layer_selector"), "View Landings information organised by:",
+                     choices = c("Main landed species" = "COMMON_NAME", "Category" = "GUILD", "Country" = "COUNTRY")),
+        card(imageOutput(ns("landings_layer")))
+      ),
+      tabPanel("Discards",
+        card(plotOutput(ns("discard_trends"))),
+        card(plotOutput(ns("recorded_discards"))),
+        card(plotOutput(ns("all_discards")))
+        )
+    )
   )
 }
     
 #' landings Server Functions
 #'
 #' @noRd 
-mod_landings_server <- function(id){
+mod_landings_server <- function(id, cap_year, cap_month){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
-    output$landings_layer <- renderImage({
+
+    output$landings_layer <- renderPlot({
       req(!is.null(input$landings_layer_selector))
-      path <- file.path(paste0("inst/app/www/landings_", input$landings_layer_selector, ".png"))
-      list(src = path)
-    }, deleteFile = F)
+    
+      plotting_params <- list()
+      plotting_params$landings <- list("COMMON_NAME" = list("n" = 10,
+                                                          type = "line"),
+                                       "GUILD"= list("n" = 6,
+                                                     type = "line"),
+                                       "COUNTRY"= list("n" = 9,
+                                                     type = "area"))
+
+      params <- plotting_params$landings[[input$landings_layer_selector]]
+      plot_catch_trends(formatted_catch_data, type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))
+      
+    })
+    
+    year <- 2022
+    
+    output$discard_trends <- renderPlot({
+      plot_discard_trends(catch_trends, year, cap_year , cap_month, caption = F)
+    })
+    output$recorded_discards <- renderPlot({
+      plot_discard_current(catch_trends, year, cap_year , cap_month, position_letter = "")
+    })
+    output$all_discards <- renderPlot({
+      plot_discard_current(catch_trends, year-1, cap_year , cap_month, position_letter = "" )
+    })
     
   })
 }

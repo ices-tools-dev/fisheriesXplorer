@@ -7,12 +7,22 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
+#' @importFrom glue glue
+#' @importFrom ggplot2 ggtitle
+#' @importFrom lubridate year
 mod_vms_ui <- function(id){
   ns <- NS(id)
   tagList(
-    radioButtons(ns("vms_layer_selector"), "Select level of fishing benthic impact",
-                 choices = c("Surface" = "surface", "Bottom" = "bottom")),
-    card(imageOutput(ns("vms_layer")))
+      card("Fishing Effort",
+        card(imageOutput(ns("effort_layer")))
+        
+      ),
+      card("Fishing Benthic Impact",
+        radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",
+                     choices = c("Surface" = "surface", "Subsurface" = "subsurface")),
+        card(imageOutput(ns("sar_layer")))
+        
+      )
   )
 }
     
@@ -23,11 +33,21 @@ mod_vms_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
-    output$vms_layer <- renderImage({
-      req(!is.null(input$vms_layer_selector))
-      path <- file.path(paste0("inst/app/www/sar_", input$vms_layer_selector, ".png"))
-      list(src = path)
-    }, deleteFile = F)
+    output$effort_layer <- renderPlot({
+     
+       plot_effort_map(effort_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]])+
+        ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
+     
+      })
+    
+    output$sar_layer <- renderPlot({
+      req(!is.null(input$sar_layer_selector))
+     
+        plot_sar_map(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], what = input$sar_layer_selector) +
+          ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
+     
+      })
+    
     
   })
 }
