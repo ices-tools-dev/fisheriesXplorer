@@ -12,6 +12,8 @@ Imports:
     bslib,
     config (>= 0.3.2),
     desc,
+    ggplot2,
+    glue,
     golem (>= 0.4.1),
     icesFO,
     leaflet,
@@ -19,7 +21,7 @@ Imports:
     pkgload,
     sf,
     shiny (>= 1.8.0)
-Remotes: ices-tools-prod/icesFO@5f4d888
+Remotes: ices-tools-prod/icesFO@03366db9676b8f3ccb09330c23f6b8fa911b1af8
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.1

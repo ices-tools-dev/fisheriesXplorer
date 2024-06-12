@@ -18,3 +18,12 @@ usethis::use_data(trends, overwrite = TRUE)
 clean_status <- read.csv(file = "data-raw/GNS/clean_status.csv")
 
 usethis::use_data(clean_status, overwrite = TRUE)
+
+
+catch_trends <- read.csv(file = "data-raw/GNS/catch_trends.csv")
+
+usethis::use_data(catch_trends, overwrite = TRUE)
+
+formatted_catch_data <- read.csv(file = "data-raw/GNS/catch_dat.csv")
+
+usethis::use_data(formatted_catch_data, overwrite = TRUE)
