@@ -10,6 +10,7 @@
 #' @importFrom glue glue
 #' @importFrom ggplot2 ggtitle
 #' @importFrom lubridate year
+#' @importFrom icesFO plot_effort_map plot_sar_map
 mod_vms_ui <- function(id){
   ns <- NS(id)
   tagList(

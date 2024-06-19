@@ -1,6 +1,6 @@
 Package: fisheriesXplorer
 Title: An interactive tool for viewing ICES Fishery Overviews
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
     person(given = "Neil",
            family = "Maginnis",

@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' @importFrom icesFO plot_discard_trends plot_discard_current
+#' @importFrom icesFO plot_discard_trends plot_discard_current plot_catch_trends
 mod_landings_ui <- function(id){
   ns <- NS(id)
   tagList(
