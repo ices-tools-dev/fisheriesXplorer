@@ -9,20 +9,42 @@ app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
-    navbarPage( title = paste0("FisheriesXplorer, v", desc_get_version()), id = "nav-page",
-               tabPanel("Home", id = "home",
-                        mod_navigation_page_ui("navigation_page_1")),
-               tabPanel("Overview", 
-                        mod_overview_ui("overview_1")),
-               tabPanel("Landings", 
-                        mod_landings_ui("landings_1")),
-               tabPanel("Stock Status",
-                        mod_stock_status_ui("stock_status_1")),
-               tabPanel("Mixed Fisheries"),
-               tabPanel("VMS", 
-                        mod_vms_ui("vms_1")),
-               tabPanel("Bycatch", 
-                        mod_bycatch_ui("bycatch_1"))
+    title_html <- tags$a(
+      href = "https://ices-taf.shinyapps.io/tafxplorer/",
+      tags$img(
+        src = "https://www.ices.dk/SiteCollectionImages/ICES%20logos/NEGATIVE%20ICES-logo.png",
+        style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
+        height = "50px"
+      )
+    ),
+    navbarPage(
+      title = title_html,
+      id = "nav-page",
+      tabPanel("Home",
+        id = "home",
+        mod_navigation_page_ui("navigation_page_1")
+      ),
+      tabPanel(
+        "Overview",
+        mod_overview_ui("overview_1")
+      ),
+      tabPanel(
+        "Landings",
+        mod_landings_ui("landings_1")
+      ),
+      tabPanel(
+        "Stock Status",
+        mod_stock_status_ui("stock_status_1")
+      ),
+      tabPanel("Mixed Fisheries"),
+      tabPanel(
+        "VMS",
+        mod_vms_ui("vms_1")
+      ),
+      tabPanel(
+        "Bycatch",
+        mod_bycatch_ui("bycatch_1")
+      )
     )
   )
 }
@@ -46,7 +68,10 @@ golem_add_external_resources <- function() {
     bundle_resources(
       path = app_sys("app/www"),
       app_title = "fisheriesXplorer"
-    )
+    ),
+    tags$link(rel = "stylesheet", type = "text/css", href = "css/gothic-a1.css"),
+    tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"))
+    
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
   )

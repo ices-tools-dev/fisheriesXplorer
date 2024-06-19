@@ -33,12 +33,12 @@ map_ecoregion <- function(eco_shape, map_shape) {
       color = "black",
       weight = 1,
       fillOpacity = 0.4,
-      fillColor = "#fddfc2", # "#E8EAEA"
+      fillColor = "#CCF0FC", # "#E8EAEA"
       group = "Europe"
     ) %>%
     leaflet::addPolygons(
       data = eco_shape,
-      fillColor = "#7fdbc7",
+      fillColor = "#E6E7E8",
       fillOpacity = 0.15,
       color = "black",
       stroke = TRUE,
@@ -49,7 +49,7 @@ map_ecoregion <- function(eco_shape, map_shape) {
     ) %>%
     leaflet::addPolygons(
       data = eco_shape,
-      fillColor = "#F15D2A",
+      fillColor = "#00B6F1",
       fillOpacity = .7,
       weight = 1,
       color = "black",

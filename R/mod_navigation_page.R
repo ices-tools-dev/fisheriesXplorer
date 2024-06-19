@@ -10,33 +10,46 @@
 #' @importFrom bslib card card_header card_body 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @import leaflet 
-mod_navigation_page_ui <- function(id){
+mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    card("Check out the FisheriesXplorer app! Select your area of interest!", width = 12),
-    tabsetPanel(type = "hidden", 
-                id=ns("landing_page"),
-       tabPanel("Map Tab", value=ns("tab_map"),
-          card("Select an ecoregion",
-                leafletOutput(ns("map"))),
-          selectizeInput(
-                inputId = ns("selected_locations"),
-                label = "Case study regions",
-                choices = c("", sort(eco_shape$Ecoregion)),
-                selected = NULL,
-                multiple = FALSE,
-                width = "100%",
-                options = list(placeholder = "Select Ecoregion(s)"))
-    ),tabPanel("Next Topic", value = ns("tab_topic"),
-          card("Overview", id= ns("overview-btn"), class = "btn action-button"),
-          card("Landings", id= ns("landings-btn"), class = "btn action-button"),
-          card("Stock status", id= ns("stock_status-btn"), class = "btn action-button"),
-          card("Mixed Fisheries", id= ns("mixfish-btn"), class = "btn action-button"),
-          card("VMS", id= ns("vms-btn"), class = "btn action-button"),
-          card("Bycatch", id= ns("bycatch-btn"), class = "btn action-button")
-                 
-      ) 
-  )
+    card(
+      # tags$style(type = "text/css", "#logo {height: 60px !important; margin-top: 10px;  padding-bottom: 20px; }"),
+      # tags$img(id = "logo", src = "fisheriesXplorer blue.png"),
+      card_image(
+    file = "adviceXplorer logo_color.png",
+    href = "app/www"
+  ),
+      card_header("Check out the FisheriesXplorer app! Select your area of interest!")
+    ),
+    tabsetPanel(
+      type = "hidden",
+      id = ns("landing_page"),
+      tabPanel("Map Tab",
+        value = ns("tab_map"),
+        card(
+          "Select an ecoregion",
+          leafletOutput(ns("map"))
+        ),
+        selectizeInput(
+          inputId = ns("selected_locations"),
+          label = "Case study regions",
+          choices = c("", sort(eco_shape$Ecoregion)),
+          selected = NULL,
+          multiple = FALSE,
+          width = "100%",
+          options = list(placeholder = "Select Ecoregion(s)")
+        )
+      ), tabPanel("Next Topic",
+        value = ns("tab_topic"),
+        card("Overview", id = ns("overview-btn"), class = "btn action-button"),
+        card("Landings", id = ns("landings-btn"), class = "btn action-button"),
+        card("Stock status", id = ns("stock_status-btn"), class = "btn action-button"),
+        card("Mixed Fisheries", id = ns("mixfish-btn"), class = "btn action-button"),
+        card("VMS", id = ns("vms-btn"), class = "btn action-button"),
+        card("Bycatch", id = ns("bycatch-btn"), class = "btn action-button")
+      )
+    )
   )
 }
     
