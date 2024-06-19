@@ -26,7 +26,7 @@ mod_stock_status_ui <- function(id){
                                         "Crustacean" = "crustacean",
                                         "Demersal" = "demersal",
                                         "Pelagic" = "pelagic")),
-               card(plotOutput(ns("status_trends")))),
+               card(plotlyOutput(ns("status_trends")))),
       tabPanel("Kobe-CLD",
                radioButtons(ns("status_kobe_cld_selector"), "Select group",
                             choices = c("All Stocks" = "All",
@@ -81,10 +81,10 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
       
     })
     
-     output$status_trends <- renderPlot({
+     output$status_trends <- renderPlotly({
       req(!is.null(input$status_trend_selector))
       
-       plot_stock_trends(trends_data(), guild = input$status_trend_selector, cap_year, cap_month , return_data = FALSE)
+       ggplotly(plot_stock_trends(trends_data(), guild = input$status_trend_selector, cap_year, cap_month , return_data = FALSE))
        })
      
      kobe_cld_data <- reactive({

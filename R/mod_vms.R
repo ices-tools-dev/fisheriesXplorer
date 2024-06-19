@@ -15,13 +15,13 @@ mod_vms_ui <- function(id){
   ns <- NS(id)
   tagList(
       card("Fishing Effort",
-        card(imageOutput(ns("effort_layer")))
+        card(plotlyOutput(ns("effort_layer")))
         
       ),
       card("Fishing Benthic Impact",
         radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",
                      choices = c("Surface" = "surface", "Subsurface" = "subsurface")),
-        card(imageOutput(ns("sar_layer")))
+        card(plotlyOutput(ns("sar_layer")))
         
       )
   )
@@ -34,18 +34,18 @@ mod_vms_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
-    output$effort_layer <- renderPlot({
+    output$effort_layer <- renderPlotly({
      
-       plot_effort_map(effort_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]])+
-        ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
+       ggplotly(plot_effort_map(effort_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]])+
+        ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-"))))
      
       })
     
-    output$sar_layer <- renderPlot({
+    output$sar_layer <- renderPlotly({
       req(!is.null(input$sar_layer_selector))
      
-        plot_sar_map(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], what = input$sar_layer_selector) +
-          ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
+        ggplotly(plot_sar_map(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], what = input$sar_layer_selector) +
+          ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-"))))
      
       })
     
