@@ -13,13 +13,14 @@
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    
     card(
-      # tags$style(type = "text/css", "#logo {height: 60px !important; margin-top: 10px;  padding-bottom: 20px; }"),
-      # tags$img(id = "logo", src = "fisheriesXplorer blue.png"),
-      card_image(
-    file = "adviceXplorer logo_color.png",
-    href = "app/www"
-  ),
+    tags$style(type = "text/css", "#logo {height: 60px !important; margin-top: 10px;  padding-bottom: 20px; }"),
+    tags$img(id = "logo", src = "D:/GitHub_2023/fisheriesXplorer/inst/app/www/fisheriesXplorer blue.png"),
+  #     card_image(
+  #   file = "fisheriesXplorer blue.png",
+  #   href = "https://github.com/ices-tools-dev/fisheriesXplorer/blob/layout_color_scheme/inst/app/www/"
+  # ),
       card_header("Check out the FisheriesXplorer app! Select your area of interest!")
     ),
     tabsetPanel(
@@ -29,7 +30,8 @@ mod_navigation_page_ui <- function(id) {
         value = ns("tab_map"),
         card(
           "Select an ecoregion",
-          leafletOutput(ns("map"))
+          tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
+          leafletOutput(ns("map"), width = "70%")
         ),
         selectizeInput(
           inputId = ns("selected_locations"),
@@ -59,7 +61,7 @@ mod_navigation_page_ui <- function(id) {
 mod_navigation_page_server <- function(id, parent_session){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
- 
+    print(getwd())
     output$map <- leaflet::renderLeaflet({
       
       map_ecoregion(eco_shape, map_shape)
