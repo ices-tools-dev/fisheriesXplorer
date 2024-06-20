@@ -16,7 +16,7 @@ mod_navigation_page_ui <- function(id) {
     
     card(
     tags$style(type = "text/css", "#logo {height: 60px !important; margin-top: 10px;  padding-bottom: 20px; }"),
-    tags$img(id = "logo", src = "D:/GitHub_2023/fisheriesXplorer/inst/app/www/fisheriesXplorer blue.png"),
+    tags$img(id = "logo", src = "www/fisheriesXplorer blue.png"),
   #     card_image(
   #   file = "fisheriesXplorer blue.png",
   #   href = "https://github.com/ices-tools-dev/fisheriesXplorer/blob/layout_color_scheme/inst/app/www/"
