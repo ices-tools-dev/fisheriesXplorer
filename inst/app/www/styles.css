@@ -38,6 +38,7 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
   display: block;
   margin-left: auto;
   margin-right: auto;
+  margin-bottom: 20px;
 }
 
 #tbl {outline:#dddddd solid 1px;}
@@ -103,6 +104,12 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
   background-color: transparent;
 }
 
+.nav-tabs {
+  border-bottom: 1px solid #ddd;
+  margin-top: 20px;
+}
+
+
 .panel-primary {
   border-color: #ffffff;
 }
@@ -145,8 +152,8 @@ input[type=radio] {
   appearance: none;
 
   border-radius: 50%;
-  width: 26px;
-  height: 26px;
+  width: 12px;
+  height: 12px;
 
   border: 2px solid #999;
   transition: 0.2s all linear;
@@ -161,7 +168,7 @@ input[type=radio] {
 }
 input[type=radio]:checked {
   /*border: 10px solid #f15d2a;*/
-  border: 10px solid #00B6F1;
+  border: 5px solid #00B6F1;
   outline: unset !important /* I added this one for Edge (chromium) support */
 }
 

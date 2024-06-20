@@ -70,6 +70,7 @@ golem_add_external_resources <- function() {
       app_title = "fisheriesXplorer"
     ),
     tags$link(rel = "stylesheet", type = "text/css", href = "css/gothic-a1.css"),
+    tags$style("body {font-family: 'Gothic A1', sans-serif;}"),
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"))
     
     # Add here other external resources
