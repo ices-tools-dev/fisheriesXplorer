@@ -237,6 +237,13 @@ caption {
   bottom: auto !important;
   top: -100 !important;
 }
+
+
+.shiny-input-container:not(.shiny-input-container-inline) {
+  width: 300px;
+  max-width: 100%;
+  margin-top: 20px;
+}
 /*
 @media(max-width:1000px)  {
 

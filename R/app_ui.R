@@ -12,7 +12,7 @@ app_ui <- function(request) {
     title_html <- tags$a(
       href = "https://ices-taf.shinyapps.io/tafxplorer/",
       tags$img(
-        src = "https://www.ices.dk/SiteCollectionImages/ICES%20logos/NEGATIVE%20ICES-logo.png",
+        src = "www/NEGATIVE ICES-logo.png",
         style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
         height = "50px"
       )
