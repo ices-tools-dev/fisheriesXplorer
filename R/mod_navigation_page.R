@@ -15,7 +15,7 @@ mod_navigation_page_ui <- function(id) {
   tagList(
     
     card(
-    tags$style(type = "text/css", "#logo {height: 60px !important; margin-top: 10px;  padding-bottom: 20px; }"),
+    tags$style(type = "text/css", "#logo {height: auto; width: 30% !important; margin-top: 0px;  padding-bottom: 20px; }"),
     tags$img(id = "logo", src = "www/fisheriesXplorer blue.png"),
   #     card_image(
   #   file = "fisheriesXplorer blue.png",
