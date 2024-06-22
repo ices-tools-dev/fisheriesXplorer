@@ -59,60 +59,66 @@ mod_navigation_page_ui <- function(id) {
               fluidRow(
             column(
               6,
+              align="center",
               actionButton(
                 inputId = ns("overview-btn"),
                 label = NULL,
-                icon = icon("image", lib = "font-awesome"),
-                style = "background: url('path/to/your/image1.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+                # icon = icon("fa-rectangle-list"),
+                style = "background: url('www/research.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
               )
             ),
             column(
               6,
+              align="center",
               actionButton(
                 inputId = ns("landings-btn"),
                 label = NULL,
-                icon = icon("image", lib = "font-awesome"),
-                style = "background: url('path/to/your/image2.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+                # icon = icon("image", lib = "font-awesome"),
+                style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
               )
             )
           ),
           fluidRow(
             column(
               6,
+              align="center",
               actionButton(
                 inputId = ns("stock_status-btn"),
                 label = NULL,
-                icon = icon("image", lib = "font-awesome"),
-                style = "background: url('path/to/your/image3.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+                # icon = icon("image", lib = "font-awesome"),
+                style = "background: url('www/check-list.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
               )
             ),
             column(
               6,
+              align="center",
               actionButton(
                 inputId = ns("mixfish-btn"),
                 label = NULL,
-                icon = icon("image", lib = "font-awesome"),
-                style = "background: url('path/to/your/image4.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+                # icon = icon("image", lib = "font-awesome"),
+                style = "background: url('www/fishing-net.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
               )
             )
           ),
           fluidRow(
             column(
               6,
+              align="center",
               actionButton(
                 inputId = ns("vms-btn"),
                 label = NULL,
-                icon = icon("image", lib = "font-awesome"),
-                style = "background: url('path/to/your/image5.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+                # icon = icon("image", lib = "font-awesome"),
+                style = "background: url('www/architecture.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
               )
             ),
             column(
               6,
+              align="center",
               actionButton(
                 inputId = ns("bycatch-btn"),
                 label = NULL,
-                icon = icon("image", lib = "font-awesome"),
-                style = "background: url('path/to/your/image6.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+                # icon = icon("image", lib = "font-awesome"),
+                style = "background: url('www/dolphin.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
               )
             )
           )
