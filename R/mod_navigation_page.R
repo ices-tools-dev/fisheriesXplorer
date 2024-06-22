@@ -13,44 +13,127 @@
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    
     card(
-    tags$style(type = "text/css", "#logo {height: auto; width: 30% !important; margin-top: 0px;  padding-bottom: 20px; }"),
-    tags$img(id = "logo", src = "www/fisheriesXplorer blue.png"),
-  #     card_image(
-  #   file = "fisheriesXplorer blue.png",
-  #   href = "https://github.com/ices-tools-dev/fisheriesXplorer/blob/layout_color_scheme/inst/app/www/"
-  # ),
-      card_header("Check out the FisheriesXplorer app! Select your area of interest!")
+      tags$style(type = "text/css", "#logo {height: auto; width: 30% !important; margin-top: 0px;  padding-bottom: 20px; }"),
+      tags$img(id = "logo", class = "center-block", src = "www/fisheriesXplorer blue.png")
+      # card_header("Check out the FisheriesXplorer app! Select your area of interest!")
     ),
     tabsetPanel(
       type = "hidden",
       id = ns("landing_page"),
       tabPanel("Map Tab",
         value = ns("tab_map"),
-        card(
-          "Select an ecoregion",
-          tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-          leafletOutput(ns("map"), width = "70%")
-        ),
-        selectizeInput(
-          inputId = ns("selected_locations"),
-          label = "Case study regions",
-          choices = c("", sort(eco_shape$Ecoregion)),
-          selected = NULL,
-          multiple = FALSE,
-          width = "100%",
-          options = list(placeholder = "Select Ecoregion(s)")
+        layout_column_wrap(
+          width = 1 / 3,
+          card(
+            full_screen = TRUE,
+            card_header("Select an ecoregion"),
+            tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
+            leafletOutput(ns("map"), width = "90%")
+          ),
+          card(
+            full_screen = TRUE,
+            card_header("Filtering options"),
+            virtualSelectInput(
+              inputId = ns("selected_locations"),
+              label = "Case study regions:",
+              choices = c("", sort(eco_shape$Ecoregion)),
+              selected = NULL,
+              multiple = FALSE,
+              width = "100%",
+              search = TRUE
+            ),
+            virtualSelectInput(
+              inputId = ns("assessmentYear"),
+              label = "Assessment year:",
+              choices = c(2024, 2022),
+              selected = NULL,
+              multiple = FALSE,
+              width = "100%",
+              search = TRUE
+            )
+          ),
+          card(
+            card_header("Choose a topic:"),
+            card_body(
+              fluidRow(
+            column(
+              6,
+              actionButton(
+                inputId = ns("overview-btn"),
+                label = NULL,
+                icon = icon("image", lib = "font-awesome"),
+                style = "background: url('path/to/your/image1.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+              )
+            ),
+            column(
+              6,
+              actionButton(
+                inputId = ns("landings-btn"),
+                label = NULL,
+                icon = icon("image", lib = "font-awesome"),
+                style = "background: url('path/to/your/image2.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+              )
+            )
+          ),
+          fluidRow(
+            column(
+              6,
+              actionButton(
+                inputId = ns("stock_status-btn"),
+                label = NULL,
+                icon = icon("image", lib = "font-awesome"),
+                style = "background: url('path/to/your/image3.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+              )
+            ),
+            column(
+              6,
+              actionButton(
+                inputId = ns("mixfish-btn"),
+                label = NULL,
+                icon = icon("image", lib = "font-awesome"),
+                style = "background: url('path/to/your/image4.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+              )
+            )
+          ),
+          fluidRow(
+            column(
+              6,
+              actionButton(
+                inputId = ns("vms-btn"),
+                label = NULL,
+                icon = icon("image", lib = "font-awesome"),
+                style = "background: url('path/to/your/image5.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+              )
+            ),
+            column(
+              6,
+              actionButton(
+                inputId = ns("bycatch-btn"),
+                label = NULL,
+                icon = icon("image", lib = "font-awesome"),
+                style = "background: url('path/to/your/image6.jpg') no-repeat center center; background-size: cover; height: 100px; width: 100px;"
+              )
+            )
+          )
+            )
+            # card("Overview", id = ns("overview-btn"), class = "btn action-button"),
+            # card("Landings", id = ns("landings-btn"), class = "btn action-button"),
+            # card("Stock status", id = ns("stock_status-btn"), class = "btn action-button"),
+            # card("Mixed Fisheries", id = ns("mixfish-btn"), class = "btn action-button"),
+            # card("VMS", id = ns("vms-btn"), class = "btn action-button"),
+            # card("Bycatch", id = ns("bycatch-btn"), class = "btn action-button")
+          )
         )
-      ), tabPanel("Next Topic",
-        value = ns("tab_topic"),
-        card("Overview", id = ns("overview-btn"), class = "btn action-button"),
-        card("Landings", id = ns("landings-btn"), class = "btn action-button"),
-        card("Stock status", id = ns("stock_status-btn"), class = "btn action-button"),
-        card("Mixed Fisheries", id = ns("mixfish-btn"), class = "btn action-button"),
-        card("VMS", id = ns("vms-btn"), class = "btn action-button"),
-        card("Bycatch", id = ns("bycatch-btn"), class = "btn action-button")
-      )
+      ) # , tabPanel("Next Topic",
+      #   value = ns("tab_topic"),
+      #   card("Overview", id = ns("overview-btn"), class = "btn action-button"),
+      #   card("Landings", id = ns("landings-btn"), class = "btn action-button"),
+      #   card("Stock status", id = ns("stock_status-btn"), class = "btn action-button"),
+      #   card("Mixed Fisheries", id = ns("mixfish-btn"), class = "btn action-button"),
+      #   card("VMS", id = ns("vms-btn"), class = "btn action-button"),
+      #   card("Bycatch", id = ns("bycatch-btn"), class = "btn action-button")
+      # )
     )
   )
 }
