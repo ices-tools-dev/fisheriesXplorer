@@ -245,28 +245,47 @@ caption {
   margin-top: 20px;
 }
 
-.card {
+/* .card {
   background: transparent;
     border-style: solid;
     border-width: 1px 1px 1px 1px;
-    border-color: rgb(255, 255, 255);
+    border-color: rgb(194, 194, 194);
     border-radius: 0.3rem;
-}
+} */
 
 .center-block {
   display: block;
   margin-left: auto;
   margin-right: auto;
 }
-/* .card-header {
-  background-color: #CCF1ED;
-  padding-bottom: 0%;
+
+#logo {
+  height: auto;
+  width: 30% !important;
+  margin-top: 40px;
+  padding-bottom: 20px;
 }
 
+
 .card-body {
-  color: #b0b0b0;
-  background-color: #E6E7E8;
-} */
+  color: #002B5F;
+  background-color: #ffffff;
+  border-color: rgb(194, 194, 194);
+  border-width: 1px 1px 1px 1px;
+  border-radius: 30px;
+} 
+
+.card-header {
+  color: #002B5F;
+  font-size: large;
+  background-color: #CCF0FC;
+  padding-left: 10px;
+  border-width: 1px 1px 1px 1px;
+  border-radius: 30px;
+}
+.bslib-card .card-body{
+  overflow-x: hidden;
+}
 /*
 @media(max-width:1000px)  {
 
