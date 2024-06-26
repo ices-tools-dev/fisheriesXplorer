@@ -24,26 +24,12 @@ mod_navigation_page_ui <- function(id) {
       tabPanel("Map Tab",
         value = ns("tab_map"),
         layout_column_wrap(
-          width = 1 / 3,
+          width = 1 / 2,
           card(
             full_screen = TRUE,
             card_header("Select an ecoregion"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            leafletOutput(ns("map"), width = "90%")
-          ),
-          card(
-            full_screen = TRUE,
-            card_header("Filtering options"),
-            tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            virtualSelectInput(
-              inputId = ns("selected_locations"),
-              label = "Case study regions:",
-              choices = c("", sort(eco_shape$Ecoregion)),
-              selected = NULL,
-              multiple = FALSE,
-              width = "90%",
-              search = TRUE
-            ),
+            leafletOutput(ns("map"), width = "90%"),
             tags$style(type = "text/css", "#assessmentYear {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             virtualSelectInput(
               inputId = ns("assessmentYear"),
@@ -55,6 +41,21 @@ mod_navigation_page_ui <- function(id) {
               search = TRUE
             )
           ),
+          # card(
+          #   full_screen = TRUE,
+          #   card_header("Filtering options"),
+          #   tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
+          #   virtualSelectInput(
+          #     inputId = ns("selected_locations"),
+          #     label = "Case study regions:",
+          #     choices = c("", sort(eco_shape$Ecoregion)),
+          #     selected = NULL,
+          #     multiple = FALSE,
+          #     width = "90%",
+          #     search = TRUE
+          #   ),
+            
+          # ),
           card(
             card_header("Choose a topic:"),
             card_body(
