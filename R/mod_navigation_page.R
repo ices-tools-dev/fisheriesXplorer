@@ -14,10 +14,8 @@ mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
     # card(
-      
-      tags$img(id = "logo", class = "center-block", src = "www/fisheriesXplorer blue.png"),
-      # card_header("Check out the FisheriesXplorer app! Select your area of interest!")
-    # ),
+
+    tags$img(id = "logo", class = "center-block", src = "www/fisheriesXplorer blue.png"),
     tabsetPanel(
       type = "hidden",
       id = ns("landing_page"),
@@ -35,7 +33,7 @@ mod_navigation_page_ui <- function(id) {
               inputId = ns("assessmentYear"),
               label = "Assessment year:",
               choices = c(2024, 2022),
-              selected = NULL,
+              selected = 2022,
               multiple = FALSE,
               width = "90%",
               search = TRUE
@@ -54,95 +52,81 @@ mod_navigation_page_ui <- function(id) {
           #     width = "90%",
           #     search = TRUE
           #   ),
-            
+
           # ),
           card(
-            card_header("Choose a topic:"),
+            card_header("Select a topic:"),
             card_body(
               fluidRow(
-            column(
-              6,
-              align="center",
-              actionButton(
-                inputId = ns("overview-btn"),
-                label = NULL,
-                # icon = icon("fa-rectangle-list"),
-                style = "background: url('www/research.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
-              )
-            ),
-            column(
-              6,
-              align="center",
-              actionButton(
-                inputId = ns("landings-btn"),
-                label = NULL,
-                # icon = icon("image", lib = "font-awesome"),
-                style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                column(
+                  6,
+                  align = "center",
+                  actionButton(
+                    inputId = ns("overview-btn"),
+                    label = NULL,
+                    # icon = icon("fa-rectangle-list"),
+                    style = "background: url('www/research.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  )
+                ),
+                column(
+                  6,
+                  align = "center",
+                  actionButton(
+                    inputId = ns("landings-btn"),
+                    label = NULL,
+                    # icon = icon("image", lib = "font-awesome"),
+                    style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  )
+                )
+              ),
+              fluidRow(
+                column(
+                  6,
+                  align = "center",
+                  actionButton(
+                    inputId = ns("stock_status-btn"),
+                    label = NULL,
+                    # icon = icon("image", lib = "font-awesome"),
+                    style = "background: url('www/check-list.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  )
+                ),
+                column(
+                  6,
+                  align = "center",
+                  actionButton(
+                    inputId = ns("mixfish-btn"),
+                    label = NULL,
+                    # icon = icon("image", lib = "font-awesome"),
+                    style = "background: url('www/fishing-net.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  )
+                )
+              ),
+              fluidRow(
+                column(
+                  6,
+                  align = "center",
+                  actionButton(
+                    inputId = ns("vms-btn"),
+                    label = NULL,
+                    # icon = icon("image", lib = "font-awesome"),
+                    style = "background: url('www/architecture.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  )
+                ),
+                column(
+                  6,
+                  align = "center",
+                  actionButton(
+                    inputId = ns("bycatch-btn"),
+                    label = NULL,
+                    # icon = icon("image", lib = "font-awesome"),
+                    style = "background: url('www/dolphin.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  )
+                )
               )
             )
-          ),
-          fluidRow(
-            column(
-              6,
-              align="center",
-              actionButton(
-                inputId = ns("stock_status-btn"),
-                label = NULL,
-                # icon = icon("image", lib = "font-awesome"),
-                style = "background: url('www/check-list.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
-              )
-            ),
-            column(
-              6,
-              align="center",
-              actionButton(
-                inputId = ns("mixfish-btn"),
-                label = NULL,
-                # icon = icon("image", lib = "font-awesome"),
-                style = "background: url('www/fishing-net.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
-              )
-            )
-          ),
-          fluidRow(
-            column(
-              6,
-              align="center",
-              actionButton(
-                inputId = ns("vms-btn"),
-                label = NULL,
-                # icon = icon("image", lib = "font-awesome"),
-                style = "background: url('www/architecture.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
-              )
-            ),
-            column(
-              6,
-              align="center",
-              actionButton(
-                inputId = ns("bycatch-btn"),
-                label = NULL,
-                # icon = icon("image", lib = "font-awesome"),
-                style = "background: url('www/dolphin.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
-              )
-            )
-          )
-            )
-            # card("Overview", id = ns("overview-btn"), class = "btn action-button"),
-            # card("Landings", id = ns("landings-btn"), class = "btn action-button"),
-            # card("Stock status", id = ns("stock_status-btn"), class = "btn action-button"),
-            # card("Mixed Fisheries", id = ns("mixfish-btn"), class = "btn action-button"),
-            # card("VMS", id = ns("vms-btn"), class = "btn action-button"),
-            # card("Bycatch", id = ns("bycatch-btn"), class = "btn action-button")
           )
         )
-      ) # , tabPanel("Next Topic",
-      #   value = ns("tab_topic"),
-      #   card("Overview", id = ns("overview-btn"), class = "btn action-button"),
-      #   card("Landings", id = ns("landings-btn"), class = "btn action-button"),
-      #   card("Stock status", id = ns("stock_status-btn"), class = "btn action-button"),
-      #   card("Mixed Fisheries", id = ns("mixfish-btn"), class = "btn action-button"),
-      #   card("VMS", id = ns("vms-btn"), class = "btn action-button"),
-      #   card("Bycatch", id = ns("bycatch-btn"), class = "btn action-button")
-      # )
+      )
     )
   )
 }
@@ -199,7 +183,7 @@ mod_navigation_page_server <- function(id, parent_session){
                      
                    }
                    
-                   updateTabsetPanel(session = session, "landing_page", selected = ns("tab_topic"))
+                  #  updateTabsetPanel(session = session, "landing_page", selected = ns("tab_topic"))
                  },
                  ignoreNULL = FALSE
     )
