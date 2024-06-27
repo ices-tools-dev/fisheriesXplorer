@@ -8,20 +8,34 @@
 #'
 #' @importFrom shiny NS tagList 
 #' @importFrom icesFO plot_discard_trends plot_discard_current plot_catch_trends
-mod_landings_ui <- function(id){
+mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(
     tabsetPanel(
-      tabPanel("Landings",
+      tabPanel(
+        "Landings",
         radioButtons(ns("landings_layer_selector"), "View Landings information organised by:",
-                     choices = c("Main landed species" = "COMMON_NAME", "Category" = "GUILD", "Country" = "COUNTRY")),
-        card(imageOutput(ns("landings_layer")))
+          choices = c("Main landed species" = "COMMON_NAME", "Category" = "GUILD", "Country" = "COUNTRY")
+        ),
+        card(
+          card_body(
+          plotlyOutput(ns("landings_layer"))
+          )
+          )
       ),
-      tabPanel("Discards",
-        card(plotOutput(ns("discard_trends"))),
-        card(plotOutput(ns("recorded_discards"))),
-        card(plotOutput(ns("all_discards")))
+      tabPanel(
+        "Discards",
+        card(
+          card_body(
+            layout_column_wrap(
+              width = 1 / 3,
+              plotlyOutput(ns("discard_trends")),
+              plotlyOutput(ns("recorded_discards")),
+              plotlyOutput(ns("all_discards"))
+            )
+          )
         )
+      )
     )
   )
 }
@@ -34,7 +48,7 @@ mod_landings_server <- function(id, cap_year, cap_month){
     ns <- session$ns
  
 
-    output$landings_layer <- renderPlot({
+    output$landings_layer <- renderPlotly({
       req(!is.null(input$landings_layer_selector))
     
       plotting_params <- list()
@@ -46,20 +60,20 @@ mod_landings_server <- function(id, cap_year, cap_month){
                                                      type = "area"))
 
       params <- plotting_params$landings[[input$landings_layer_selector]]
-      plot_catch_trends(formatted_catch_data, type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))
+      ggplotly(plot_catch_trends(formatted_catch_data, type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year)))
       
     })
     
     year <- 2022
     
-    output$discard_trends <- renderPlot({
-      plot_discard_trends(catch_trends, year, cap_year , cap_month, caption = F)
+    output$discard_trends <- renderPlotly({
+      ggplotly(plot_discard_trends(catch_trends, year, cap_year , cap_month, caption = F))
     })
-    output$recorded_discards <- renderPlot({
-      plot_discard_current(catch_trends, year, cap_year , cap_month, position_letter = "")
+    output$recorded_discards <- renderPlotly({
+      ggplotly(plot_discard_current(catch_trends, year, cap_year , cap_month, position_letter = ""))
     })
-    output$all_discards <- renderPlot({
-      plot_discard_current(catch_trends, year-1, cap_year , cap_month, position_letter = "" )
+    output$all_discards <- renderPlotly({
+      ggplotly(plot_discard_current(catch_trends, year-1, cap_year , cap_month, position_letter = "" ))
     })
     
   })

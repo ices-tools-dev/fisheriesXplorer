@@ -11,40 +11,60 @@
 #' @importFrom icesFO plot_CLD_bar plot_kobe plot_stock_trends plot_status_prop_pies plot_GES_pies
 #' @importFrom dplyr filter slice_max
 #' 
-mod_stock_status_ui <- function(id){
+mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
     tabsetPanel(
-      tabPanel("Status Summary",
-               radioButtons(ns("status_indicator_selector"), "Select status indicator",
-                            choices = c("MSY / PA" = "ices", "GES" = "ges")),
-               card(imageOutput(ns("status_summary")))),
-      tabPanel("Trends-by-groups",
-               radioButtons(ns("status_trend_selector"), "Select group",
-                            choices = c("Elasmobranchs" = "elasmobranch",
-                                        "Benthic" = "benthic",
-                                        "Crustacean" = "crustacean",
-                                        "Demersal" = "demersal",
-                                        "Pelagic" = "pelagic")),
-               card(plotOutput(ns("status_trends")))),
-      tabPanel("Kobe-CLD",
-               radioButtons(ns("status_kobe_cld_selector"), "Select group",
-                            choices = c("All Stocks" = "All",
-                                        "Benthic" = "benthic",
-                                        "Demersal" = "demersal",
-                                        "Crustacean" = "crustacean",
-                                        "Pelagic" = "pelagic")),
-               uiOutput(ns("slider")),
-               card(plotOutput(ns("status_kobe")),
-                    plotOutput(ns("status_cld")))),
-      tabPanel("Stock status Lookup",
-               selectInput(ns("stock_status_selector"), "Select stock to view status", choices = "A stock"), 
-               radioButtons(ns("stock_status_indicator_selector"), "Select status indicator",
-                            choices = c("MSY / PA" = "ices", "GES" = "ges")),
-               plotOutput("stock_status"))
-      
+      tabPanel(
+        "Status Summary",
+        radioButtons(ns("status_indicator_selector"), "Select status indicator",
+          choices = c("MSY / PA" = "ices", "GES" = "ges")
+        ),
+        card(imageOutput(ns("status_summary")))
+      ),
+      tabPanel(
+        "Trends-by-groups",
+        radioButtons(ns("status_trend_selector"), "Select group",
+          choices = c(
+            "Elasmobranchs" = "elasmobranch",
+            "Benthic" = "benthic",
+            "Crustacean" = "crustacean",
+            "Demersal" = "demersal",
+            "Pelagic" = "pelagic"
+          )
+        ),
+        card(
+          card_body(
+            plotlyOutput(ns("status_trends"))
+          )
+        )
+      ),
+      tabPanel(
+        "Kobe-CLD",
+        radioButtons(ns("status_kobe_cld_selector"), "Select group",
+          choices = c(
+            "All Stocks" = "All",
+            "Benthic" = "benthic",
+            "Demersal" = "demersal",
+            "Crustacean" = "crustacean",
+            "Pelagic" = "pelagic"
+          )
+        ),
+        uiOutput(ns("slider")),
+        card(
+          plotOutput(ns("status_kobe")),
+          plotOutput(ns("status_cld"))
+        )
+      ),
+      tabPanel(
+        "Stock status Lookup",
+        selectInput(ns("stock_status_selector"), "Select stock to view status", choices = "A stock"),
+        radioButtons(ns("stock_status_indicator_selector"), "Select status indicator",
+          choices = c("MSY / PA" = "ices", "GES" = "ges")
+        ),
+        plotOutput("stock_status")
+      )
     )
- 
   )
 }
     
@@ -81,10 +101,10 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
       
     })
     
-     output$status_trends <- renderPlot({
+     output$status_trends <- renderPlotly({
       req(!is.null(input$status_trend_selector))
       
-       plot_stock_trends(trends_data(), guild = input$status_trend_selector, cap_year, cap_month , return_data = FALSE)
+       ggplotly(plot_stock_trends(trends_data(), guild = input$status_trend_selector, cap_year, cap_month , return_data = FALSE))
        })
      
      kobe_cld_data <- reactive({
