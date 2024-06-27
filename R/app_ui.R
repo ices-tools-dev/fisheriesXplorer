@@ -10,7 +10,7 @@ app_ui <- function(request) {
     # Leave this function for adding external resources
     golem_add_external_resources(),
     title_html <- tags$a(
-      href = "https://ices-taf.shinyapps.io/tafxplorer/",
+      href = "https://ices-taf.shinyapps.io/fisheriesxplorer/",
       tags$img(
         src = "www/NEGATIVE ICES-logo.png",
         style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
@@ -69,6 +69,7 @@ golem_add_external_resources <- function() {
       path = app_sys("app/www"),
       app_title = "fisheriesXplorer"
     ),
+    # tags$head(includeHTML(("google-analytics.html"))),
     tags$link(rel = "stylesheet", type = "text/css", href = "css/gothic-a1.css"),
     tags$style("body {font-family: 'Gothic A1', sans-serif;}"),
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"))
