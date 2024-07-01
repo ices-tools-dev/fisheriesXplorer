@@ -7,12 +7,17 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-mod_bycatch_ui <- function(id){
+mod_bycatch_ui <- function(id) {
   ns <- NS(id)
   tagList(
     radioButtons(ns("bycatch_taxa_selector"), "Select bycatch of seabirds and marine mammals",
-                 choices = c("Seabirds" = "seabirds", "Marine mammals" = "mammals")),
-    card(imageOutput(ns("bycatch_layer")))
+      choices = c("Seabirds" = "seabirds", "Marine mammals" = "mammals")
+    ),
+    card(
+      withSpinner(
+        imageOutput(ns("bycatch_layer"))
+      )
+    )
   )
 }
     

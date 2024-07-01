@@ -19,7 +19,7 @@ mod_landings_ui <- function(id) {
         ),
         card(
           card_body(
-          plotlyOutput(ns("landings_layer"))
+          withSpinner(plotlyOutput(ns("landings_layer")))
           )
           )
       ),
@@ -29,9 +29,9 @@ mod_landings_ui <- function(id) {
           card_body(
             layout_column_wrap(
               width = 1 / 3,
-              plotlyOutput(ns("discard_trends")),
-              plotlyOutput(ns("recorded_discards")),
-              plotlyOutput(ns("all_discards"))
+              withSpinner(plotlyOutput(ns("discard_trends"))),
+              withSpinner(plotlyOutput(ns("recorded_discards"))),
+              withSpinner(plotlyOutput(ns("all_discards")))
             )
           )
         )

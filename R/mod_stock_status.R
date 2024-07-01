@@ -20,7 +20,9 @@ mod_stock_status_ui <- function(id) {
         radioButtons(ns("status_indicator_selector"), "Select status indicator",
           choices = c("MSY / PA" = "ices", "GES" = "ges")
         ),
-        card(imageOutput(ns("status_summary")))
+        card(
+          withSpinner(
+            imageOutput(ns("status_summary"))))
       ),
       tabPanel(
         "Trends-by-groups",
@@ -35,7 +37,9 @@ mod_stock_status_ui <- function(id) {
         ),
         card(
           card_body(
-            plotlyOutput(ns("status_trends"))
+            withSpinner(
+              plotlyOutput(
+                ns("status_trends")))
           )
         )
       ),
@@ -52,8 +56,8 @@ mod_stock_status_ui <- function(id) {
         ),
         uiOutput(ns("slider")),
         card(
-          plotOutput(ns("status_kobe")),
-          plotOutput(ns("status_cld"))
+          withSpinner(plotOutput(ns("status_kobe"))),
+          withSpinner(plotOutput(ns("status_cld")))
         )
       ),
       tabPanel(
@@ -63,7 +67,7 @@ mod_stock_status_ui <- function(id) {
           choices = c("MSY / PA" = "ices", "GES" = "ges")
         ),
         # plotOutput("stock_status")
-        htmlOutput("stock_status_table")
+        withSpinner(htmlOutput("stock_status_table"))
       )
     )
   )
@@ -151,7 +155,8 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
     })
 
     output$stock_status_table <- renderUI({
-      includeHTML(path = "www/NrS_2022_FO_SAG_annex_table_formatted.html")
+      # path <- file.path(paste0("inst/app/www/bycatch_", input$bycatch_taxa_selector, ".png"))
+      includeHTML(path = "inst/app/www/NrS_2022_FO_SAG_annex_table_formatted.html")
       # tags$iframe(
         
       #   src = "D:/GitHub_2023/fisheriesXplorer/inst/NrS_2022_FO_SAG_annex_table_formatted.html",

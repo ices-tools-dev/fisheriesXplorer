@@ -27,7 +27,7 @@ mod_navigation_page_ui <- function(id) {
             full_screen = TRUE,
             card_header("Select an ecoregion"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            leafletOutput(ns("map"), width = "90%"),
+            withSpinner(leafletOutput(ns("map"), width = "90%")),
             tags$style(type = "text/css", "#assessmentYear {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             virtualSelectInput(
               inputId = ns("assessmentYear"),
