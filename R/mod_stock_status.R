@@ -62,7 +62,8 @@ mod_stock_status_ui <- function(id) {
         radioButtons(ns("stock_status_indicator_selector"), "Select status indicator",
           choices = c("MSY / PA" = "ices", "GES" = "ges")
         ),
-        plotOutput("stock_status")
+        # plotOutput("stock_status")
+        htmlOutput("stock_status_table")
       )
     )
   )
@@ -148,7 +149,16 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
         plot_CLD_bar(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
         
     })
-  
+
+    output$stock_status_table <- renderUI({
+      includeHTML(path = "www/NrS_2022_FO_SAG_annex_table_formatted.html")
+      # tags$iframe(
+        
+      #   src = "D:/GitHub_2023/fisheriesXplorer/inst/NrS_2022_FO_SAG_annex_table_formatted.html",
+      #   width = 800,
+      #   height = 800
+      # )
+    })
      
   })
 }
