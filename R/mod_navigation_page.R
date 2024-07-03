@@ -27,16 +27,20 @@ mod_navigation_page_ui <- function(id) {
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             leafletOutput(ns("map"), width = "90%"),
             tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            card_body(min_height = 310,
-            selectizeInput(
-              inputId = ns("selected_locations"),
-              label = "Selected Ecoregion:",
-              choices = c("", sort(eco_shape$Ecoregion)),
-              selected = NULL,
-              multiple = FALSE,
-              width = "90%",
-              options = list(placeholder = "Select Ecoregion(s)")
-            ))),
+            card_body(
+              min_height = 400,
+              virtualSelectInput(
+                inputId = ns("selected_locations"),
+                label = "Selected Ecoregion:",
+                choices = sort(eco_shape$Ecoregion),
+                selected = "Greater North Sea",
+                multiple = FALSE,
+                width = "100%",
+                search = TRUE,
+                optionsCount = 11
+              )
+            )
+          ),
           card(
             card_header("Select a topic:"),
             card_body(
