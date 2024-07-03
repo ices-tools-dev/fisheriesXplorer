@@ -8,6 +8,7 @@
 #'
 #' @importFrom shiny NS tagList 
 #' @importFrom icesFO plot_discard_trends plot_discard_current plot_catch_trends
+#' @importFrom plotly ggplotly plotlyOutput renderPlotly
 mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(

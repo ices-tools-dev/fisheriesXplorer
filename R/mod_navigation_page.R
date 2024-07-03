@@ -7,14 +7,12 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' @importFrom bslib card card_header card_body 
+#' @importFrom bslib card card_header card_body layout_column_wrap 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
-#' @import leaflet 
+#' @importFrom shinyWidgets virtualSelectInput
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # card(
-
     tags$img(id = "logo", class = "center-block", src = "www/fisheriesXplorer blue.png"),
     tabsetPanel(
       type = "hidden",
@@ -29,15 +27,15 @@ mod_navigation_page_ui <- function(id) {
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             leafletOutput(ns("map"), width = "90%"),
             tags$style(type = "text/css", "#assessmentYear {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            virtualSelectInput(
+            card_body(min_height = 100,
+              virtualSelectInput(
               inputId = ns("assessmentYear"),
               label = "Assessment year:",
               choices = c(2024, 2022),
               selected = 2022,
               multiple = FALSE,
               width = "90%",
-              search = TRUE
-            )
+              search = TRUE))
           ),
           # card(
           #   full_screen = TRUE,
