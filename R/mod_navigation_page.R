@@ -25,23 +25,18 @@ mod_navigation_page_ui <- function(id) {
             full_screen = TRUE,
             card_header("Select an ecoregion"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            withSpinner(
-              leafletOutput(ns("map"), width = "90%")
-            ),
-            tags$style(type = "text/css", "#assessmentYear {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            card_body(
-              min_height = 100,
-              virtualSelectInput(
-                inputId = ns("assessmentYear"),
-                label = "Assessment year:",
-                choices = c(2024, 2022),
-                selected = 2022,
-                multiple = FALSE,
-                width = "90%",
-                search = TRUE
-              )
-            )
-          ),
+            leafletOutput(ns("map"), width = "90%"),
+            tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
+            card_body(min_height = 310,
+            selectizeInput(
+              inputId = ns("selected_locations"),
+              label = "Selected Ecoregion:",
+              choices = c("", sort(eco_shape$Ecoregion)),
+              selected = NULL,
+              multiple = FALSE,
+              width = "90%",
+              options = list(placeholder = "Select Ecoregion(s)")
+            ))),
           card(
             card_header("Select a topic:"),
             card_body(
