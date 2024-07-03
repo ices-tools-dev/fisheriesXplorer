@@ -9,7 +9,7 @@
 #' @importFrom shiny NS tagList 
 #' @importFrom bslib card card_header card_body layout_column_wrap 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
-#' @importFrom shinyWidgets virtualSelectInput
+#' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -140,10 +140,11 @@ mod_navigation_page_server <- function(id, parent_session){
           showGroup(group = input$map_shape_click$id)
       }
       
-      updateSelectizeInput(session,
+      updateVirtualSelect(
                            inputId = "selected_locations",
                            choices = eco_shape$Ecoregion,
-                           selected = selected_1$groups)
+                           selected = selected_1$groups,
+                           session = session)
     })
     
     
