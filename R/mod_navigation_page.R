@@ -25,7 +25,9 @@ mod_navigation_page_ui <- function(id) {
             full_screen = TRUE,
             card_header("Select an ecoregion"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            leafletOutput(ns("map"), width = "90%"),
+            withSpinner(
+              leafletOutput(ns("map"), width = "90%")
+            ),
             tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             card_body(
               min_height = 400,
@@ -51,7 +53,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("overview-btn"),
                     label = NULL,
-                    # icon = icon("fa-rectangle-list"),
                     style = "background: url('www/research.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 ),
@@ -61,7 +62,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("landings-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 )
@@ -73,7 +73,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("stock_status-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/check-list.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 ),
@@ -83,7 +82,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("mixfish-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/fishing-net.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 )
@@ -95,7 +93,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("vms-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/architecture.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 ),
@@ -105,7 +102,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("bycatch-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/dolphin.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 )
