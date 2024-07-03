@@ -9,6 +9,7 @@
 #' @importFrom shiny NS tagList 
 #' @importFrom icesFO plot_discard_trends plot_discard_current plot_catch_trends
 #' @importFrom plotly ggplotly plotlyOutput renderPlotly
+#' @importFrom shinycssloaders withSpinner
 mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -20,7 +21,7 @@ mod_landings_ui <- function(id) {
         ),
         card(
           card_body(
-          plotlyOutput(ns("landings_layer"))
+          withSpinner(plotlyOutput(ns("landings_layer")))
           )
           )
       ),
@@ -30,9 +31,9 @@ mod_landings_ui <- function(id) {
           card_body(
             layout_column_wrap(
               width = 1 / 3,
-              plotlyOutput(ns("discard_trends")),
-              plotlyOutput(ns("recorded_discards")),
-              plotlyOutput(ns("all_discards"))
+              withSpinner(plotlyOutput(ns("discard_trends"))),
+              withSpinner(plotlyOutput(ns("recorded_discards"))),
+              withSpinner(plotlyOutput(ns("all_discards")))
             )
           )
         )

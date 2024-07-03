@@ -17,6 +17,10 @@ app_ui <- function(request) {
         height = "50px"
       )
     ),
+    options(spinner.type = 5, 
+        spinner.color = "#00B6F1",
+        spinner.size = 0.7),
+    
     navbarPage(
       title = title_html,
       id = "nav-page",

@@ -37,21 +37,6 @@ mod_navigation_page_ui <- function(id) {
               width = "90%",
               search = TRUE))
           ),
-          # card(
-          #   full_screen = TRUE,
-          #   card_header("Filtering options"),
-          #   tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-          #   virtualSelectInput(
-          #     inputId = ns("selected_locations"),
-          #     label = "Case study regions:",
-          #     choices = c("", sort(eco_shape$Ecoregion)),
-          #     selected = NULL,
-          #     multiple = FALSE,
-          #     width = "90%",
-          #     search = TRUE
-          #   ),
-
-          # ),
           card(
             card_header("Select a topic:"),
             card_body(
@@ -180,14 +165,10 @@ mod_navigation_page_server <- function(id, parent_session){
                      proxy_map %>% showGroup(group = added_via_selectInput)
                      
                    }
-                   
-                  #  updateTabsetPanel(session = session, "landing_page", selected = ns("tab_topic"))
-                 },
+                },
                  ignoreNULL = FALSE
     )
     
-    # addTooltip(session = session, id="overview-btn", title="Overview of the document.", trigger = "hover")
-
     observeEvent(input[["overview-btn"]],{
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")

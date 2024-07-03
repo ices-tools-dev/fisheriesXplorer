@@ -11,22 +11,34 @@
 #' @importFrom ggplot2 ggtitle
 #' @importFrom lubridate year
 #' @importFrom icesFO plot_effort_map plot_sar_map
-mod_vms_ui <- function(id){
+mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
-      card("Fishing Effort",
-        card(imageOutput(ns("effort_layer")))
-        
-      ),
-      card("Fishing Benthic Impact",
-        radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",
-                     choices = c("Surface" = "surface", "Subsurface" = "subsurface")),
-        card(imageOutput(ns("sar_layer")))
-        
+    card(
+      "Fishing Effort",
+      card(
+        withSpinner(
+          imageOutput(
+            ns("effort_layer")
+          )
+        )
       )
+    ),
+    card(
+      "Fishing Benthic Impact",
+      radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",
+        choices = c("Surface" = "surface", "Subsurface" = "subsurface")
+      ),
+      card(
+        withSpinner(
+          imageOutput(
+            ns("sar_layer")
+          )
+        )
+      )
+    )
   )
 }
-    
 #' vms Server Functions
 #'
 #' @noRd 
