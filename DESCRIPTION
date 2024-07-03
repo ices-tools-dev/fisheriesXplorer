@@ -21,6 +21,7 @@ Imports:
     pkgload,
     sf,
     shiny (>= 1.8.0),
+    shinycssloaders,
     shinyWidgets
 Remotes: ices-tools-prod/icesFO@f66f41f
 Encoding: UTF-8
