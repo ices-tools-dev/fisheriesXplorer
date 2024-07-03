@@ -27,7 +27,7 @@ map_ecoregion <- function(eco_shape, map_shape) {
     resolutions = resolutions
   )
   
-  leaflet::leaflet(options = leaflet::leafletOptions(crs = crs_laea, minZoom = minZoom, maxZoom = 3)) %>%
+  leaflet::leaflet(options = leaflet::leafletOptions(crs = crs_laea, minZoom = minZoom, maxZoom = 3, dragging = FALSE)) %>%
     leaflet::addPolygons(
       data = map_shape,
       color = "black",
