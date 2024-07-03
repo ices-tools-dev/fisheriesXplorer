@@ -23,6 +23,10 @@ app_ui <- function(request) {
     
     navbarPage(
       title = title_html,
+      position = "static-top",
+      collapsible = TRUE,
+      fluid = TRUE,
+      windowTitle = "fisheriesXplorer",
       id = "nav-page",
       tabPanel("Home",
         id = "home",
