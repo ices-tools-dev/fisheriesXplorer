@@ -31,8 +31,8 @@ mod_navigation_page_ui <- function(id) {
             selectizeInput(
               inputId = ns("selected_locations"),
               label = "Selected Ecoregion:",
-              choices = c("", sort(eco_shape$Ecoregion)),
-              selected = NULL,
+              choices = sort(eco_shape$Ecoregion),
+              selected = eco_shape$Ecoregion[6],
               multiple = FALSE,
               width = "90%",
               options = list(placeholder = "Select Ecoregion(s)")
@@ -120,22 +120,16 @@ mod_navigation_page_ui <- function(id) {
 mod_navigation_page_server <- function(id, parent_session){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    print(getwd())
+    
     output$map <- leaflet::renderLeaflet({
-      
       map_ecoregion(eco_shape, map_shape)
     })
     
     proxy_map <- leafletProxy("map", parent_session)
-
-    # create empty vector to hold all click ids
-    selected_1 <- reactiveValues(groups = vector())
     
-    # find index
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
       if (input$map_shape_click$group == "Eco_regions") {
-        selected_1$groups <- c(selected_1$groups, input$map_shape_click$id)
         proxy_map %>%
           showGroup(group = input$map_shape_click$id)
       }
@@ -143,31 +137,9 @@ mod_navigation_page_server <- function(id, parent_session){
       updateSelectizeInput(session,
                            inputId = "selected_locations",
                            choices = eco_shape$Ecoregion,
-                           selected = selected_1$groups)
+                           selected = input$map_shape_click$id)
     })
-    
-    
-    observeEvent(input$selected_locations,{
-      
-      req(input$selected_locations!= "")
-                   removed_via_selectInput <- setdiff(selected_1$groups, input$selected_locations)
-                   added_via_selectInput <- setdiff(input$selected_locations, selected_1$groups)
-                   
-                   if (length(removed_via_selectInput) > 0) {
-                     selected_1$groups <- input$selected_locations
-                     
-                     proxy_map %>% hideGroup(group = removed_via_selectInput)
-                   }
-                   
-                   if (length(added_via_selectInput) > 0) {
-                     selected_1$groups <- input$selected_locations
-                     
-                     proxy_map %>% showGroup(group = added_via_selectInput)
-                     
-                   }
-                },
-                 ignoreNULL = FALSE
-    )
+
     
     observeEvent(input[["overview-btn"]],{
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
