@@ -131,9 +131,8 @@ mod_navigation_page_server <- function(id, parent_session) {
 
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
+      
       if (input$map_shape_click$group == "Eco_regions") {
-        proxy_map %>%
-          showGroup(input$map_shape_click$id)
         selected_map$groups <- c(selected_map$groups, input$map_shape_click$id)
       }
 
@@ -145,17 +144,15 @@ mod_navigation_page_server <- function(id, parent_session) {
     })
 
     observeEvent(input$selected_locations,{      
-        removed <- setdiff(selected_map$groups, input$selected_locations)
-        added <- setdiff(input$selected_locations, selected_map$groups)
-        selected_map$groups <- input$selected_locations
-        if (length(removed)) {
-          proxy_map %>% hideGroup(removed)
-        }
-        if (length(added)) {
-          proxy_map %>% showGroup(added)
-        }
-      },
-      ignoreNULL = FALSE
+        
+      removed <- setdiff(selected_map$groups, input$selected_locations)
+      selected_map$groups <- input$selected_locations
+        
+      proxy_map %>% 
+        hideGroup(removed) %>% 
+        showGroup(input$selected_locations)
+        
+      }, ignoreNULL = FALSE
     )
 
 
