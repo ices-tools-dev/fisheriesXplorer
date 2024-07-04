@@ -117,54 +117,69 @@ mod_navigation_page_ui <- function(id) {
 #' landing_page Server Functions
 #'
 #' @noRd 
-mod_navigation_page_server <- function(id, parent_session){
-  moduleServer( id, function(input, output, session){
+mod_navigation_page_server <- function(id, parent_session) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    
+
     output$map <- leaflet::renderLeaflet({
       map_ecoregion(eco_shape, map_shape)
     })
-    
-    proxy_map <- leafletProxy("map", parent_session)
-    
+    proxy_map <- leafletProxy("map")
+
+    # create empty character vector to hold map selected locations
+    selected_map <- reactiveValues(groups = character())
+
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
-      if (input$map_shape_click$group == "Eco_regions") {
-        proxy_map %>%
-          showGroup(group = input$map_shape_click$id)
-      }
       
-      updateVirtualSelect( inputId = "selected_locations",
-                           choices = eco_shape$Ecoregion,
-                           selected = input$map_shape_click$id)
+      if (input$map_shape_click$group == "Eco_regions") {
+        selected_map$groups <- c(selected_map$groups, input$map_shape_click$id)
+      }
+
+      updateVirtualSelect(
+        inputId = "selected_locations",
+        choices = eco_shape$Ecoregion,
+        selected = input$map_shape_click$id
+      )
     })
 
-    
-    observeEvent(input[["overview-btn"]],{
+    observeEvent(input$selected_locations,{      
+        
+      removed <- setdiff(selected_map$groups, input$selected_locations)
+      selected_map$groups <- input$selected_locations
+        
+      proxy_map %>% 
+        hideGroup(removed) %>% 
+        showGroup(input$selected_locations)
+        
+      }, ignoreNULL = FALSE
+    )
+
+
+    observeEvent(input[["overview-btn"]], {
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")
     })
-    observeEvent(input[["landings-btn"]],{
+    observeEvent(input[["landings-btn"]], {
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Landings")
     })
-    observeEvent(input[["stock_status-btn"]],{
+    observeEvent(input[["stock_status-btn"]], {
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Stock Status")
     })
-    observeEvent(input[["mixfish-btn"]],{
+    observeEvent(input[["mixfish-btn"]], {
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Mixed Fisheries")
     })
-    observeEvent(input[["vms-btn"]],{
+    observeEvent(input[["vms-btn"]], {
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "VMS")
     })
-    observeEvent(input[["bycatch-btn"]],{
+    observeEvent(input[["bycatch-btn"]], {
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
       updateNavbarPage(session = parent_session, "nav-page", selected = "Bycatch")
     })
-    
   })
 }
     
