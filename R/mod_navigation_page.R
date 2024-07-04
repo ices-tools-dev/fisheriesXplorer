@@ -9,7 +9,7 @@
 #' @importFrom shiny NS tagList 
 #' @importFrom bslib card card_header card_body layout_column_wrap 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
-#' @importFrom shinyWidgets virtualSelectInput
+#' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -25,18 +25,24 @@ mod_navigation_page_ui <- function(id) {
             full_screen = TRUE,
             card_header("Select an ecoregion"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            leafletOutput(ns("map"), width = "90%"),
+            withSpinner(
+              leafletOutput(ns("map"), width = "90%")
+            ),
             tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            card_body(min_height = 310,
-            selectizeInput(
-              inputId = ns("selected_locations"),
-              label = "Selected Ecoregion:",
-              choices = c("", sort(eco_shape$Ecoregion)),
-              selected = NULL,
-              multiple = FALSE,
-              width = "90%",
-              options = list(placeholder = "Select Ecoregion(s)")
-            ))),
+            card_body(
+              min_height = 400,
+              virtualSelectInput(
+                inputId = ns("selected_locations"),
+                label = "Selected Ecoregion:",
+                choices = sort(eco_shape$Ecoregion),
+                selected = "Greater North Sea",
+                multiple = FALSE,
+                width = "100%",
+                search = TRUE,
+                optionsCount = 11
+              )
+            )
+          ),
           card(
             card_header("Select a topic:"),
             card_body(
@@ -47,7 +53,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("overview-btn"),
                     label = NULL,
-                    # icon = icon("fa-rectangle-list"),
                     style = "background: url('www/research.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 ),
@@ -57,7 +62,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("landings-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 )
@@ -69,7 +73,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("stock_status-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/check-list.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 ),
@@ -79,7 +82,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("mixfish-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/fishing-net.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 )
@@ -91,7 +93,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("vms-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/architecture.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 ),
@@ -101,7 +102,6 @@ mod_navigation_page_ui <- function(id) {
                   actionButton(
                     inputId = ns("bycatch-btn"),
                     label = NULL,
-                    # icon = icon("image", lib = "font-awesome"),
                     style = "background: url('www/dolphin.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
                   )
                 )
@@ -120,54 +120,25 @@ mod_navigation_page_ui <- function(id) {
 mod_navigation_page_server <- function(id, parent_session){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    print(getwd())
+    
     output$map <- leaflet::renderLeaflet({
-      
       map_ecoregion(eco_shape, map_shape)
     })
     
     proxy_map <- leafletProxy("map", parent_session)
-
-    # create empty vector to hold all click ids
-    selected_1 <- reactiveValues(groups = vector())
     
-    # find index
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
       if (input$map_shape_click$group == "Eco_regions") {
-        selected_1$groups <- c(selected_1$groups, input$map_shape_click$id)
         proxy_map %>%
           showGroup(group = input$map_shape_click$id)
       }
       
-      updateSelectizeInput(session,
-                           inputId = "selected_locations",
+      updateVirtualSelect( inputId = "selected_locations",
                            choices = eco_shape$Ecoregion,
-                           selected = selected_1$groups)
+                           selected = input$map_shape_click$id)
     })
-    
-    
-    observeEvent(input$selected_locations,{
-      
-      req(input$selected_locations!= "")
-                   removed_via_selectInput <- setdiff(selected_1$groups, input$selected_locations)
-                   added_via_selectInput <- setdiff(input$selected_locations, selected_1$groups)
-                   
-                   if (length(removed_via_selectInput) > 0) {
-                     selected_1$groups <- input$selected_locations
-                     
-                     proxy_map %>% hideGroup(group = removed_via_selectInput)
-                   }
-                   
-                   if (length(added_via_selectInput) > 0) {
-                     selected_1$groups <- input$selected_locations
-                     
-                     proxy_map %>% showGroup(group = added_via_selectInput)
-                     
-                   }
-                },
-                 ignoreNULL = FALSE
-    )
+
     
     observeEvent(input[["overview-btn"]],{
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
