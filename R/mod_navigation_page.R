@@ -10,7 +10,7 @@
 #' @importFrom bslib card card_header card_body layout_column_wrap 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
-#' @importFrom shinyBS addTooltip
+#' @importFrom shinyBS addTooltip tipify
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -60,10 +60,14 @@ mod_navigation_page_ui <- function(id) {
                 column(
                   6,
                   align = "center",
-                  actionButton(
-                    inputId = ns("landings-btn"),
-                    label = NULL,
-                    style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  tipify(
+                    actionButton(
+                      inputId = ns("landings-btn"),
+                      label = NULL,
+                      style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                    ),
+                    "landings test tooltips",
+                    trigger = "hover"
                   )
                 )
               ),
