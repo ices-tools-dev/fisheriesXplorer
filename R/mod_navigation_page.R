@@ -10,6 +10,7 @@
 #' @importFrom bslib card card_header card_body layout_column_wrap 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
+#' @importFrom shinyBS addTooltip
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -155,6 +156,7 @@ mod_navigation_page_server <- function(id, parent_session) {
       }, ignoreNULL = FALSE
     )
 
+    addTooltip(session = parent_session, id = "overview-btn", title = "test overview tooltip")
 
     observeEvent(input[["overview-btn"]], {
       updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
