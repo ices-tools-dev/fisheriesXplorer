@@ -25,7 +25,6 @@ Imports:
     pkgload,
     sf,
     shiny (>= 1.8.0),
-    shinyBS,
     shinycssloaders,
     shinyjs,
     shinyWidgets
