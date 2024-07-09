@@ -27,6 +27,7 @@ Imports:
     shiny (>= 1.8.0),
     shinyBS,
     shinycssloaders,
+    shinyjs,
     shinyWidgets
 Remotes: ices-tools-prod/icesFO@f66f41f
 Encoding: UTF-8

@@ -198,7 +198,7 @@ input[type=radio]:checked {
   visibility: hidden;
   opacity: 0;
   width: 140px;
-  background-color: black;
+  background-color: rgb(189, 12, 12);
   color: #fff;
   text-align: center;
   border-radius: 5px;
@@ -361,3 +361,38 @@ caption {
   overflow: hidden;
   @include transition($transition-collapse);
 }*/
+
+
+.image-button {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  background-size: cover;
+  height: 150px;
+  width: 150px;
+  border: none;
+  margin: 10px;
+}
+.image-button:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+.tooltip {
+  visibility: hidden;
+  width: 160px;
+  background-color: black;
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  font-size: 14px;
+  position: absolute;
+  z-index: 1;
+  top: 100%; /* Adjust as necessary */
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+

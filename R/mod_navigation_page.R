@@ -10,7 +10,7 @@
 #' @importFrom bslib card card_header card_body layout_column_wrap 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
-#' @importFrom shinyBS addTooltip tipify
+#' @importFrom shinyjs onclick
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -51,23 +51,19 @@ mod_navigation_page_ui <- function(id) {
                 column(
                   6,
                   align = "center",
-                  actionButton(
-                    inputId = ns("overview-btn"),
-                    label = NULL,
-                    style = "background: url('www/research.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("overviewBtn"),
+                    style = "background-image: url('www/research.png');",
+                    div(class = "tooltip", "Overview")
                   )
                 ),
                 column(
                   6,
                   align = "center",
-                  tipify(
-                    actionButton(
-                      inputId = ns("landings-btn"),
-                      label = NULL,
-                      style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
-                    ),
-                    "landings test tooltips",
-                    trigger = "hover"
+                  div(
+                    class = "image-button", id = ns("landingsBtn"),
+                    style = "background-image: url('www/trend.png');",
+                    div(class = "tooltip", "Landings")
                   )
                 )
               ),
@@ -75,19 +71,19 @@ mod_navigation_page_ui <- function(id) {
                 column(
                   6,
                   align = "center",
-                  actionButton(
-                    inputId = ns("stock_status-btn"),
-                    label = NULL,
-                    style = "background: url('www/check-list.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("stockStatusBtn"),
+                    style = "background-image: url('www/check-list.png');",
+                    div(class = "tooltip", "Stock status")
                   )
                 ),
                 column(
                   6,
                   align = "center",
-                  actionButton(
-                    inputId = ns("mixfish-btn"),
-                    label = NULL,
-                    style = "background: url('www/fishing-net.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("mixfishBtn"),
+                    style = "background-image: url('www/fishing-net.png');",
+                    div(class = "tooltip", "Mixed Fisheries")
                   )
                 )
               ),
@@ -95,19 +91,19 @@ mod_navigation_page_ui <- function(id) {
                 column(
                   6,
                   align = "center",
-                  actionButton(
-                    inputId = ns("vms-btn"),
-                    label = NULL,
-                    style = "background: url('www/architecture.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("VMS"),
+                    style = "background-image: url('www/architecture.png');",
+                    div(class = "tooltip", "VMS")
                   )
                 ),
                 column(
                   6,
                   align = "center",
-                  actionButton(
-                    inputId = ns("bycatch-btn"),
-                    label = NULL,
-                    style = "background: url('www/dolphin.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("bycatchBtn"),
+                    style = "background-image: url('www/dolphin.png');",
+                    div(class = "tooltip", "Bycatch")
                   )
                 )
               )
@@ -136,7 +132,7 @@ mod_navigation_page_server <- function(id, parent_session) {
 
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
-      
+
       if (input$map_shape_click$group == "Eco_regions") {
         selected_map$groups <- c(selected_map$groups, input$map_shape_click$id)
       }
@@ -148,42 +144,34 @@ mod_navigation_page_server <- function(id, parent_session) {
       )
     })
 
-    observeEvent(input$selected_locations,{      
-        
-      removed <- setdiff(selected_map$groups, input$selected_locations)
-      selected_map$groups <- input$selected_locations
-        
-      proxy_map %>% 
-        hideGroup(removed) %>% 
-        showGroup(input$selected_locations)
-        
-      }, ignoreNULL = FALSE
+    observeEvent(input$selected_locations,
+      {
+        removed <- setdiff(selected_map$groups, input$selected_locations)
+        selected_map$groups <- input$selected_locations
+
+        proxy_map %>%
+          hideGroup(removed) %>%
+          showGroup(input$selected_locations)
+      },
+      ignoreNULL = FALSE
     )
 
-    addTooltip(session = parent_session, id = "overview-btn", title = "test overview tooltip")
-
-    observeEvent(input[["overview-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("overviewBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")
     })
-    observeEvent(input[["landings-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("landingsBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Landings")
     })
-    observeEvent(input[["stock_status-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("stockStatusBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Stock Status")
     })
-    observeEvent(input[["mixfish-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("mixfishBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Mixed Fisheries")
     })
-    observeEvent(input[["vms-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("VMS", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "VMS")
     })
-    observeEvent(input[["bycatch-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("bycatchBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Bycatch")
     })
   })

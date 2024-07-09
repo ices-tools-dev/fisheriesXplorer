@@ -4,6 +4,7 @@
 #'     DO NOT REMOVE.
 #' @import shiny
 #' @importFrom desc desc_get_version
+#' @importFrom shinyjs useShinyjs
 #' @noRd
 app_ui <- function(request) {
   tagList(
@@ -22,6 +23,7 @@ app_ui <- function(request) {
         spinner.size = 0.7),
     
     navbarPage(
+      useShinyjs(),
       title = title_html,
       position = "static-top",
       collapsible = TRUE,
