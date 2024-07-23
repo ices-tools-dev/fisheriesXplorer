@@ -49,60 +49,58 @@ mod_navigation_page_ui <- function(id) {
             card_body(
               fluidRow(
                 column(
-                  6,
+                  4,
                   align = "center",
                   div(
                     class = "image-button", id = ns("overviewBtn"),
-                    style = "background-image: url('www/research.png');",
+                    style = "background-image: url('www/Overview.svg');",
                     div(class = "tooltip", "Overview")
                   )
                 ),
                 column(
-                  6,
+                  4,
                   align = "center",
                   div(
                     class = "image-button", id = ns("landingsBtn"),
-                    style = "background-image: url('www/trend.png');",
+                    style = "background-image: url('www/Landings.svg');",
                     div(class = "tooltip", "Landings")
-                  )
-                )
-              ),
-              fluidRow(
-                column(
-                  6,
-                  align = "center",
-                  div(
-                    class = "image-button", id = ns("stockStatusBtn"),
-                    style = "background-image: url('www/check-list.png');",
-                    div(class = "tooltip", "Stock status")
                   )
                 ),
                 column(
-                  6,
+                  4,
                   align = "center",
                   div(
-                    class = "image-button", id = ns("mixfishBtn"),
-                    style = "background-image: url('www/fishing-net.png');",
-                    div(class = "tooltip", "Mixed Fisheries")
+                    class = "image-button", id = ns("stockStatusBtn"),
+                    style = "background-image: url('www/Stock status.svg');",
+                    div(class = "tooltip", "Stock status")
                   )
                 )
               ),
               fluidRow(
                 column(
-                  6,
+                  4,
+                  align = "center",
+                  div(
+                    class = "image-button", id = ns("mixfishBtn"),
+                    style = "background-image: url('www/Mix fishieries.svg');",
+                    div(class = "tooltip", "Mixed Fisheries")
+                  )
+                ),
+                column(
+                  4,
                   align = "center",
                   div(
                     class = "image-button", id = ns("VMS"),
-                    style = "background-image: url('www/architecture.png');",
+                    style = "background-image: url('www/VMS.svg');",
                     div(class = "tooltip", "VMS")
                   )
                 ),
                 column(
-                  6,
+                  4,
                   align = "center",
                   div(
                     class = "image-button", id = ns("bycatchBtn"),
-                    style = "background-image: url('www/dolphin.png');",
+                    style = "background-image: url('www/Bycath.svg');",
                     div(class = "tooltip", "Bycatch")
                   )
                 )

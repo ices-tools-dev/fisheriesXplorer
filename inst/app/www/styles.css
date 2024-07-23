@@ -368,8 +368,8 @@ caption {
   display: inline-block;
   cursor: pointer;
   background-size: cover;
-  height: 150px;
-  width: 150px;
+  height: 200px;
+  width: 200px;
   border: none;
   margin: 10px;
 }
