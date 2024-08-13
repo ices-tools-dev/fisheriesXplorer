@@ -4,7 +4,6 @@
 #'     DO NOT REMOVE.
 #' @import shiny
 #' @importFrom desc desc_get_version
-#' @importFrom shinyjs useShinyjs
 #' @noRd
 app_ui <- function(request) {
   tagList(
@@ -23,7 +22,6 @@ app_ui <- function(request) {
         spinner.size = 0.7),
     
     navbarPage(
-      useShinyjs(),
       title = title_html,
       position = "static-top",
       collapsible = TRUE,
@@ -66,6 +64,7 @@ app_ui <- function(request) {
 #'
 #' @import shiny
 #' @importFrom golem add_resource_path activate_js favicon bundle_resources
+#' @importFrom shinyjs useShinyjs
 #' @noRd
 golem_add_external_resources <- function() {
   add_resource_path(
@@ -82,9 +81,10 @@ golem_add_external_resources <- function() {
     # tags$head(includeHTML(("google-analytics.html"))),
     tags$link(rel = "stylesheet", type = "text/css", href = "css/gothic-a1.css"),
     tags$style("body {font-family: 'Gothic A1', sans-serif;}"),
-    tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"))
+    tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
     
     # Add here other external resources
-    # for example, you can add shinyalert::useShinyalert()
+    useShinyjs()
+    
   )
 }
