@@ -10,6 +10,7 @@
 #' @importFrom bslib card card_header card_body layout_column_wrap 
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
+#' @importFrom shinyjs onclick
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -48,61 +49,59 @@ mod_navigation_page_ui <- function(id) {
             card_body(
               fluidRow(
                 column(
-                  6,
+                  4,
                   align = "center",
-                  actionButton(
-                    inputId = ns("overview-btn"),
-                    label = NULL,
-                    style = "background: url('www/research.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("overviewBtn"),
+                    style = "background-image: url('www/Overview.svg');",
+                    div(class = "tooltip", "Overview")
                   )
                 ),
                 column(
-                  6,
+                  4,
                   align = "center",
-                  actionButton(
-                    inputId = ns("landings-btn"),
-                    label = NULL,
-                    style = "background: url('www/trend.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("landingsBtn"),
+                    style = "background-image: url('www/Landings.svg');",
+                    div(class = "tooltip", "Landings")
+                  )
+                ),
+                column(
+                  4,
+                  align = "center",
+                  div(
+                    class = "image-button", id = ns("stockStatusBtn"),
+                    style = "background-image: url('www/Stock status.svg');",
+                    div(class = "tooltip", "Stock status")
                   )
                 )
               ),
               fluidRow(
                 column(
-                  6,
+                  4,
                   align = "center",
-                  actionButton(
-                    inputId = ns("stock_status-btn"),
-                    label = NULL,
-                    style = "background: url('www/check-list.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("mixfishBtn"),
+                    style = "background-image: url('www/Mix fishieries.svg');",
+                    div(class = "tooltip", "Mixed Fisheries")
                   )
                 ),
                 column(
-                  6,
+                  4,
                   align = "center",
-                  actionButton(
-                    inputId = ns("mixfish-btn"),
-                    label = NULL,
-                    style = "background: url('www/fishing-net.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
-                  )
-                )
-              ),
-              fluidRow(
-                column(
-                  6,
-                  align = "center",
-                  actionButton(
-                    inputId = ns("vms-btn"),
-                    label = NULL,
-                    style = "background: url('www/architecture.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("VMS"),
+                    style = "background-image: url('www/VMS.svg');",
+                    div(class = "tooltip", "VMS")
                   )
                 ),
                 column(
-                  6,
+                  4,
                   align = "center",
-                  actionButton(
-                    inputId = ns("bycatch-btn"),
-                    label = NULL,
-                    style = "background: url('www/dolphin.png') no-repeat center center; background-size: cover; height: 150px; width: 150px;"
+                  div(
+                    class = "image-button", id = ns("bycatchBtn"),
+                    style = "background-image: url('www/Bycath.svg');",
+                    div(class = "tooltip", "Bycatch")
                   )
                 )
               )
@@ -131,7 +130,7 @@ mod_navigation_page_server <- function(id, parent_session) {
 
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
-      
+
       if (input$map_shape_click$group == "Eco_regions") {
         selected_map$groups <- c(selected_map$groups, input$map_shape_click$id)
       }
@@ -143,41 +142,34 @@ mod_navigation_page_server <- function(id, parent_session) {
       )
     })
 
-    observeEvent(input$selected_locations,{      
-        
-      removed <- setdiff(selected_map$groups, input$selected_locations)
-      selected_map$groups <- input$selected_locations
-        
-      proxy_map %>% 
-        hideGroup(removed) %>% 
-        showGroup(input$selected_locations)
-        
-      }, ignoreNULL = FALSE
+    observeEvent(input$selected_locations,
+      {
+        removed <- setdiff(selected_map$groups, input$selected_locations)
+        selected_map$groups <- input$selected_locations
+
+        proxy_map %>%
+          hideGroup(removed) %>%
+          showGroup(input$selected_locations)
+      },
+      ignoreNULL = FALSE
     )
 
-
-    observeEvent(input[["overview-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("overviewBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")
     })
-    observeEvent(input[["landings-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("landingsBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Landings")
     })
-    observeEvent(input[["stock_status-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("stockStatusBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Stock Status")
     })
-    observeEvent(input[["mixfish-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("mixfishBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Mixed Fisheries")
     })
-    observeEvent(input[["vms-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("VMS", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "VMS")
     })
-    observeEvent(input[["bycatch-btn"]], {
-      updateTabsetPanel(session, "landing_page", selected = ns("tab_map"))
+    onclick("bycatchBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Bycatch")
     })
   })

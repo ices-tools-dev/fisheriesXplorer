@@ -6,6 +6,10 @@ Authors@R:
            family = "Maginnis",
            role = c("aut", "cre"),
            email = "neilm@ices.dk")
+    person(given = "Luca",
+           family = "Lamoni",
+           role = c("aut"),
+           email = "luca.lamoni@ices.dk")
 Description: What the package does (one paragraph).
 License: GPL-3
 Imports: 
@@ -22,8 +26,9 @@ Imports:
     sf,
     shiny (>= 1.8.0),
     shinycssloaders,
+    shinyjs,
     shinyWidgets
-Remotes: ices-tools-prod/icesFO@f66f41f
+Remotes: ices-tools-prod/icesFO@6ce5003
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.1
