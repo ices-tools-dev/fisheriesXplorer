@@ -5,12 +5,11 @@
 #' @param list_object a list of dataframes each containing 'ref' and 'text' columns
 #' @param tab a character vector - the name of a list entry
 #' @param section a character vector indicating which row to extract
-#'
-#' @return A character string
+#' @returns A character string
 #'
 #' @noRd
 
 select_text <- function(list_object, tab, section){
   
-  list_object[[tab]] %>% dplyr::filter(section == !!section) %>% dplyr::pull(text)
+  list_object[[tab]] %>% dplyr::filter(section == !!section) %>% dplyr::pull(.data$text)
 }

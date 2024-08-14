@@ -14,7 +14,7 @@
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    tags$img(id = "logo", class = "center-block", src = "www/fisheriesXplorer blue.png"),
+    tags$img(id = "logo", class = "center-block", src = "www/fisheriesxplorer_blue.png"),
     tabsetPanel(
       type = "hidden",
       id = ns("landing_page"),
@@ -53,7 +53,7 @@ mod_navigation_page_ui <- function(id) {
                   align = "center",
                   div(
                     class = "image-button", id = ns("overviewBtn"),
-                    style = "background-image: url('www/Overview.svg');",
+                    style = "background-image: url('www/overview.svg');",
                     div(class = "tooltip", "Overview")
                   )
                 ),
@@ -62,7 +62,7 @@ mod_navigation_page_ui <- function(id) {
                   align = "center",
                   div(
                     class = "image-button", id = ns("landingsBtn"),
-                    style = "background-image: url('www/Landings.svg');",
+                    style = "background-image: url('www/landings.svg');",
                     div(class = "tooltip", "Landings")
                   )
                 ),
@@ -71,7 +71,7 @@ mod_navigation_page_ui <- function(id) {
                   align = "center",
                   div(
                     class = "image-button", id = ns("stockStatusBtn"),
-                    style = "background-image: url('www/Stock status.svg');",
+                    style = "background-image: url('www/stock_status.svg');",
                     div(class = "tooltip", "Stock status")
                   )
                 )
@@ -82,7 +82,7 @@ mod_navigation_page_ui <- function(id) {
                   align = "center",
                   div(
                     class = "image-button", id = ns("mixfishBtn"),
-                    style = "background-image: url('www/Mix fishieries.svg');",
+                    style = "background-image: url('www/mix_fishieries.svg');",
                     div(class = "tooltip", "Mixed Fisheries")
                   )
                 ),
@@ -91,7 +91,7 @@ mod_navigation_page_ui <- function(id) {
                   align = "center",
                   div(
                     class = "image-button", id = ns("VMS"),
-                    style = "background-image: url('www/VMS.svg');",
+                    style = "background-image: url('www/vms.svg');",
                     div(class = "tooltip", "VMS")
                   )
                 ),
@@ -100,7 +100,7 @@ mod_navigation_page_ui <- function(id) {
                   align = "center",
                   div(
                     class = "image-button", id = ns("bycatchBtn"),
-                    style = "background-image: url('www/Bycath.svg');",
+                    style = "background-image: url('www/bycatch.svg');",
                     div(class = "tooltip", "Bycatch")
                   )
                 )

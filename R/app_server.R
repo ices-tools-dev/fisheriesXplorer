@@ -3,10 +3,11 @@
 #' @param input,output,session Internal parameters for {shiny}.
 #'     DO NOT REMOVE.
 #' @import shiny
+#' @importFrom stringr str_split
 #' @noRd
 app_server <- function(input, output, session) {
   
-  app_date <- stringr::str_split(date(), pattern = " ")[[1]]
+  app_date <- str_split(date(), pattern = " ")[[1]]
   cap_year <- app_date[5]
   cap_month <- app_date[2]
   

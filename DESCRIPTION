@@ -1,36 +1,35 @@
 Package: fisheriesXplorer
 Title: An interactive tool for viewing ICES Fishery Overviews
 Version: 0.0.0.9003
-Authors@R: 
-    person(given = "Neil",
-           family = "Maginnis",
-           role = c("aut", "cre"),
-           email = "neilm@ices.dk")
-    person(given = "Luca",
-           family = "Lamoni",
-           role = c("aut"),
-           email = "luca.lamoni@ices.dk")
+Authors@R: c(person(given = "Neil", family = "Maginnis", role = c("aut", "cre"), email = "neil.maginnis@ices.dk"),
+             person(given = "Luca", family = "Lamoni", role = c("aut"), email = "luca.lamoni@ices.dk"))
 Description: What the package does (one paragraph).
-License: GPL-3
+License: GPL-3 + file LICENSE
 Imports: 
     bslib,
     config (>= 0.3.2),
     desc,
+    dplyr,
     ggplot2,
     glue,
     golem (>= 0.4.1),
     icesFO,
     leaflet,
+    lubridate,
     magrittr,
-    pkgload,
-    sf,
+    plotly,
     shiny (>= 1.8.0),
     shinycssloaders,
     shinyjs,
-    shinyWidgets
+    shinyWidgets,
+    stringr
+Suggests: pkgload,
+          sf,
+          usethis
 Remotes: ices-tools-prod/icesFO@6ce5003
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+LazyDataCompression: gzip
+RoxygenNote: 7.3.2
 Depends: 
     R (>= 2.10)

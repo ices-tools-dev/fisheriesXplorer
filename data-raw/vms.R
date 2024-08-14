@@ -3,6 +3,7 @@ library(icesFO)
 library(icesVocab)
 library(purrr)
 library(dplyr)
+library(sf)
 
 ecoregions <- sort(get_ecoregion_list())
 ecoregions <- ecoregions[c(4:7,9:13, 15,16)]
