@@ -9,7 +9,9 @@
 #' @importFrom shiny NS tagList 
 #' @importFrom bslib card_image
 #' @importFrom icesFO plot_CLD_bar plot_kobe plot_stock_trends plot_status_prop_pies plot_GES_pies
-#' @importFrom dplyr filter slice_max
+#' @importFrom dplyr filter slice_max mutate select group_by if_else row_number ungroup summarize_all
+#' @importFrom DT datatable renderDT DTOutput
+#' @importFrom reactable reactable reactableOutput renderReactable colDef
 #' 
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
@@ -62,12 +64,7 @@ mod_stock_status_ui <- function(id) {
       ),
       tabPanel(
         "Stock status Lookup",
-        selectInput(ns("stock_status_selector"), "Select stock to view status", choices = "A stock"),
-        radioButtons(ns("stock_status_indicator_selector"), "Select status indicator",
-          choices = c("MSY / PA" = "ices", "GES" = "ges")
-        ),
-        # plotOutput("stock_status")
-        withSpinner(htmlOutput("stock_status_table"))
+        withSpinner(reactableOutput(ns("stock_status_table_reactable")))
       )
     )
   )
@@ -153,16 +150,134 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
         plot_CLD_bar(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
         
     })
-
-    output$stock_status_table <- renderUI({
-      # path <- file.path(paste0("inst/app/www/bycatch_", input$bycatch_taxa_selector, ".png"))
-      includeHTML(path = "inst/app/www/NrS_2022_FO_SAG_annex_table_formatted.html")
-      # tags$iframe(
+    
+    
+    processed_data_DT <- reactive({
+      stock_status_data <- read.csv("data-raw/GNS/annex_table.csv")
+      
+      stock_status_data %>%
+      group_by(StockKeyLabel) %>%
+      mutate("Fishing Pressure" = sapply(FishingPressure, icon_mapping),
+             "Stock Size" = sapply(StockSize, icon_mapping),
+             D3C1 = sapply(D3C1, icon_mapping),
+             D3C2 = sapply(D3C2, icon_mapping),
+             GES = sapply(GES, icon_mapping),
+             SBL = sapply(SBL, icon_mapping),
+             StockKeyLabel = if_else(row_number() == 2, "", StockKeyLabel),
+             StockKeyDescription = if_else(row_number() == 2, "", StockKeyDescription),
+             SpeciesScientificName = if_else(row_number() == 2, "", SpeciesScientificName),
+             SpeciesCommonName = if_else(row_number() == 2, "", SpeciesCommonName),
+             FisheriesGuild.y = if_else(row_number() == 2, "", FisheriesGuild.y),
+             DataCategory = if_else(row_number() == 2, "", as.character(DataCategory)),
+             AssessmentYear = if_else(row_number() == 2, "", as.character(AssessmentYear)),
+             AdviceCategory = if_else(row_number() == 2, "", AdviceCategory)
+      ) %>%
         
-      #   src = "D:/GitHub_2023/fisheriesXplorer/inst/NrS_2022_FO_SAG_annex_table_formatted.html",
-      #   width = 800,
-      #   height = 800
-      # )
+      select("Stock code" = StockKeyLabel,
+             "Stock Description" = StockKeyDescription,
+             "Scientific Name" = SpeciesScientificName,
+             "Common Name" = SpeciesCommonName,
+             "Fisheries Guild" = FisheriesGuild.y,
+             "Data Category" = DataCategory,
+             "Assessment Year" = AssessmentYear,
+             "Advice Category" = AdviceCategory,
+             "Approach" = lineDescription,
+             "Fishing Pressure",
+             "Stock Size", D3C1, D3C2, GES, SBL)
+    })
+    
+    
+    processed_data_reactable <- reactive({
+      stock_status_data <- read.csv("data-raw/GNS/annex_table.csv")
+      
+      stock_status_data %>%
+        group_by(StockKeyLabel, StockKeyDescription, SpeciesScientificName, 
+                 SpeciesCommonName, FisheriesGuild.y, DataCategory, 
+                 AssessmentYear, AdviceCategory, lineDescription, GES, SBL) %>%
+        summarize_all(~paste(unique(.), collapse = " ")) %>%
+        ungroup() %>% 
+      mutate("Fishing Pressure" = sapply(FishingPressure, icon_mapping),
+             "Stock Size" = sapply(StockSize, icon_mapping),
+             D3C1 = sapply(D3C1, icon_mapping),
+             D3C2 = sapply(D3C2, icon_mapping),
+             GES = sapply(GES, icon_mapping),
+             SBL = sapply(SBL, icon_mapping)
+      ) %>%
+        
+      select("Stock code" = StockKeyLabel,
+             "Stock Description" = StockKeyDescription,
+             "Scientific Name" = SpeciesScientificName,
+             "Common Name" = SpeciesCommonName,
+             "Fisheries Guild" = FisheriesGuild.y,
+             "Data Category" = DataCategory,
+             "Assessment Year" = AssessmentYear,
+             "Advice Category" = AdviceCategory,
+             "Approach" = lineDescription,
+             "Fishing Pressure",
+             "Stock Size", D3C1, D3C2, GES, SBL)
+      #   select(-c(Ecoregion, StockSize, FishingPressure))
+    })
+      
+    
+    
+    output$stock_status_table <- renderDT({
+      req(nrow(processed_data_DT())!=0)
+        datatable(processed_data_DT(), 
+                  escape = FALSE, # allows HTML to be rendered
+                  rownames = FALSE,
+                  options = list(
+                    rowCallback = JS(
+                      "function(row, data, index) {",
+                      "  if (index % 2 == 0) {",
+                      "    $('td', row).eq(0).attr('rowspan', 2);", # merging row span for the first column
+                      "    $('td', row).eq(1).attr('rowspan', 2);",
+                      "    $('td', row).eq(2).attr('rowspan', 2);",
+                      "    $('td', row).eq(3).attr('rowspan', 2);",
+                      "    $('td', row).eq(4).attr('rowspan', 2);",
+                      "    $('td', row).eq(5).attr('rowspan', 2);",
+                      "    $('td', row).eq(6).attr('rowspan', 2);",
+                      "    $('td', row).eq(7).attr('rowspan', 2);",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "    $('td', row.nextElementSibling).eq(0).remove();",
+                      "  }",
+                      "}")
+                  )
+        )
+      })
+    
+    output$stock_status_table_reactable <- renderReactable({
+      req(nrow(processed_data_reactable())!=0)
+      reactable(processed_data_reactable(), filterable = TRUE,
+                #groupBy = c("Stock code"),
+                columns = list(
+                               # "Stock code" = colDef(html = T, cell = merge_cells),
+                               # "Stock Description" = colDef(html = T, cell = merge_cells),
+                               # "Scientific Name" = colDef(html = T, cell = merge_cells),
+                               # "Common Name" = colDef(html = T, cell = merge_cells),
+                               # "Fisheries Guild" = colDef(html = T, cell = merge_cells),
+                               "Fisheries Guild" = colDef(html = T, width = 108),
+                               # "Data Category" = colDef(html = T, cell = merge_cells),
+                               "Data Category" = colDef(html = T, width = 80),
+                               # "Assessment Year" = colDef(html = T, cell = merge_cells),
+                               # "Advice Category" = colDef(html = T, cell = merge_cells),
+                              "Advice Category" = colDef(html = T, width = 80),
+                              "Approach" = colDef(html = T, width = 108),
+                               # SBL = colDef(html = T, filterable = F, cell = merge_cells),
+                               # GES = colDef(html = T, filterable = F, cell = merge_cells),
+                               "Fishing Pressure" = colDef(html = T, filterable = F, width = 74),
+                               SBL = colDef(html = T, filterable = F, width = 74),
+                               GES = colDef(html = T, filterable = F, width = 74),
+                               D3C1 = colDef(html = T, filterable = F, width = 74),
+                               D3C2 = colDef(html = T, filterable = F, width = 74),
+                               "Stock Size" = colDef(html = T, filterable = F, width = 74)
+                               )
+      )
     })
      
   })

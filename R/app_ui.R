@@ -80,6 +80,8 @@ golem_add_external_resources <- function() {
     ),
     # tags$head(includeHTML(("google-analytics.html"))),
     tags$link(rel = "stylesheet", type = "text/css", href = "css/gothic-a1.css"),
+    tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"),
+    
     tags$style("body {font-family: 'Gothic A1', sans-serif;}"),
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
     
