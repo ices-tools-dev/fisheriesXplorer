@@ -14,28 +14,31 @@
 mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    card(
-      "Fishing Effort",
-      card(
-        withSpinner(
-          imageOutput(
-            ns("effort_layer")
+    fluidRow(
+      column(6,
+          card(
+            "Fishing Effort",
+            selectInput(ns("fishing_cat_selector"), "Select fishing category",
+              choices = c("All"= "all", "Beam trawls", "Bottom otter trawls", "Bottom seines", "Dredges", "Pelagic trawls and seines", "Static gears"),
+              selected = "All"
+            ),
+            card(full_screen = T, height = "80%",
+              withSpinner(plotOutput(ns("effort_layer"), width = "100%", fill =T))
+            )
+          )),
+      column(6,
+            card(
+              "Fishing Benthic Impact",
+              radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",
+                choices = c("Surface" = "surface", "Subsurface" = "subsurface")
+              ),
+              card(full_screen = T, height = "70%",
+                withSpinner(plotOutput(ns("sar_layer"), width = "100%", fill =T))
+              )
+            )
           )
-        )
-      )
-    ),
-    card(
-      "Fishing Benthic Impact",
-      radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",
-        choices = c("Surface" = "surface", "Subsurface" = "subsurface")
-      ),
-      card(
-        withSpinner(
-          imageOutput(
-            ns("sar_layer")
-          )
-        )
-      )
+             
+             
     )
   )
 }
@@ -48,7 +51,7 @@ mod_vms_server <- function(id){
  
     output$effort_layer <- renderPlot({
      
-       plot_effort_map(effort_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]])+
+       plot_effort_map_app(effort_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], europe_shape = europe_land_shp, fishing_category = input$fishing_cat_selector)+
         ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
      
       })
@@ -56,7 +59,7 @@ mod_vms_server <- function(id){
     output$sar_layer <- renderPlot({
       req(!is.null(input$sar_layer_selector))
      
-        plot_sar_map(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], what = input$sar_layer_selector) +
+        plot_sar_map_app(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], europe_shape = europe_land_shp, layer = input$sar_layer_selector) +
           ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
      
       })
