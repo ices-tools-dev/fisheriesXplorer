@@ -20,7 +20,7 @@ mod_stock_status_ui <- function(id) {
       tabPanel(
         "Status Summary",
         radioButtons(ns("status_indicator_selector"), "Select status indicator",
-          choices = c("MSY / PA" = "ices", "GES" = "ges")
+          choices = c("MSY / Precautionary Approach" = "ices", "Good Environmental Status" = "ges")
         ),
         card(
           withSpinner(
@@ -77,15 +77,23 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
+    ices_prop_pies_data <- reactive({
+      dat <- prepare_ices_stock_status(clean_status)
+    })
+    
+    ges_prop_pies_data <- reactive({
+      dat <- prepare_ges_stock_status(status_df = clean_status, catch_df = current_catches)
+    })
+    
     output$status_summary <- renderPlot({
       req(!is.null(input$status_indicator_selector))
       
       if(input$status_indicator_selector == "ices") {
-        plot_status_prop_pies(clean_status, cap_month, cap_year)
+        plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
       
         } else if((input$status_indicator_selector == "ges")) {
         
-          plot_GES_pies(clean_status, current_catches, cap_month, cap_year)
+          plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
         }
       })
    
