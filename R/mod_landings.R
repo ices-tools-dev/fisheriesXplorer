@@ -20,6 +20,7 @@ mod_landings_ui <- function(id) {
           choices = c("Main landed species" = "COMMON_NAME", "Category" = "GUILD", "Country" = "COUNTRY")
         ),
         card(
+          min_height = "40vw",
           card_body(
           withSpinner(plotlyOutput(ns("landings_layer")))
           )
@@ -28,6 +29,7 @@ mod_landings_ui <- function(id) {
       tabPanel(
         "Discards",
         card(
+          min_height = "40vw",
           card_body(
             layout_column_wrap(
               width = 1 / 3,

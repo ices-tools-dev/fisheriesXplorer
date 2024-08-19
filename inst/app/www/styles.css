@@ -281,6 +281,7 @@ caption {
 }
 
 
+
 .card-body {
   color: #002B5F;
   background-color: #ffffff;
@@ -300,68 +301,6 @@ caption {
 .bslib-card .card-body{
   overflow-x: hidden;
 }
-/*
-@media(max-width:1000px)  {
-
-  .navbar-collapse.collapse {
-      display: none !important;
-  }
-
-  .navbar-collapse {
-      overflow-x: visible !important;
-  }
-
-  .navbar-collapse.in {
-    overflow-y: auto !important;
-  }
-
-  .collapse.in {
-    display: inline-block !important;
-  }
-  .dropdown-toggle {
-    display: inline-block;
-  }
-
-}
-@media (max-width: 990px) {
-  .navbar-header {
-      float: none;
-  }
-  .navbar-toggle {
-      display: block;
-  }
-  .navbar-collapse {
-      border-top: 1px solid transparent;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-  }
-  .navbar-collapse.collapse {
-      display: none!important;
-  }
-  .navbar-nav {
-      float: none!important;
-      margin: 7.5px -15px;
-  }
-  .navbar-nav>li {
-      float: none;
-  }
-  .navbar-nav>li>a {
-      padding-top: 10px;
-      padding-bottom: 10px;
-  }
-}
-
-.collapse {
-  &:not(.show) {
-    display: none;
-  }
-}
-
-.collapsing {
-  height: 0;
-  overflow: hidden;
-  @include transition($transition-collapse);
-}*/
-
 
 .image-button {
   position: relative;
@@ -396,3 +335,10 @@ caption {
 }
 
 
+.sidebar img {
+  max-width: 100%; 
+  height: auto;
+}
+.sidebar {
+  overflow: hidden;
+}
