@@ -34,15 +34,15 @@ mod_overview_ui <- function(id) {
           tabsetPanel(
             tabPanel(
               "Executive Summary",
-              textOutput(ns("executive_summary"))
+              uiOutput(ns("executive_summary"))
             ),
             tabPanel(
               "Introduction",
-              textOutput(ns("introduction"))
+              uiOutput(ns("introduction"))
             ),
             tabPanel(
               "Who is Fishing",
-              textOutput(ns("who_is_fishing"))
+              uiOutput(ns("who_is_fishing"))
             )
           )
         )
@@ -131,14 +131,14 @@ mod_overview_server <- function(id){
     }, deleteFile = F)
   
     
-    output$executive_summary <- renderText({
-      select_text(texts,"overview","executive_summary")
+    output$executive_summary <- renderUI({
+      HTML(select_text(texts,"overview","executive_summary"))
     })
-    output$introduction <- renderText({
-      select_text(texts,"overview","introduction")
+    output$introduction <- renderUI({
+      HTML(select_text(texts,"overview","introduction"))
     })
-    output$who_is_fishing <- renderText({
-      select_text(texts,"overview","who_is_fishing")
+    output$who_is_fishing <- renderUI({
+      HTML(select_text(texts,"overview","who_is_fishing"))
     })
   })
 }
