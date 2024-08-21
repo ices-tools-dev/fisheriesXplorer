@@ -16,18 +16,20 @@ mod_overview_ui <- function(id) {
       # card(
       # card_body(
       card(
-        min_height = "40vw",
+        min_height = "80vh",
         # full_screen = TRUE,
         # card_header("A sidebar layout inside a card"),
         layout_sidebar(
           # fillable = TRUE,
           # height = 600,
           sidebar = sidebar(
-            width = "50vw",
+            width = "50%",
+            height = "70vh",
             
             # height = "100vw",
             br(),
-            withSpinner(imageOutput(ns("map"), width = "95%", height = "auto"))
+            tags$style(type = "text/css", "#staticMap {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
+            withSpinner(imageOutput(ns("staticMap"), width = "95%"))
           ),
           tabsetPanel(
             tabPanel(
@@ -123,7 +125,7 @@ mod_overview_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    output$map <- renderImage({
+    output$staticMap <- renderImage({
       path <- file.path("inst/app/www/ecoregion.png")
     list(src = path)
     }, deleteFile = F)
