@@ -7,62 +7,81 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' @importFrom bslib card_image
+#' @importFrom bslib card_image navset_tab nav_panel
 #' @importFrom icesFO plot_CLD_bar plot_kobe plot_stock_trends plot_status_prop_pies plot_GES_pies
 #' @importFrom dplyr filter slice_max mutate select group_by if_else row_number ungroup summarize_all
-#' @importFrom DT datatable renderDT DTOutput
 #' @importFrom reactable reactable reactableOutput renderReactable colDef
 #' 
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    tabsetPanel(
-      tabPanel(
-        "Status Summary",
-        radioButtons(ns("status_indicator_selector"), "Select status indicator",
-          choices = c("MSY / Precautionary Approach" = "ices", "Good Environmental Status" = "ges")
-        ),
-        card(
-          withSpinner(
-            imageOutput(ns("status_summary"))))
-      ),
-      tabPanel(
-        "Trends-by-groups",
-        radioButtons(ns("status_trend_selector"), "Select group",
-          choices = c(
-            "Elasmobranchs" = "elasmobranch",
-            "Benthic" = "benthic",
-            "Crustacean" = "crustacean",
-            "Demersal" = "demersal",
-            "Pelagic" = "pelagic"
+    navset_tab(
+      nav_panel("Status Summary",
+                
+          column(6,
+           card(height = "85vh", full_screen = T,
+            card_header("MSY & Precautionary Approach"),
+            card_body(fillable = T, 
+              withSpinner(
+                plotOutput(ns("status_summary_ices"), height = "72vh"))))
+          ),
+          column(6,
+           card(height = "85vh", full_screen = T,
+            card_header("Good Environmental Status"),
+            card_body(fillable = T,
+              withSpinner(
+                plotOutput(ns("status_summary_ges"), height = "72vh")))
+            )
           )
-        ),
-        card(
+      ),
+      nav_panel("Trends by group",
+                
+          column(12,
+           card(height = "85vh", full_screen = T,
+             card_header(
+              div(style = "margin-left: 12px;",
+               radioButtons(ns("status_trend_selector"), "Select group", inline = T,
+              choices = c(
+                "Elasmobranchs" = "elasmobranch",
+                "Benthic" = "benthic",
+                "Crustacean" = "crustacean",
+                "Demersal" = "demersal",
+                "Pelagic" = "pelagic")))),
           card_body(
             withSpinner(
-              plotlyOutput(
-                ns("status_trends")))
+              plotOutput(ns("status_trends"), height = "68vh")))
+            )
           )
-        )
       ),
-      tabPanel(
-        "Kobe-CLD",
-        radioButtons(ns("status_kobe_cld_selector"), "Select group",
+      nav_panel("Kobe-CLD",
+              
+        card(card_header(
+          column(6,
+          radioButtons(ns("status_kobe_cld_selector"), "Select group", inline = T,
           choices = c(
-            "All Stocks" = "All",
             "Benthic" = "benthic",
             "Demersal" = "demersal",
             "Crustacean" = "crustacean",
-            "Pelagic" = "pelagic"
+            "Pelagic" = "pelagic",
+            "All Stocks" = "All"
           )
+                 )
         ),
-        uiOutput(ns("slider")),
-        card(
-          withSpinner(plotOutput(ns("status_kobe"))),
-          withSpinner(plotOutput(ns("status_cld")))
+          column(6,
+          uiOutput(ns("kobe_cld_slider"), inline = T)
+                 ))
+        ),
+        column(6,
+          card(fillable = T, height = "75vh", full_screen = T,
+            withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
+                 )),
+        column(6,
+          card(fillable = T, height = "75vh", full_screen = T,
+            withSpinner(plotOutput(ns("status_cld"), height = "67vh"))
+                 )
         )
       ),
-      tabPanel(
+      nav_panel(
         "Stock status Lookup",
         withSpinner(reactableOutput(ns("stock_status_table_reactable")))
       )
@@ -95,7 +114,15 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
         
           plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
         }
-      })
+    })
+    output$status_summary_ices <- renderPlot({
+      plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
+        
+    })
+    output$status_summary_ges <- renderPlot({
+        plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
+        
+    })
    
     
     trends_data <- reactive({
@@ -107,19 +134,29 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
       } else {
         guild <- input$status_trend_selector
       }
-      tmp <- trends %>% filter(FisheriesGuild %in% guild)
+      
+      dat <- trends %>% filter(FisheriesGuild %in% guild) %>% 
+        prepare_stock_trends()
       
     })
     
-     output$status_trends <- renderPlotly({
+     output$status_trends <- renderPlot({
       req(!is.null(input$status_trend_selector))
-      
-       ggplotly(plot_stock_trends(trends_data(), guild = input$status_trend_selector, cap_year, cap_month , return_data = FALSE))
+
+       # ggplotly(plot_stock_trends_app(trends_data(), guild = input$status_trend_selector, caption_year = cap_year, caption_month = cap_month))
+       plot_stock_trends_app(trends_data(), caption_year = cap_year, caption_month = cap_month)
        })
      
+     
+     output$kobe_cld_slider <- renderUI({
+       slider_max <- nrow(kobe_cld_data())
+       div(id="custom_slider",
+           sliderInput(ns("n_selector"), HTML("Top <em>n</em> stocks"),  
+                       min = 1, max = slider_max, value = min(10, slider_max), step = 1)
+           )
+    })
+     
      kobe_cld_data <- reactive({
-       
-       #stopifnot(sum(is.na(current_catches$FisheriesGuild)) ==0)
        
        if(input$status_kobe_cld_selector == "All") {
          guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
@@ -135,14 +172,9 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
        
      })
      
-     output$slider <- renderUI({
-       slider_max <- nrow(kobe_cld_data())
-       sliderInput(ns("n_selector"), "Select number of stocks to display",  min = 1, max = slider_max, value = min(10, slider_max))
-     })
      
      output$status_kobe <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
-      req(!is.null(input$n_selector))
       
         plot_data <- kobe_cld_data() %>% 
           slice_max(order_by = total, n = input$n_selector)
@@ -161,7 +193,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
     
     
     processed_data_DT <- reactive({
-      stock_status_data <- read.csv("data-raw/GNS/annex_table.csv")
+      stock_status_data <- annex_data
       
       stock_status_data %>%
       group_by(StockKeyLabel) %>%
@@ -223,46 +255,13 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
              "Approach" = lineDescription,
              "Fishing Pressure",
              "Stock Size", D3C1, D3C2, GES, SBL)
-      #   select(-c(Ecoregion, StockSize, FishingPressure))
     })
       
     
     
-    output$stock_status_table <- renderDT({
-      req(nrow(processed_data_DT())!=0)
-        datatable(processed_data_DT(), 
-                  escape = FALSE, # allows HTML to be rendered
-                  rownames = FALSE,
-                  options = list(
-                    rowCallback = JS(
-                      "function(row, data, index) {",
-                      "  if (index % 2 == 0) {",
-                      "    $('td', row).eq(0).attr('rowspan', 2);", # merging row span for the first column
-                      "    $('td', row).eq(1).attr('rowspan', 2);",
-                      "    $('td', row).eq(2).attr('rowspan', 2);",
-                      "    $('td', row).eq(3).attr('rowspan', 2);",
-                      "    $('td', row).eq(4).attr('rowspan', 2);",
-                      "    $('td', row).eq(5).attr('rowspan', 2);",
-                      "    $('td', row).eq(6).attr('rowspan', 2);",
-                      "    $('td', row).eq(7).attr('rowspan', 2);",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "    $('td', row.nextElementSibling).eq(0).remove();",
-                      "  }",
-                      "}")
-                  )
-        )
-      })
-    
     output$stock_status_table_reactable <- renderReactable({
       req(nrow(processed_data_reactable())!=0)
       reactable(processed_data_reactable(), filterable = TRUE,
-                #groupBy = c("Stock code"),
                 columns = list(
                                # "Stock code" = colDef(html = T, cell = merge_cells),
                                # "Stock Description" = colDef(html = T, cell = merge_cells),

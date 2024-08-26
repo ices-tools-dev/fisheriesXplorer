@@ -15,6 +15,7 @@ mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
     tags$img(id = "logo", class = "center-block", src = "www/fisheriesxplorer_blue.png"),
+    br(),br(),
     tabsetPanel(
       type = "hidden",
       id = ns("landing_page"),

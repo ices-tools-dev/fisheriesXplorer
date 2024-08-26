@@ -79,6 +79,11 @@ golem_add_external_resources <- function() {
       app_title = "fisheriesXplorer"
     ),
     # tags$head(includeHTML(("google-analytics.html"))),
+    tags$style(HTML("
+    #custom_slider .shiny-input-container {
+      margin-top: 0px !important;  /* Remove top margin */
+    }"
+    )),
     tags$link(rel = "stylesheet", type = "text/css", href = "css/gothic-a1.css"),
     tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"),
     
