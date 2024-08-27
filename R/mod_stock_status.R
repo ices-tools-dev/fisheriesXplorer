@@ -67,7 +67,7 @@ mod_stock_status_ui <- function(id) {
           choices = c("MSY / PA" = "ices", "GES" = "ges")
         ),
         # plotOutput("stock_status")
-        withSpinner(htmlOutput("stock_status_table"))
+        uiOutput(ns("stock_status_table_reactable"))
       )
     )
   )
