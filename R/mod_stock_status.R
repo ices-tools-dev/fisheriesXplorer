@@ -154,16 +154,32 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
         
     })
 
-    output$stock_status_table <- renderUI({
-      # path <- file.path(paste0("inst/app/www/bycatch_", input$bycatch_taxa_selector, ".png"))
-      includeHTML(path = "inst/app/www/NrS_2022_FO_SAG_annex_table_formatted.html")
-      # tags$iframe(
+    # output$stock_status_table <- renderUI({
+    #   # path <- file.path(paste0("inst/app/www/bycatch_", input$bycatch_taxa_selector, ".png"))
+    #   includeHTML(path = "inst/app/www/NrS_2022_FO_SAG_annex_table_formatted.html")
+    #   # tags$iframe(
         
-      #   src = "D:/GitHub_2023/fisheriesXplorer/inst/NrS_2022_FO_SAG_annex_table_formatted.html",
-      #   width = 800,
-      #   height = 800
-      # )
-    })
+    #   #   src = "D:/GitHub_2023/fisheriesXplorer/inst/NrS_2022_FO_SAG_annex_table_formatted.html",
+    #   #   width = 800,
+    #   #   height = 800
+    #   # )
+    # })
+     output$stock_status_table_reactable <- renderUI({
+       ft_1 <- flextable::flextable(processed_data_reactable())
+       ft_1 <- flextable::theme_box(ft_1)
+       ft_2 <- flextable::merge_v(ft_1,
+         j = "Stock code",
+         target = c("Stock code", 
+                    "Stock Description", 
+                    "Scientific Name",
+                    "Common Name",
+                    "Fisheries Guild",
+                    "Data Category",
+                    "Assessment Year",
+                    "Advice Category")
+       )
+        flextable::htmltools_value(ft_2)
+     })
      
   })
 }
