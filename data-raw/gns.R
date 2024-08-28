@@ -27,3 +27,9 @@ usethis::use_data(catch_trends, overwrite = TRUE)
 formatted_catch_data <- read.csv(file = "data-raw/GNS/catch_dat.csv")
 
 usethis::use_data(formatted_catch_data, overwrite = TRUE)
+
+
+
+annex_data <- read.csv(file = "data-raw/GNS/annex_table.csv")
+
+usethis::use_data(annex_data, overwrite = TRUE)

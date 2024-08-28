@@ -13,3 +13,33 @@ select_text <- function(list_object, tab, section){
   
   list_object[[tab]] %>% dplyr::filter(section == !!section) %>% dplyr::pull(.data$text)
 }
+
+
+
+icon_mapping <- function(value) {
+  if (value == "GREEN") {
+    '<i class="fas fa-check-circle" style="color:green; font-size:38px;"></i>'
+  } else if (value == "RED") {
+    '<i class="fas fa-times-circle" style="color:red; font-size:38px;"></i>'
+  } else if (value == "ORANGE") {
+    '<i class="fas fa-exclamation-circle" style="color:orange; font-size:38px;"></i>'
+  } else if (value == "GREY") {
+    '<i class="fas fa-question-circle" style="color:grey; font-size:38px;"></i>'
+  } else {
+    value  # If no match, return the original value
+  }
+}
+
+
+merge_cells <- function(values) {
+  values <- as.character(values)
+  unique_values <- unique(values)
+  spans <- cumsum(rle(values)$lengths)
+  mapply(function(start, end, value) {
+    if (start == end) {
+      tags$td(value)
+    } else {
+      tags$td(rowspan = end - start + 1, value)
+    }
+  }, c(1, spans[-length(spans)] + 1), spans, unique_values)
+}
