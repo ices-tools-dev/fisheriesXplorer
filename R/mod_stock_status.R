@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' @importFrom bslib card_image navset_tab nav_panel
+#' @importFrom bslib card_image navset_tab nav_panel layout_sidebar sidebar
 #' @importFrom icesFO plot_CLD_bar plot_kobe plot_stock_trends plot_status_prop_pies plot_GES_pies
 #' @importFrom dplyr filter slice_max mutate select group_by if_else row_number ungroup summarize_all
 #' @importFrom reactable reactable reactableOutput renderReactable colDef
@@ -16,9 +16,12 @@ mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
     navset_tab(
-      nav_panel("Status Summary",
-                
-          column(6,
+       nav_panel("Status Summary",
+          layout_sidebar(
+            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
+                                       open = FALSE,
+                                       uiOutput(ns("status_text1"))),
+          fluidRow(column(6,
            card(height = "85vh", full_screen = T,
             card_header("MSY & Precautionary Approach"),
             card_body(fillable = T, 
@@ -31,11 +34,16 @@ mod_stock_status_ui <- function(id) {
             card_body(fillable = T,
               withSpinner(
                 plotOutput(ns("status_summary_ges"), height = "72vh")))
-            )
-          )
-      ),
-      nav_panel("Trends by group",
                 
+            )
+          ))
+      )),
+      
+      nav_panel("Trends by group",
+          layout_sidebar(
+            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
+                                       open = FALSE,
+                                       uiOutput(ns("status_text2"))),
           column(12,
            card(height = "85vh", full_screen = T,
              card_header(
@@ -52,42 +60,53 @@ mod_stock_status_ui <- function(id) {
               plotOutput(ns("status_trends"), height = "68vh")))
             )
           )
-      ),
+      )),
+      
       nav_panel("Kobe-CLD",
-              
+          layout_sidebar(
+            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", open = FALSE,
+                              uiOutput(ns("status_text3"))),
         card(card_header(
           column(6,
-          radioButtons(ns("status_kobe_cld_selector"), "Select group", inline = T,
-          choices = c(
-            "Benthic" = "benthic",
-            "Demersal" = "demersal",
-            "Crustacean" = "crustacean",
-            "Pelagic" = "pelagic",
-            "All Stocks" = "All"
-          )
-                 )
-        ),
+            radioButtons(ns("status_kobe_cld_selector"), "Select group", inline = T,
+              choices = c(
+                "Benthic" = "benthic",
+                "Demersal" = "demersal",
+                "Crustacean" = "crustacean",
+                "Pelagic" = "pelagic",
+                "All Stocks" = "All")
+            )
+          ),
           column(6,
-          uiOutput(ns("kobe_cld_slider"), inline = T)
+            uiOutput(ns("kobe_cld_slider"), inline = T)
                  ))
         ),
-        column(6,
-          card(fillable = T, height = "75vh", full_screen = T,
-            withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
-                 )),
-        column(6,
-          card(fillable = T, height = "75vh", full_screen = T,
-            withSpinner(plotOutput(ns("status_cld"), height = "67vh"))
-                 )
+        fluidRow(
+          column(6,
+            card(fillable = T, height = "75vh", full_screen = T,
+              withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
+                   )),
+          column(6,
+            card(fillable = T, height = "75vh", full_screen = T,
+              withSpinner(plotOutput(ns("status_cld"), height = "67vh"))
+                   )
+          )
         )
-      ),
-      nav_panel(
-        "Stock status Lookup",
+      )),
+      
+      nav_panel("Stock status Lookup",
+          layout_sidebar(
+            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
+                                       open = FALSE,
+                                       uiOutput(ns("status_text4"))),
+            
         withSpinner(reactableOutput(ns("stock_status_table_reactable")))
+      )
       )
     )
   )
 }
+        
     
 #' stock_status Server Functions
 #'
@@ -96,6 +115,10 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
+    output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
+      HTML(select_text(texts,"status","sidebar"))
+    })
+    
     ices_prop_pies_data <- reactive({
       dat <- prepare_ices_stock_status(clean_status)
     })
@@ -175,6 +198,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
      
      output$status_kobe <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
+        req(!is.null(input$n_selector))
       
         plot_data <- kobe_cld_data() %>% 
           slice_max(order_by = total, n = input$n_selector)
@@ -189,41 +213,6 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
           slice_max(order_by = total, n = input$n_selector)
         plot_CLD_bar(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
         
-    })
-    
-    
-    processed_data_DT <- reactive({
-      stock_status_data <- annex_data
-      
-      stock_status_data %>%
-      group_by(StockKeyLabel) %>%
-      mutate("Fishing Pressure" = sapply(FishingPressure, icon_mapping),
-             "Stock Size" = sapply(StockSize, icon_mapping),
-             D3C1 = sapply(D3C1, icon_mapping),
-             D3C2 = sapply(D3C2, icon_mapping),
-             GES = sapply(GES, icon_mapping),
-             SBL = sapply(SBL, icon_mapping),
-             StockKeyLabel = if_else(row_number() == 2, "", StockKeyLabel),
-             StockKeyDescription = if_else(row_number() == 2, "", StockKeyDescription),
-             SpeciesScientificName = if_else(row_number() == 2, "", SpeciesScientificName),
-             SpeciesCommonName = if_else(row_number() == 2, "", SpeciesCommonName),
-             FisheriesGuild.y = if_else(row_number() == 2, "", FisheriesGuild.y),
-             DataCategory = if_else(row_number() == 2, "", as.character(DataCategory)),
-             AssessmentYear = if_else(row_number() == 2, "", as.character(AssessmentYear)),
-             AdviceCategory = if_else(row_number() == 2, "", AdviceCategory)
-      ) %>%
-        
-      select("Stock code" = StockKeyLabel,
-             "Stock Description" = StockKeyDescription,
-             "Scientific Name" = SpeciesScientificName,
-             "Common Name" = SpeciesCommonName,
-             "Fisheries Guild" = FisheriesGuild.y,
-             "Data Category" = DataCategory,
-             "Assessment Year" = AssessmentYear,
-             "Advice Category" = AdviceCategory,
-             "Approach" = lineDescription,
-             "Fishing Pressure",
-             "Stock Size", D3C1, D3C2, GES, SBL)
     })
     
     
@@ -256,7 +245,6 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
              "Fishing Pressure",
              "Stock Size", D3C1, D3C2, GES, SBL)
     })
-      
     
     
     output$stock_status_table_reactable <- renderReactable({
@@ -286,7 +274,6 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
                                )
       )
     })
-     
   })
 }
     
