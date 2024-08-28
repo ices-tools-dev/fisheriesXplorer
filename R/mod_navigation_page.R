@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' @importFrom bslib card card_header card_body layout_column_wrap 
+#' @importFrom bslib card card_header card_body layout_column_wrap nav_panel layout_sidebar sidebar
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
 #' @importFrom shinyjs onclick

@@ -10,12 +10,20 @@
 mod_bycatch_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    radioButtons(ns("bycatch_taxa_selector"), "Select bycatch of seabirds and marine mammals",
-      choices = c("Seabirds" = "seabirds", "Marine mammals" = "mammals")
-    ),
-    card(
-      withSpinner(
-        imageOutput(ns("bycatch_layer"))
+    layout_sidebar(bg = "white", fg = "black", 
+      sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
+                        open = F,
+                        uiOutput(ns("bycatch_text"))),
+      card(height = "85vh",
+        card_header(
+          div(style = "margin-left: 12px;",
+              radioButtons(ns("bycatch_taxa_selector"), "View bycatch of seabirds or marine mammals:",
+              choices = c("Seabirds" = "seabirds", "Marine mammals" = "mammals"))
+          )
+        ),
+        card_body(withSpinner(
+            imageOutput(ns("bycatch_layer"), height = "75vh"))
+        )
       )
     )
   )
@@ -27,6 +35,10 @@ mod_bycatch_ui <- function(id) {
 mod_bycatch_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    
+    output$bycatch_text <- renderUI({
+      HTML(select_text(texts,"bycatch","sidebar"))
+    })
     
     output$bycatch_layer <- renderImage({
       req(!is.null(input$bycatch_taxa_selector))

@@ -57,7 +57,6 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
   margin-bottom: 10px;
 }
 
-
 .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus {
   color: #000000;
   /*
@@ -76,7 +75,6 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
 .navbar-default .navbar-nav>li>a {
   color: #ffffff;
 }
-
 
 .navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.open>a:focus {
   color: #000000;
@@ -151,8 +149,6 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
   box-shadow: 0 1px 1px rgb(0 0 0 / 5%);
 }
 
-
-
 .panel-title {
   margin-top: 0;
   margin-bottom: 0;
@@ -195,8 +191,6 @@ input[type=radio]:checked {
   outline: unset !important /* I added this one for Edge (chromium) support */
 }
 
-
-
 .hovertext {
   position: relative;
   
@@ -233,7 +227,6 @@ input[type=radio]:checked {
   background-color: #99AABF;
 }
 
-
 caption {
   padding-top: 8px;
   padding-bottom: 8px;
@@ -241,7 +234,6 @@ caption {
   color: #112247;
   text-align: left;
 }
-
 
 .well {
   min-height: 20px;
@@ -289,7 +281,6 @@ caption {
   margin-bottom: -40px
 }
 
-
 .card-body {
   color: #002B5F;
   background-color: #ffffff;
@@ -306,71 +297,10 @@ caption {
   border-width: 1px 1px 1px 1px;
   border-radius: 30px;
 }
+
 .bslib-card .card-body{
   overflow-x: hidden;
 }
-/*
-@media(max-width:1000px)  {
-
-  .navbar-collapse.collapse {
-      display: none !important;
-  }
-
-  .navbar-collapse {
-      overflow-x: visible !important;
-  }
-
-  .navbar-collapse.in {
-    overflow-y: auto !important;
-  }
-
-  .collapse.in {
-    display: inline-block !important;
-  }
-  .dropdown-toggle {
-    display: inline-block;
-  }
-
-}
-@media (max-width: 990px) {
-  .navbar-header {
-      float: none;
-  }
-  .navbar-toggle {
-      display: block;
-  }
-  .navbar-collapse {
-      border-top: 1px solid transparent;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-  }
-  .navbar-collapse.collapse {
-      display: none!important;
-  }
-  .navbar-nav {
-      float: none!important;
-      margin: 7.5px -15px;
-  }
-  .navbar-nav>li {
-      float: none;
-  }
-  .navbar-nav>li>a {
-      padding-top: 10px;
-      padding-bottom: 10px;
-  }
-}
-
-.collapse {
-  &:not(.show) {
-    display: none;
-  }
-}
-
-.collapsing {
-  height: 0;
-  overflow: hidden;
-  @include transition($transition-collapse);
-}*/
-
 
 .image-button {
   position: relative;
@@ -382,10 +312,12 @@ caption {
   border: none;
   margin: 10px;
 }
+
 .image-button:hover .tooltip {
   visibility: visible;
   opacity: 1;
 }
+
 .tooltip {
   visibility: hidden;
   width: 160px;
@@ -404,4 +336,11 @@ caption {
   transition: opacity 0.3s;
 }
 
+.sidebar img {
+  max-width: 100%; 
+  height: auto;
+}
 
+.sidebar {
+  overflow: hidden;
+}
