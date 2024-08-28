@@ -15,8 +15,8 @@ mod_landings_ui <- function(id) {
   tagList(
     tabsetPanel(
       tabPanel("Landings",
-        layout_sidebar(
-          sidebar = sidebar(width = "33vw", 
+        layout_sidebar(bg = "white", fg = "black", 
+          sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
                             open = FALSE,
                             uiOutput(ns("landings_text"))),
           card(height = "85vh",
@@ -28,8 +28,8 @@ mod_landings_ui <- function(id) {
               plotlyOutput(ns("landings_layer"), height = "65vh")))
           ))),
       tabPanel("Discards",
-        layout_sidebar(
-          sidebar = sidebar(width = "33vw", 
+        layout_sidebar(bg = "white", fg = "black", 
+          sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
                             open = FALSE,
                             uiOutput(ns("discards_text"))),
           card(height = "85vh",

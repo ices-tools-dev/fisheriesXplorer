@@ -13,14 +13,15 @@ mod_overview_ui <- function(id) {
     tabsetPanel(
       type = "hidden",
       id = ns("overview"),
-      layout_sidebar(
-        sidebar = sidebar(
-            width = "50%",
-            card(br(),
-            tags$style(type = "text/css", "#staticMap {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
-              withSpinner(imageOutput(ns("staticMap"), width = "95vh", height = "80vh"))#,fill = T)
-          )),
         card(min_height = "80vh",
+      layout_sidebar(
+        fillable = T, bg = "white", fg = "black", 
+        sidebar = sidebar(bg = "white", fg = "black",
+            width = "40%", 
+            card(min_height = "50vh", height = "80vh", full_screen = T, 
+              tags$style(type = "text/css", "#staticMap {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
+                withSpinner(plotOutput(ns("staticMap1"), width = "35vw", height = "35vh")))
+        ),
           tabsetPanel(
             tabPanel("Executive Summary",
               card(uiOutput(ns("executive_summary")))
@@ -28,7 +29,7 @@ mod_overview_ui <- function(id) {
             tabPanel("Introduction",
               card(uiOutput(ns("introduction")))
             ),
-            tabPanel("Who is Fishing", 
+            tabPanel("Who is Fishing",
               card(uiOutput(ns("who_is_fishing")))
             )
           )
@@ -45,7 +46,7 @@ mod_overview_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    output$staticMap <- renderImage({
+    output$staticMap1 <- output$staticMap2 <- renderImage({
       path <- file.path("inst/app/www/ecoregion.png")
     list(src = path,
         width = "auto",

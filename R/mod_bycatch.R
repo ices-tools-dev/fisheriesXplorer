@@ -10,8 +10,8 @@
 mod_bycatch_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    layout_sidebar(
-      sidebar = sidebar(width = "33vw", 
+    layout_sidebar(bg = "white", fg = "black", 
+      sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
                         open = F,
                         uiOutput(ns("bycatch_text"))),
       card(height = "85vh",
