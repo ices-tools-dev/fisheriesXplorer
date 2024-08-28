@@ -101,7 +101,12 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
 }
 
 .form-group .shiny-input-container {
-      margin-top: 0 !important;  /* Remove top margin */
+  margin-top: 0;
+}
+
+.form-group > .shiny-input-container {
+  margin-top: 0;
+}
     }
 
 .disabled {
