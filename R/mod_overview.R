@@ -13,36 +13,23 @@ mod_overview_ui <- function(id) {
     tabsetPanel(
       type = "hidden",
       id = ns("overview"),
-      # card(
-      # card_body(
-      card(
-        min_height = "80vh",
-        # full_screen = TRUE,
-        # card_header("A sidebar layout inside a card"),
-        layout_sidebar(
-          # fillable = TRUE,
-          # height = 600,
-          sidebar = sidebar(
+      layout_sidebar(
+        sidebar = sidebar(
             width = "50%",
-            height = "70vh",
-            
-            # height = "100vw",
-            br(),
+            card(br(),
             tags$style(type = "text/css", "#staticMap {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
-            withSpinner(imageOutput(ns("staticMap"), width = "95%"))
-          ),
+              withSpinner(imageOutput(ns("staticMap"), width = "95vh", height = "80vh"))#,fill = T)
+          )),
+        card(min_height = "80vh",
           tabsetPanel(
-            tabPanel(
-              "Executive Summary",
-              uiOutput(ns("executive_summary"))
+            tabPanel("Executive Summary",
+              card(uiOutput(ns("executive_summary")))
             ),
-            tabPanel(
-              "Introduction",
-              uiOutput(ns("introduction"))
+            tabPanel("Introduction",
+              card(uiOutput(ns("introduction")))
             ),
-            tabPanel(
-              "Who is Fishing",
-              uiOutput(ns("who_is_fishing"))
+            tabPanel("Who is Fishing", 
+              card(uiOutput(ns("who_is_fishing")))
             )
           )
         )
@@ -50,74 +37,7 @@ mod_overview_ui <- function(id) {
     )
   )
 }
-          # layout_column_wrap(
-          #   width = 1 / 2,
-          #   card(
-          #     card_body(
-          #         withSpinner(imageOutput(ns("map")))
-          #     )
-          #   ),
-          #   card(
-          #     card_body(
-          #       tabsetPanel(
-          #         tabPanel(
-          #           "Executive Summary",
-          #           textOutput(ns("executive_summary"))
-          #         ),
-          #         tabPanel(
-          #           "Introduction",
-          #           textOutput(ns("introduction"))
-          #         ),
-          #         tabPanel(
-          #           "Who is Fishing",
-          #           textOutput(ns("who_is_fishing"))
-          #         )
-          #       )
-          #     )
-          #   )
-            # tabsetPanel(
-            #   tabPanel(
-            #     "Executive Summary",
-            #     textOutput(ns("executive_summary"))
-            #   ),
-            #   tabPanel(
-            #     "Introduction",
-            #     textOutput(ns("introduction"))
-            #   ),
-            #   tabPanel(
-            #     "Who is Fishing",
-            #     textOutput(ns("who_is_fishing"))
-            #   )
-            # )
-  #         )
-  #       # )
-  #     # )
-  #   )
-  # )
-# }
-
-
-
-
-
-
-    # tabsetPanel(type = "hidden", 
-    #             id=ns("overview"),
-    #             tabPanel("Map tab", value=ns("tab_map"),
-    #                      card(imageOutput(ns("map")))
-    #                      )),
-    # tabsetPanel(
-    #     tabPanel("Executive Summary",
-    #              textOutput(ns("executive_summary"))),
-    #     tabPanel("Introduction",
-    #              textOutput(ns("introduction"))),
-    #     tabPanel("Who is Fishing",
-    #              textOutput(ns("who_is_fishing")))
-    # )
-                    
-  # )
-# }
-    
+       
 #' overview Server Functions
 #'
 #' @noRd 
@@ -127,7 +47,9 @@ mod_overview_server <- function(id){
     
     output$staticMap <- renderImage({
       path <- file.path("inst/app/www/ecoregion.png")
-    list(src = path)
+    list(src = path,
+        width = "auto",
+        height = "auto")
     }, deleteFile = F)
   
     
