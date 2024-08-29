@@ -12,3 +12,4 @@ data-raw/*
 !data-raw/*.R
 
 data/*
+!data/annex_data.rda
