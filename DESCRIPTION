@@ -10,7 +10,6 @@ Imports:
     config (>= 0.3.2),
     desc,
     dplyr,
-    DT,
     ggplot2,
     ggthemes,
     glue,
