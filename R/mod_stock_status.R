@@ -217,9 +217,8 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
     
     
     processed_data_reactable <- reactive({
-      stock_status_data <- read.csv("data-raw/GNS/annex_table.csv")
       
-      stock_status_data %>%
+      annex_data %>%
         group_by(StockKeyLabel, StockKeyDescription, SpeciesScientificName, 
                  SpeciesCommonName, FisheriesGuild.y, DataCategory, 
                  AssessmentYear, AdviceCategory, lineDescription, GES, SBL) %>%
