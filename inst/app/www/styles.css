@@ -307,8 +307,8 @@ caption {
   display: inline-block;
   cursor: pointer;
   background-size: cover;
-  height: 170px;
-  width: 170px;
+  height: 10vw;
+  width: 10vw;
   border: none;
   margin: 10px;
 }
