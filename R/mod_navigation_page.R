@@ -55,7 +55,7 @@ mod_navigation_page_ui <- function(id) {
                   div(
                     class = "image-button", id = ns("overviewBtn"),
                     style = "background-image: url('www/overview.svg');",
-                    div(class = "tooltip", "Overview")
+                    div(class = "tooltip", HTML("<strong>Overview</strong><br><br>Key signals and detailed <br> catch-by-country <br> information<br><br>"))
                   )
                 ),
                 column(
@@ -64,7 +64,7 @@ mod_navigation_page_ui <- function(id) {
                   div(
                     class = "image-button", id = ns("landingsBtn"),
                     style = "background-image: url('www/landings.svg');",
-                    div(class = "tooltip", "Landings")
+                    div(class = "tooltip", HTML("<strong>Landings</strong><br><br>Landings over time:<br> by country, species, fish guild, and gear type<br><br>"))
                   )
                 ),
                 column(
@@ -73,7 +73,7 @@ mod_navigation_page_ui <- function(id) {
                   div(
                     class = "image-button", id = ns("stockStatusBtn"),
                     style = "background-image: url('www/stock_status.svg');",
-                    div(class = "tooltip", "Stock status")
+                    div(class = "tooltip", HTML("<strong>Stock status</strong><br><br>Stock status relative to MSY and PA reference points, and MSFD descriptors<br><br>"))
                   )
                 )
               ),
@@ -84,7 +84,7 @@ mod_navigation_page_ui <- function(id) {
                   div(
                     class = "image-button", id = ns("mixfishBtn"),
                     style = "background-image: url('www/mix_fishieries.svg');",
-                    div(class = "tooltip", "Mixed Fisheries")
+                    div(class = "tooltip", HTML("<strong>Mixed Fisheries</strong><br><br>Overview of the Technical Interactions across the main fisheries<br><br>"))
                   )
                 ),
                 column(
@@ -93,7 +93,7 @@ mod_navigation_page_ui <- function(id) {
                   div(
                     class = "image-button", id = ns("VMS"),
                     style = "background-image: url('www/vms.svg');",
-                    div(class = "tooltip", "VMS")
+                    div(class = "tooltip", HTML("<strong>VMS</strong><br><br>Spatial distribution of fishing effort, and maps of the physical disturbance of benthic habitats by fishing gear<br><br>"))
                   )
                 ),
                 column(
@@ -102,7 +102,7 @@ mod_navigation_page_ui <- function(id) {
                   div(
                     class = "image-button", id = ns("bycatchBtn"),
                     style = "background-image: url('www/bycatch.svg');",
-                    div(class = "tooltip", "Bycatch")
+                    div(class = "tooltip", HTML("<strong>Bycatch</strong><br><br>Bycatch of protected, endangered, and threatened species<br><br>"))
                   )
                 )
               )
