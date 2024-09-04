@@ -16,6 +16,7 @@ app_server <- function(input, output, session) {
   mod_overview_server("overview_1")
   mod_landings_server("landings_1", cap_year, cap_month)
   mod_stock_status_server("stock_status_1", cap_year, cap_month)
+  mod_mixfish_server("mixfish_1")
   mod_vms_server("vms_1")
   mod_bycatch_server("bycatch_1")
 }

@@ -44,7 +44,8 @@ app_ui <- function(request) {
         "Stock Status",
         mod_stock_status_ui("stock_status_1")
       ),
-      tabPanel("Mixed Fisheries"),
+      tabPanel("Mixed Fisheries",
+               mod_mixfish_ui("mixfish_1")),
       tabPanel(
         "VMS",
         mod_vms_ui("vms_1")
