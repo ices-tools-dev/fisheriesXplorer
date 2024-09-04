@@ -8,6 +8,7 @@ License: GPL-3 + file LICENSE
 Imports: 
     bslib,
     config (>= 0.3.2),
+    datamods,
     desc,
     dplyr,
     ggplot2,
