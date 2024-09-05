@@ -18,11 +18,12 @@ mod_bycatch_ui <- function(id) {
         card_header(
           div(style = "margin-left: 12px;",
               radioButtons(ns("bycatch_taxa_selector"), "View bycatch of seabirds or marine mammals:",
-              choices = c("Seabirds" = "seabirds", "Marine mammals" = "mammals"))
+                           choices = c("Seabirds" = "seabirds", "Marine mammals" = "mammals"),
+                           width = "80%", inline = T)
           )
         ),
-        card_body(withSpinner(
-            imageOutput(ns("bycatch_layer"), height = "75vh"))
+        card_body(fillable = T,
+                  withSpinner(plotOutput(ns("bycatch_layer"), height = "72vh"))
         )
       )
     )
