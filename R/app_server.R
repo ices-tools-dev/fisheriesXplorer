@@ -7,6 +7,11 @@
 #' @noRd
 app_server <- function(input, output, session) {
   
+  showModal(modalDialog(
+    title = "Important message",
+    HTML("Welcome to the development version of the fisheriesXplorer application. <u>The contents are indicitative and should not be quoted or used elsewhere</u>.")
+  ))
+  
   app_date <- str_split(date(), pattern = " ")[[1]]
   cap_year <- app_date[5]
   cap_month <- app_date[2]
