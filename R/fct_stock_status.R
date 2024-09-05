@@ -152,4 +152,126 @@ plot_GES_pies_app <- function(df, cap_month = "August", cap_year = "2019"){
     ggplot2::facet_grid(Metric ~ Variable)
   p1
 }
-  
+
+
+
+
+plot_kobe_app <- function(x, guild, caption = FALSE, cap_year, cap_month, return_data = FALSE){
+        if(guild == "All"){
+                df <-x
+        }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
+        xmax = max(df$F_FMSY, na.rm = TRUE)
+        ifelse(xmax < 3, xmax2 <- 3, xmax2 <- (xmax + 0.5))
+        ymax = max(df$SSB_MSYBtrigger, na.rm = TRUE)
+        ifelse(ymax < 3, ymax2 <- 3, ymax2 <- (ymax + 0.5))
+        kobe <- ggplot2::ggplot(df, ggplot2::aes(x = F_FMSY, y = SSB_MSYBtrigger,
+                                         data_id = StockKeyLabel)) +
+                ggplot2::coord_cartesian(xlim = c(0, xmax2), ylim = c(0, ymax2))+
+                ggplot2::geom_point(ggplot2::aes(color = Status), size = 15,
+                           alpha = 0.7, na.rm = TRUE) +
+                ggplot2::geom_hline(yintercept = 1, color = "grey60", linetype = "dashed") +
+                ggplot2::geom_vline(xintercept = 1, color = "grey60", linetype = "dashed") +
+                # ggrepel::geom_text_repel(ggplot2::aes(label = StockKeyLabel),
+                #                          segment.size = .25,
+                #                          force = 5,
+                #                          size = 2) +
+                ggplot2::scale_color_manual(values = c("GREEN" = "#4daf4a",
+                                              "RED" = "#e41a1c",
+                                              "GREY" = "#d3d3d3")) +
+                ggplot2::labs(x = expression(F/F[MSY]),
+                     y = expression(SSB/MSY~B[trigger]),
+                     caption = "") +
+                ggplot2::theme_bw(base_size = 20) +
+                ggplot2::theme(legend.position = 'none',
+                      panel.grid.minor = ggplot2::element_blank(),
+                      panel.grid.major = ggplot2::element_blank(),
+                      plot.caption = ggplot2::element_text(size = 10))
+      
+        
+        if(return_data == T){
+                df
+        }else{
+                kobe
+        }
+}
+
+
+plot_CLD_bar_app <- function(x, guild, caption = TRUE, cap_year, cap_month, return_data = FALSE){
+        if(guild == "All"){
+                df <-x
+        }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
+        df <- dplyr::mutate(df,total = ifelse(all(is.na(Catches) & is.na(Landings)),
+                                      NA,
+                                      max(Catches, Landings, na.rm = TRUE))) 
+        df <- dplyr::ungroup (df)
+        df <- dplyr::mutate(df,StockKeyLabel = forcats::fct_reorder(StockKeyLabel, total))
+        
+        plot <- ggplot2::ggplot(df, ggplot2::aes(x =StockKeyLabel, y = Catches/1000)) +
+               ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Catches/1000,
+                                 xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+               ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Landings/1000,
+                                 xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+               ggplot2::geom_point(stat = "identity", ggplot2::aes(y = Catches/1000,
+                                                  fill = Status), color = "grey50",
+                           shape = 24, size = 7, alpha = 0.8, na.rm = TRUE) +
+               ggplot2::geom_point(stat = "identity", ggplot2::aes(y = Landings/1000,
+                                                  fill = Status), color = "grey50",
+                           shape = 21, size = 7, alpha = 0.8, na.rm = TRUE) +
+               ggplot2::scale_fill_manual(values = c("GREEN" = "#4daf4a",
+                                             "RED" = "#e41a1c",
+                                             "GREY" = "#d3d3d3")) +
+               ggplot2::scale_color_manual(values = c("GREEN" = "#4daf4a",
+                                              "RED" = "#e41a1c",
+                                              "GREY" = "#d3d3d3")) +
+               ggplot2::coord_equal() +
+               ggplot2::coord_flip() +
+               ggplot2::theme_bw(base_size = 20) + 
+               ggplot2::labs(y = expression("Catch and Landings (thousand tonnes)"))+
+               ggplot2::theme(legend.position = 'none',
+                      plot.caption = ggplot2::element_text(size = 10),
+                      panel.grid.minor = ggplot2::element_blank(),
+                      panel.grid.major.y = ggplot2::element_blank(),
+                      panel.grid.major.x = ggplot2::element_line( size = 0.1, color = "grey80"))
+        
+        
+        if(caption == T){
+                cap_lab <- ggplot2::labs(caption = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen",
+                                                           cap_month,
+                                                           cap_year))
+                plot <- ggplot2::ggplot(df, ggplot2::aes(x =StockKeyLabel, y = Catches/1000)) +
+                        ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Catches/1000,
+                                                           xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+                        ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Landings/1000,
+                                                           xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+                        ggplot2::geom_point(stat = "identity", ggplot2::aes(y = Catches/1000,
+                                                                            fill = Status), color = "grey50",
+                                            shape = 24, size = 7, alpha = 0.8, na.rm = TRUE) +
+                        ggplot2::geom_point(stat = "identity", ggplot2::aes(y = Landings/1000,
+                                                                            fill = Status), color = "grey50",
+                                            shape = 21, size = 7, alpha = 0.8, na.rm = TRUE) +
+                        ggplot2::scale_fill_manual(values = c("GREEN" = "#4daf4a",
+                                                              "RED" = "#e41a1c",
+                                                              "GREY" = "#d3d3d3")) +
+                        ggplot2::scale_color_manual(values = c("GREEN" = "#4daf4a",
+                                                               "RED" = "#e41a1c",
+                                                               "GREY" = "#d3d3d3")) +
+                        ggplot2::coord_equal() +
+                        ggplot2::coord_flip() +
+                        ggplot2::theme_bw(base_size = 20) + 
+                        ggplot2::labs(y = expression("Catch and Landings (thousand tonnes)"))+
+                        ggplot2::theme(legend.position = 'none',
+                                       plot.caption = ggplot2::element_text(size = 10),
+                                       panel.grid.minor = ggplot2::element_blank(),
+                                       panel.grid.major.y = ggplot2::element_blank(),
+                                       panel.grid.major.x = ggplot2::element_line( size = 0.1, color = "grey80"))+
+                        cap_lab
+        }
+        
+        
+        if(return_data == T){
+                df
+        }else{
+                plot
+        }
+}
+

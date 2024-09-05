@@ -58,20 +58,20 @@ plot_stock_trends_app <- function(df, caption_year, caption_month) {
   # Set up the plot aesthetics and layers
   plot <- ggplot(non_mean_data, aes(x = Year, y = Value, color = StockKeyLabel, fill = StockKeyLabel)) +
     geom_hline(yintercept = 1, color = "grey60") +
-    theme_bw(base_size = 9) +
+    theme_bw(base_size = 22) +
     scale_color_manual(values = stock_colors) +
     scale_fill_manual(values = stock_colors) +
     scale_x_continuous(breaks = breaks_extended(n = 5)) +
     guides(fill = FALSE) +
-    theme(legend.position = "bottom",
-          strip.text = element_text(size = 9, angle = 0, hjust = 0),
+    theme(legend.position = "right",
+          strip.text = element_text(size = 13, angle = 0, hjust = 0),
           strip.background = element_blank(),
           strip.placement = "outside",
           panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           legend.key = element_rect(colour = NA),
           legend.title = element_blank(),
-          plot.caption = element_text(size = 6)) +
+          plot.caption = element_text(size = 10)) +
     labs(title = element_blank(), x = "Year", y = "", caption = caption_text) +
     facet_wrap(~Metric, scales = "free_y", labeller = label_parsed, strip.position = "left", ncol = 1, nrow = 2) +
     geom_line(data = non_mean_data, alpha = 0.8) +
