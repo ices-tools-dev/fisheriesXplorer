@@ -24,7 +24,7 @@ mod_navigation_page_ui <- function(id) {
         layout_column_wrap(
           width = 1 / 2,
           card(
-            full_screen = TRUE,
+            full_screen = FALSE,
             card_header("Select an ecoregion"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             withSpinner(

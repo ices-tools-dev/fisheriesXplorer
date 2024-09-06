@@ -184,12 +184,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
        if(input$status_kobe_cld_selector == "All") {
          guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
          tmp <- current_catches %>% filter(FisheriesGuild %in% guild)
-         tmp <- plot_CLD_bar(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
+         tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
          
        } else {
          guild <- input$status_kobe_cld_selector
         tmp <- current_catches %>% filter(FisheriesGuild %in% guild)
-        tmp <- plot_CLD_bar(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
+        tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
         
        }
        
@@ -202,7 +202,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
       
         plot_data <- kobe_cld_data() %>% 
           slice_max(order_by = total, n = input$n_selector)
-       plot_kobe(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
+       plot_kobe_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
         
     })
     
@@ -211,7 +211,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
         req(!is.null(input$n_selector))
         plot_data <- kobe_cld_data() %>% 
           slice_max(order_by = total, n = input$n_selector)
-        plot_CLD_bar(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
+        plot_CLD_bar_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = FALSE)
         
     })
     
