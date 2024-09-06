@@ -84,11 +84,11 @@ mod_stock_status_ui <- function(id) {
         fluidRow(
           column(6,
             card(fillable = T, height = "75vh", full_screen = T,
-              withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
+              withSpinner(plotOutput(ns("status_cld"), height = "67vh"))
                    )),
           column(6,
             card(fillable = T, height = "75vh", full_screen = T,
-              withSpinner(plotOutput(ns("status_cld"), height = "67vh"))
+              withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
                    )
           )
         )
