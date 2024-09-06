@@ -171,10 +171,10 @@ plot_kobe_app <- function(x, guild, caption = FALSE, cap_year, cap_month, return
                            alpha = 0.7, na.rm = TRUE) +
                 ggplot2::geom_hline(yintercept = 1, color = "grey60", linetype = "dashed") +
                 ggplot2::geom_vline(xintercept = 1, color = "grey60", linetype = "dashed") +
-                # ggrepel::geom_text_repel(ggplot2::aes(label = StockKeyLabel),
-                #                          segment.size = .25,
-                #                          force = 5,
-                #                          size = 2) +
+                ggrepel::geom_text_repel(ggplot2::aes(label = StockKeyLabel),
+                                         segment.size = .25,
+                                         force = 5,
+                                         size = 5) +
                 ggplot2::scale_color_manual(values = c("GREEN" = "#4daf4a",
                                               "RED" = "#e41a1c",
                                               "GREY" = "#d3d3d3")) +
@@ -200,10 +200,14 @@ plot_CLD_bar_app <- function(x, guild, caption = TRUE, cap_year, cap_month, retu
         if(guild == "All"){
                 df <-x
         }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
+      
+        df <- df %>% dplyr::group_by(StockKeyLabel)
         df <- dplyr::mutate(df,total = ifelse(all(is.na(Catches) & is.na(Landings)),
                                       NA,
                                       max(Catches, Landings, na.rm = TRUE))) 
-        df <- dplyr::ungroup (df)
+        df <- dplyr::ungroup (df) %>% 
+          dplyr::filter(!is.na(total))
+        
         df <- dplyr::mutate(df,StockKeyLabel = forcats::fct_reorder(StockKeyLabel, total))
         
         plot <- ggplot2::ggplot(df, ggplot2::aes(x =StockKeyLabel, y = Catches/1000)) +
