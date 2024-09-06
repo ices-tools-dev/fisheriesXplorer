@@ -177,34 +177,12 @@ plot_catch_trends_app <- function(x,type = c("COMMON_NAME", "COUNTRY", "GUILD"),
                 pl <- pl + ggplot2::geom_area(ggplot2::aes(fill = type_var, color = type_var),
                                      alpha = .8,
                                      position = "stack")
-                # pl <- pl + ggrepel::geom_label_repel(data = cumPlot,
-                #                                      ggplot2::aes(y = td,
-                #                                          fill = type_var,
-                #                                          label = type_var),
-                #                                      nudge_x = 10,
-                #                                      label.size = 0.2,
-                #                                      segment.size = 0.25,
-                #                                      size = 2,
-                #                                      color = 'white',
-                #                                      force = 3,
-                #                                      segment.color = 'grey60')
+
         }
 
         if(plot_type == "line") {
                 pl <- pl + ggplot2::geom_line(ggplot2::aes(color = type_var),
                                      alpha = .8, position = "identity")
-                # plot2 <- dplyr::filter(plot, YEAR== max(YEAR, na.rm = TRUE))
-                
-                # pl <- pl + ggrepel::geom_label_repel(data = plot2,
-                #                                      ggplot2::aes(label = type_var,
-                #                                          fill = type_var),
-                #                                      nudge_x = 10,
-                #                                      label.size = 0.2,
-                #                                      segment.size = 0.25,
-                #                                      size = 2,
-                #                                      color = 'white',
-                #                                      force = 3,
-                #                                      segment.color = 'grey60')
 
         }
 
@@ -225,11 +203,6 @@ plot_discard_trends_app <- function(x, year, caption = FALSE, cap_year, cap_mont
         df3 <- unique(df3)
         df3 <- tibble::rowid_to_column(df3)
         df3 <- tidyr::spread(df3,Year, Discards)
-        # df3<- dplyr::mutate(df3,`2017` = ifelse(AssessmentYear == 2017 &
-        #                                        is.na(`2017`) &
-        #                                        !is.na(`2016`),
-        #                                `2016`,
-        #                                `2017`))
         df3 <- tidyr::gather(df3,Year, Discards, 4:ncol(df3))
         df3 <- dplyr::mutate(df3,Year = as.numeric(Year),
                        Discards = as.numeric(Discards))
@@ -239,11 +212,6 @@ plot_discard_trends_app <- function(x, year, caption = FALSE, cap_year, cap_mont
         df4 <- tibble::rowid_to_column(df4)
         df4 <- dplyr::group_by(df4,StockKeyLabel)
         df4 <- tidyr::spread(df4,Year, Landings)
-        # df4 <- dplyr::mutate(df4,`2017` = ifelse(AssessmentYear == 2017 &
-        #                                        is.na(`2017`) &
-        #                                        !is.na(`2016`),
-        #                                `2016`,
-        #                                `2017`))
         df4 <- tidyr::gather(df4,Year, Landings, 4:ncol(df4))
         df4 <- dplyr::mutate(df4,Year = as.numeric(Year),
                        Landings = as.numeric(Landings))
@@ -265,17 +233,6 @@ plot_discard_trends_app <- function(x, year, caption = FALSE, cap_year, cap_mont
                                    y = value,
                                    color = FisheriesGuild)) +
                 ggplot2::geom_line() +
-                # ggrepel::geom_label_repel(data = df6,
-                #                           ggplot2::aes(label = FisheriesGuild,
-                #                               color = FisheriesGuild,
-                #                               fill = FisheriesGuild),
-                #                           nudge_x = 1,
-                #                           label.size = 0.2,
-                #                           segment.size = 0.25,
-                #                           size = 2,
-                #                           color = 'white',
-                #                           force = 2,
-                #                           segment.color = 'grey60') +
                 ggplot2::scale_y_continuous(labels = scales::percent) +
                 ggplot2::scale_x_continuous(breaks = seq(min(df5$Year, na.rm = TRUE),
                                                 max(df5$Year, na.rm = TRUE), by = 1)) +
@@ -303,17 +260,6 @@ plot_discard_trends_app <- function(x, year, caption = FALSE, cap_year, cap_mont
                                                      y = value,
                                                      color = FisheriesGuild)) +
                         ggplot2::geom_line() +
-                        # ggrepel::geom_label_repel(data = df6,
-                        #                           ggplot2::aes(label = FisheriesGuild,
-                        #                                        color = FisheriesGuild,
-                        #                                        fill = FisheriesGuild),
-                        #                           nudge_x = 1,
-                        #                           label.size = 0.2,
-                        #                           segment.size = 0.25,
-                        #                           size = 2,
-                        #                           color = 'white',
-                        #                           force = 2,
-                        #                           segment.color = 'grey60') +
                         ggplot2::scale_y_continuous(labels = scales::percent) +
                         ggplot2::scale_x_continuous(breaks = seq(min(df5$Year, na.rm = TRUE),
                                                                  max(df5$Year, na.rm = TRUE), by = 1)) +
@@ -356,43 +302,22 @@ plot_discard_current_app <- function(x, year, position_letter = "",
   df3 <- tibble::rowid_to_column(df3)
   df3 <- dplyr::group_by(df3,StockKeyLabel)
   df3 <- tidyr::spread(df3,Year, Discards)
-  # df3<- dplyr::mutate(df3,`2017` = ifelse(AssessmentYear == 2017 &
-  #                                                 is.na(`2017`) &
-  #                                                 !is.na(`2016`),
-  #                                         `2016`,
-  #                                         `2017`))
   df3 <- tidyr::gather(df3,Year, Discards, 3:ncol(df3))
   df3 <- dplyr::mutate(df3,Year = as.numeric(Year),
                        Discards = as.numeric(Discards))
   df5 <- dplyr::select(df,-Discards)
   df5 <- dplyr::left_join(df5,df3, by = c("Year", "StockKeyLabel"))
-  # df5 <- dplyr::left_join(df5,df4, by = c("Year", "StockKeyLabel", "AssessmentYear"))
   df5 <- dplyr::group_by(df5,Year, FisheriesGuild)
   df5$Landings <- ifelse(!is.na(df5$Landings), df5$Landings, df5$Catches)
-  # df5 <- dplyr::summarize(df5,guildLandings = sum(Landings, na.rm = TRUE)/ 1000,
-  #                   guildDiscards = sum(Discards, na.rm = TRUE)/ 1000)
 
   df5 <- dplyr::summarize(df5,guildLandings = sum(Landings, na.rm = TRUE),
                           guildDiscards = sum(Discards, na.rm = TRUE))
   
-  # df5 <- dplyr::mutate(df5,guildRate = guildDiscards/ (guildLandings + guildDiscards))
   df5 <- tidyr::gather(df5,variable, value, -Year, -FisheriesGuild)
   df5 <- dplyr::filter(df5, FisheriesGuild %in% c("demersal", "pelagic", "benthic"))
   df5 <- dplyr::filter(df5,Year == year-1)
   df5$value <- df5$value/1000
 
-  # df5 <- dplyr::filter(df5,!variable %in% c("guildDiscards", "guildLandings"))
-  #out?
-  # df5 <- dplyr::filter(df5,Year == year - 1)
-
-  # df5_order <- dplyr::group_by(df5,FisheriesGuild) %>%
-  #         summarize(total = sum(value, na.rm = TRUE)) %>%
-  #         arrange(-total) %>%
-  #         ungroup()
-  # df5_order <- dplyr::mutate(df5_order,FisheriesGuild = factor(FisheriesGuild, FisheriesGuild))
-
-  # df5$FisheriesGuild <- factor(df5$FisheriesGuild,
-  #                                 levels = df5_order$FisheriesGuild[order(df5_order$total)])
   plot <- ggplot2::ggplot(dplyr::ungroup(df5),
                           ggplot2::aes(x = reorder(FisheriesGuild, value, sum), y = value, fill = variable)) +
           ggplot2::geom_bar(stat = "identity") +
