@@ -14,31 +14,39 @@
 mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    br(),
     fluidRow(
       column(6,
-          card(
-            "Fishing Effort",
-            selectInput(ns("fishing_cat_selector"), "Select fishing category",
-              choices = c("All"= "all", "Beam trawls", "Bottom otter trawls", "Bottom seines", "Dredges", "Pelagic trawls and seines", "Static gears"),
-              selected = "All"
-            ),
-            card(full_screen = T, height = "80%",
-              withSpinner(plotOutput(ns("effort_layer"), width = "100%", fill =T))
+       layout_sidebar(bg = "white", fg = "black",
+                      sidebar = sidebar(width = "100%", bg = "white", fg = "black",
+                                        open = F,
+                                        uiOutput(ns("sar_text"), height = "65vh")),
+          card(height = "85vh", full_screen = T,
+            card_header("Fishing Effort"),
+            card_body(
+              selectInput(ns("fishing_cat_selector"), "Select fishing category", 
+                choices = c("All"= "all", "Beam trawls", "Bottom otter trawls", "Bottom seines", "Dredges", "Pelagic trawls and seines", "Static gears"),
+                selected = "Beam trawls"),
+              withSpinner(suppressWarnings(plotOutput(ns("effort_layer"), height = "65vh", width = "100%", fill =T)))
             )
-          )),
+          ))),
       column(6,
-            card(
-              "Fishing Benthic Impact",
-              radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",
-                choices = c("Surface" = "surface", "Subsurface" = "subsurface")
-              ),
-              card(full_screen = T, height = "70%",
-                withSpinner(plotOutput(ns("sar_layer"), width = "100%", fill =T))
+       layout_sidebar(bg = "white", fg = "black", 
+                      sidebar = sidebar(width = "100%", bg = "white", fg = "black", 
+                                        open = F,
+                                        uiOutput(ns("benthic_impact_text"))),
+            card(height = "85vh", full_screen = T,
+              card_header("Fishing Benthic Impact"),
+              card_body(
+                div(style = "margin-top: 20px; margin-bottom: 14.432px", 
+                    radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",inline = T,
+                  choices = c("Surface" = "surface", "Subsurface" = "subsurface"))
+                  ),
+                suppressWarnings(withSpinner( suppressWarnings(plotOutput(ns("sar_layer"), height = "65vh", width = "100%", fill =T))))
               )
             )
           )
-             
-             
+      )
     )
   )
 }
@@ -59,11 +67,9 @@ mod_vms_server <- function(id){
     output$sar_layer <- renderPlot({
       req(!is.null(input$sar_layer_selector))
      
-        plot_sar_map_app(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], europe_shape = europe_land_shp, layer = input$sar_layer_selector) +
-          ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
-     
-      })
-    
+      plot_sar_map_app(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], europe_shape = europe_land_shp, layer = input$sar_layer_selector) +
+        ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
+    })
     
   })
 }

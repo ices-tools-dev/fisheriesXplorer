@@ -21,7 +21,7 @@ plot_effort_map_app <- function (effort, ecoregion, europe_shape, fishing_catego
                    axis.title.x = ggplot2::element_blank(), axis.title.y = ggplot2::element_blank()) + 
     ggplot2::coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
     ggplot2::labs(caption = "Made with Natural Earth and ICES Marine Data") + 
-    ggplot2::theme_bw(base_size = 13) 
+    ggplot2::theme_bw(base_size = 11) 
   
   if(fishing_category == "all") {
     p <- p + ggplot2::facet_wrap(~fishing_category_FO)
@@ -46,7 +46,6 @@ plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer)
   ecoregion <- sf::st_transform(ecoregion, crs = crs)
   #move st_transform to prep_vms.R
   # sar <- sf::st_transform(sar, crs = crs)
-  browser()
   sar$val <- as.numeric(sar[[what]])
   sar <- dplyr::filter(sar, val > 0)
   box <- sf::st_bbox(ecoregion)
@@ -62,6 +61,6 @@ plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer)
                    axis.title.x = ggplot2::element_blank(), axis.title.y = ggplot2::element_blank()) + 
     ggplot2::coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
     ggplot2::labs(caption = "Made with Natural Earth and ICES Marine Data") + 
-    ggplot2::theme_bw(base_size = 8)
+    ggplot2::theme_bw(base_size = 11)
   p
 }
