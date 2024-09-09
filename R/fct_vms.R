@@ -36,10 +36,10 @@ plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer)
   what <- match.arg(layer, c("surface", "subsurface"))
   what <- paste0(what, "_sar")
   if (what == "surface_sar") {
-    legend_name = "Surface Swept Area Ratio"
+    legend_name = "Surface Swept \nArea Ratio"
   }
   else {
-    legend_name = "Subsurface Swept Area Ratio"
+    legend_name = "Subsurface Swept\nArea Ratio"
   }
   crs <- "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
@@ -62,5 +62,6 @@ plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer)
     ggplot2::coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
     ggplot2::labs(caption = "Made with Natural Earth and ICES Marine Data") + 
     ggplot2::theme_bw(base_size = 11)
+
   p
 }

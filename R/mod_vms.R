@@ -70,7 +70,6 @@ mod_vms_server <- function(id){
       plot_sar_map_app(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], europe_shape = europe_land_shp, layer = input$sar_layer_selector) +
         ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
     })
-    
   })
 }
     
