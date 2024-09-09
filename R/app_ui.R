@@ -10,7 +10,7 @@ app_ui <- function(request) {
     # Leave this function for adding external resources
     golem_add_external_resources(),
     title_html <- tags$a(
-      href = "https://ices-taf.shinyapps.io/fisheriesxplorer/",
+      href = "https://ices-tools-dev.shinyapps.io/fisheriesXplorer/",
       tags$img(
         src = "www/negative_ices_logo.png",
         style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
@@ -74,7 +74,7 @@ golem_add_external_resources <- function() {
   )
 
   tags$head(
-    favicon(),
+    tags$link(rel = "shortcut icon", href = "www/favicon.png"),
     bundle_resources(
       path = app_sys("app/www"),
       app_title = "fisheriesXplorer"
