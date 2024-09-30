@@ -25,7 +25,7 @@ mod_navigation_page_ui <- function(id) {
           width = 1 / 2,
           card(
             full_screen = FALSE,
-            card_header("Select an ecoregion"),
+            card_header("Select an ICES ecoregion"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             withSpinner(
               leafletOutput(ns("map"), width = "90%")
@@ -35,7 +35,7 @@ mod_navigation_page_ui <- function(id) {
               min_height = 400,
               virtualSelectInput(
                 inputId = ns("selected_locations"),
-                label = "Selected Ecoregion:",
+                label = "Selected ICES Ecoregion:",
                 choices = sort(eco_shape$Ecoregion),
                 selected = "Greater North Sea",
                 multiple = FALSE,
