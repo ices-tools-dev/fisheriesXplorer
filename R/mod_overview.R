@@ -42,7 +42,7 @@ mod_overview_ui <- function(id) {
 #' overview Server Functions
 #'
 #' @noRd 
-mod_overview_server <- function(id){
+mod_overview_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     

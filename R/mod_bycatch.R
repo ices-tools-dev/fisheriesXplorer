@@ -33,7 +33,7 @@ mod_bycatch_ui <- function(id) {
 #' bycatch Server Functions
 #'
 #' @noRd 
-mod_bycatch_server <- function(id){
+mod_bycatch_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     

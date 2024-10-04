@@ -11,6 +11,7 @@
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
 #' @importFrom shinyjs onclick
+#' @importFrom stringr str_replace_all
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -117,7 +118,7 @@ mod_navigation_page_ui <- function(id) {
 #' landing_page Server Functions
 #'
 #' @noRd 
-mod_navigation_page_server <- function(id, parent_session) {
+mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -154,6 +155,12 @@ mod_navigation_page_server <- function(id, parent_session) {
       },
       ignoreNULL = FALSE
     )
+
+    observeEvent(input$selected_locations, {
+      temp_location <- input$selected_locations
+      temp_location <- str_replace_all(temp_location, " ", "_")
+      selected_ecoregion(tolower(temp_location))
+    })
 
     onclick("overviewBtn", expr = {
       updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")

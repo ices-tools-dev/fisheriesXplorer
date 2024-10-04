@@ -28,7 +28,7 @@ mod_stock_status_ui <- function(id) {
               withSpinner(
                 plotOutput(ns("status_summary_ices"), height = "72vh"))))
           ),
-          column(6,
+          column(6,          
            card(height = "85vh", full_screen = T,
             card_header("Good Environmental Status"),
             card_body(fillable = T,
@@ -111,7 +111,7 @@ mod_stock_status_ui <- function(id) {
 #' stock_status Server Functions
 #'
 #' @noRd 
-mod_stock_status_server <- function(id, cap_year, cap_month){
+mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -217,7 +217,8 @@ mod_stock_status_server <- function(id, cap_year, cap_month){
     
     
     processed_data_reactable <- reactive({
-      
+
+      annex_data <- all_data[[selected_ecoregion()]]$stock_annex_table
       annex_data %>%
         group_by(StockKeyLabel, StockKeyDescription, SpeciesScientificName, 
                  SpeciesCommonName, FisheriesGuild.y, DataCategory, 
