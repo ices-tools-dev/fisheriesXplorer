@@ -62,7 +62,7 @@ mod_landings_ui <- function(id) {
 #' landings Server Functions
 #'
 #' @noRd 
-mod_landings_server <- function(id, cap_year, cap_month){
+mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  

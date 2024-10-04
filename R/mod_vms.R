@@ -42,7 +42,7 @@ mod_vms_ui <- function(id) {
 #' vms Server Functions
 #'
 #' @noRd 
-mod_vms_server <- function(id){
+mod_vms_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  

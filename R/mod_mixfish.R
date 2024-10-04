@@ -38,7 +38,7 @@ mod_mixfish_ui <- function(id){
 #' mixfish Server Functions
 #'
 #' @noRd 
-mod_mixfish_server <- function(id){
+mod_mixfish_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
