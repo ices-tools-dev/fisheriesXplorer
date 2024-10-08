@@ -11,7 +11,7 @@
 #' @importFrom plotly ggplotly plotlyOutput renderPlotly
 #' @importFrom shinycssloaders withSpinner
 
-mod_landings_ui <- function(id) {
+mod_landings_ui <- function(id, sub_tabs) {
   ns <- NS(id)
   tagList(
     tabsetPanel(
@@ -62,7 +62,7 @@ mod_landings_ui <- function(id) {
 #' landings Server Functions
 #'
 #' @noRd 
-mod_landings_server <- function(id, cap_year, cap_month){
+mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  

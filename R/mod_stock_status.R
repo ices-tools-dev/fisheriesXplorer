@@ -12,7 +12,7 @@
 #' @importFrom dplyr filter slice_max mutate select group_by if_else row_number ungroup summarize_all
 #' @importFrom reactable reactable reactableOutput renderReactable colDef
 #' 
-mod_stock_status_ui <- function(id) {
+mod_stock_status_ui <- function(id, sub_tabs) {
   ns <- NS(id)
   tagList(
     navset_tab(
@@ -111,7 +111,7 @@ mod_stock_status_ui <- function(id) {
 #' stock_status Server Functions
 #'
 #' @noRd 
-mod_stock_status_server <- function(id, cap_year, cap_month){
+mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  

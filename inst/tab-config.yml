@@ -1,0 +1,22 @@
+ecoregions:
+  greater_north_sea:
+    tabs:
+      overview:
+        sub_tabs:
+          executive_summary: true
+          introduction: true
+          who_is_fishing: true
+      landings:
+        sub_tabs:
+          by_country: true
+          by_species: true
+          by_guild: true
+      mixed_fisheries: false  # This tab won't be shown
+      stock_status:
+        sub_tabs:
+          status_summary: true
+          stock_status_table: true
+      vms:
+        sub_tabs:
+          effort_map: true
+          sar_map: true

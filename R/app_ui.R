@@ -6,55 +6,13 @@
 #' @importFrom desc desc_get_version
 #' @noRd
 app_ui <- function(request) {
+  
   tagList(
-    # Leave this function for adding external resources
     golem_add_external_resources(),
-    title_html <- tags$a(
-      href = "https://ices-tools-dev.shinyapps.io/fisheriesXplorer/",
-      tags$img(
-        src = "www/negative_ices_logo.png",
-        style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
-        height = "50px"
-      )
-    ),
     options(spinner.type = 5, 
         spinner.color = "#00B6F1",
         spinner.size = 0.7),
-    
-    navbarPage(
-      title = title_html,
-      position = "static-top",
-      collapsible = TRUE,
-      fluid = TRUE,
-      windowTitle = "fisheriesXplorer",
-      id = "nav-page",
-      tabPanel("Home",
-        id = "home",
-        mod_navigation_page_ui("navigation_page_1")
-      ),
-      tabPanel(
-        "Overview",
-        mod_overview_ui("overview_1")
-      ),
-      tabPanel(
-        "Landings",
-        mod_landings_ui("landings_1")
-      ),
-      tabPanel(
-        "Stock Status",
-        mod_stock_status_ui("stock_status_1")
-      ),
-      tabPanel("Mixed Fisheries",
-               mod_mixfish_ui("mixfish_1")),
-      tabPanel(
-        "VMS",
-        mod_vms_ui("vms_1")
-      ),
-      tabPanel(
-        "Bycatch",
-        mod_bycatch_ui("bycatch_1")
-      )
-    )
+    uiOutput("dynamic_navbar")
   )
 }
 
@@ -92,7 +50,13 @@ golem_add_external_resources <- function() {
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
     
     # Add here other external resources
-    useShinyjs()
+    useShinyjs(),
+    
+    tags$script("
+      Shiny.addCustomMessageHandler('triggerNavbarRender', function(message) {
+        Shiny.setInputValue('triggerNavbarRender', Math.random());
+      });
+    ")
     
   )
 }

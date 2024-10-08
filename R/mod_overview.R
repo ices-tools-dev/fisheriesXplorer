@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-mod_overview_ui <- function(id) {
+mod_overview_ui <- function(id, sub_tabs) {
   ns <- NS(id)
   tagList(
     tabsetPanel(
@@ -42,7 +42,7 @@ mod_overview_ui <- function(id) {
 #' overview Server Functions
 #'
 #' @noRd 
-mod_overview_server <- function(id){
+mod_overview_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     

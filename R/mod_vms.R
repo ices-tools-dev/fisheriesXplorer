@@ -11,7 +11,7 @@
 #' @importFrom ggplot2 ggtitle
 #' @importFrom lubridate year
 #' @importFrom icesFO plot_effort_map plot_sar_map
-mod_vms_ui <- function(id) {
+mod_vms_ui <- function(id, sub_tabs) {
   ns <- NS(id)
   tagList(
     card(
@@ -42,7 +42,7 @@ mod_vms_ui <- function(id) {
 #' vms Server Functions
 #'
 #' @noRd 
-mod_vms_server <- function(id){
+mod_vms_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  

@@ -11,7 +11,8 @@
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
 #' @importFrom shinyjs onclick
-mod_navigation_page_ui <- function(id) {
+#' @importFrom stringr str_replace_all
+mod_navigation_page_ui <- function(id, sub_tabs) {
   ns <- NS(id)
   tagList(
     tags$img(id = "logo", class = "center-block", src = "www/fisheriesxplorer_blue.png"),
@@ -117,11 +118,14 @@ mod_navigation_page_ui <- function(id) {
 #' landing_page Server Functions
 #'
 #' @noRd 
-mod_navigation_page_server <- function(id, parent_session) {
+mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$map <- leaflet::renderLeaflet({
+      print("Rendering map")
+      print(paste("eco_shape dimensions:", nrow(eco_shape), "x", ncol(eco_shape)))
+      print(paste("map_shape dimensions:", nrow(map_shape), "x", ncol(map_shape)))
       map_ecoregion(eco_shape, map_shape)
     })
     proxy_map <- leafletProxy("map")
@@ -143,8 +147,18 @@ mod_navigation_page_server <- function(id, parent_session) {
       )
     })
 
-    observeEvent(input$selected_locations,
+    observeEvent(input$selected_locations,  
       {
+        if(!is.null(input$selected_locations)){
+
+        temp_location <- input$selected_locations
+        temp_location <- str_replace_all(temp_location, " ", "_")
+        selected_ecoregion(tolower(temp_location))
+        # Trigger navbar re-render
+        session$sendCustomMessage("triggerNavbarRender", list())
+        }
+        
+        
         removed <- setdiff(selected_map$groups, input$selected_locations)
         selected_map$groups <- input$selected_locations
 

@@ -9,7 +9,7 @@
 #' @importFrom shiny NS tagList 
 #' @importFrom mixfishtools plot_catchScenStk
 #' @importFrom datamods select_group_server select_group_ui
-mod_mixfish_ui <- function(id){
+mod_mixfish_ui <- function(id, sub_tabs){
   ns <- NS(id)
   tagList(
     navset_tab(
@@ -38,7 +38,7 @@ mod_mixfish_ui <- function(id){
 #' mixfish Server Functions
 #'
 #' @noRd 
-mod_mixfish_server <- function(id){
+mod_mixfish_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     

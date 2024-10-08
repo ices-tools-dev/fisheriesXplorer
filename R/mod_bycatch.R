@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-mod_bycatch_ui <- function(id) {
+mod_bycatch_ui <- function(id, sub_tabs) {
   ns <- NS(id)
   tagList(
     layout_sidebar(bg = "white", fg = "black", 
@@ -33,7 +33,7 @@ mod_bycatch_ui <- function(id) {
 #' bycatch Server Functions
 #'
 #' @noRd 
-mod_bycatch_server <- function(id){
+mod_bycatch_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
