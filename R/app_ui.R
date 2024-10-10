@@ -6,13 +6,30 @@
 #' @importFrom desc desc_get_version
 #' @noRd
 app_ui <- function(request) {
+  title_html <- tags$a(
+    href = "https://ices-tools-dev.shinyapps.io/fisheriesXplorer/",
+    tags$img(
+      src = "www/negative_ices_logo.png",
+      style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
+      height = "50px"
+    )
+  )
   
   tagList(
     golem_add_external_resources(),
-    options(spinner.type = 5, 
-        spinner.color = "#00B6F1",
-        spinner.size = 0.7),
-    uiOutput("dynamic_navbar")
+    options(
+      spinner.type = 5, 
+      spinner.color = "#00B6F1",
+      spinner.size = 0.7
+    ),
+    navbarPage(
+      title = title_html,
+      id = "main-navbar",
+      tabPanel(
+        "Home",
+        mod_navigation_page_ui("navigation_page_1")
+      )
+    )
   )
 }
 

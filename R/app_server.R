@@ -7,87 +7,26 @@
 #' @noRd
 app_server <- function(input, output, session) {
   
+  # Show welcome modal
   showModal(modalDialog(
     title = "Important message",
     HTML("Welcome to the development version of the fisheriesXplorer application. <u>The contents are indicative and should not be quoted or used elsewhere</u>.")
   ))
   
-    title_html <- tags$a(
-    href = "https://ices-tools-dev.shinyapps.io/fisheriesXplorer/",
-    tags$img(
-      src = "www/negative_ices_logo.png",
-      style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
-      height = "50px"
-    )
-  )
-
+  # Extract current date information
   app_date <- str_split(date(), pattern = " ")[[1]]
   cap_year <- app_date[5]
   cap_month <- app_date[2]
   
-
+  # Reactive value to store selected ecoregion
   selected_ecoregion <- reactiveVal(NULL)
-
-  print("App server function started")
-  print(paste("Config loaded:", !is.null(config)))
-   observe({
+  
+  # Debugging: Observe changes to selected_ecoregion
+  observe({
     print(paste("selected_ecoregion value:", selected_ecoregion()))
   })
-
-
   
-  output$debug_output <- renderText({
-    paste("Selected ecoregion:", selected_ecoregion())
-  })
-
-  navbar_data <- reactive({
-    input$triggerNavbarRender  # This ensures the reactive recalculates when triggerNavbarRender changes
-    
-    if (is.null(selected_ecoregion())) {
-      return(NULL)
-    }
-    
-    if (!is.null(ecoregion_config)) {
-  print(paste("Available tabs:", paste(names(ecoregion_config), collapse = ", ")))
-  
-  for (tab_name in names(ecoregion_config)) {
-    tab_config <- ecoregion_config[[tab_name]]
-    if (!is.null(tab_config)) {
-      tab_ui <- switch(tab_name,
-        "overview" = mod_overview_ui("overview_1", tab_config$sub_tabs),
-        "landings" = mod_landings_ui("landings_1", tab_config$sub_tabs),
-        "stock_status" = mod_stock_status_ui("stock_status_1", tab_config$sub_tabs),
-        "mixed_fisheries" = mod_mixfish_ui("mixfish_1"),
-        "vms" = mod_vms_ui("vms_1", tab_config$sub_tabs),
-        "bycatch" = mod_bycatch_ui("bycatch_1", tab_config$sub_tabs)
-      )
-      if (!is.null(tab_ui)) {
-        navbar_pages <- c(navbar_pages, list(tabPanel(tools::toTitleCase(gsub("_", " ", tab_name)), tab_ui)))
-      }
-    }
-  }
-}
-  })
-
-  output$dynamic_navbar <- renderUI({
-    pages <- navbar_data()
-    if (is.null(pages)) {
-      return(NULL)
-    }
-    
-    do.call(navbarPage, c(
-      list(
-        title = title_html,
-        position = "static-top",
-        collapsible = TRUE,
-        fluid = TRUE,
-        windowTitle = "fisheriesXplorer",
-        id = "nav-page"
-      ),
-      pages
-    ))
-  })
-  
+  # Initialize Modules
   mod_navigation_page_server("navigation_page_1", parent_session = session, selected_ecoregion = selected_ecoregion)
   mod_overview_server("overview_1", selected_ecoregion)
   mod_landings_server("landings_1", cap_year, cap_month, selected_ecoregion)
@@ -96,8 +35,48 @@ app_server <- function(input, output, session) {
   mod_vms_server("vms_1", selected_ecoregion)
   mod_bycatch_server("bycatch_1", selected_ecoregion)
   
-  observeEvent(input$triggerNavbarRender, {
-    session$sendCustomMessage("triggerNavbarRender", list())
-  })
+  # Observer to manage dynamic navbar tabs
+  observeEvent(selected_ecoregion(), {
+    req(selected_ecoregion())
+    
+    # Define all possible dynamic tabs
+    all_tabs <- c("Overview", "Landings", "Stock Status", "Mixed Fisheries", "VMS", "Bycatch")
+    
+    # Remove existing dynamic tabs if any
+    lapply(all_tabs, function(tab_name) {
+      removeTab(inputId = "main-navbar", target = tab_name)
+    })
+    
+    # Fetch the configuration for the selected ecoregion
+    ecoregion_config <- config$ecoregions[[selected_ecoregion()]]$tabs
+    
+    if (!is.null(ecoregion_config)) {
+      # Iterate through each tab in the config and insert it
+      for (tab_key in names(ecoregion_config)) {
+        tab_name <- tools::toTitleCase(gsub("_", " ", tab_key))
+        
+        # Ensure tab_name is in the list of all_tabs
+        if (tab_name %in% all_tabs) {
+          # Generate the UI using the corresponding module
+          tab_ui <- switch(tab_key,
+            "overview" = mod_overview_ui("overview_1", ecoregion_config[[tab_key]]$sub_tabs),
+            "landings" = mod_landings_ui("landings_1", ecoregion_config[[tab_key]]$sub_tabs),
+            "stock_status" = mod_stock_status_ui("stock_status_1", ecoregion_config[[tab_key]]$sub_tabs),
+            "mixed_fisheries" = mod_mixfish_ui("mixfish_1"),
+            "vms" = mod_vms_ui("vms_1", ecoregion_config[[tab_key]]$sub_tabs),
+            "bycatch" = mod_bycatch_ui("bycatch_1", ecoregion_config[[tab_key]]$sub_tabs)
+          )
+          
+          if (!is.null(tab_ui)) {
+            # Insert the tab after the "Home" tab
+            appendTab(
+              inputId = "main-navbar",
+              tab = tabPanel(tab_name, tab_ui),
+              select = FALSE
+            )
+          }
+        }
+      }
+    }
+  }, ignoreNULL = FALSE)
 }
-  

@@ -20,3 +20,9 @@ ecoregions:
         sub_tabs:
           effort_map: true
           sar_map: true
+  celtic_seas:
+    tabs:
+      stock_status:
+        sub_tabs:
+          stock_status_table: true
+

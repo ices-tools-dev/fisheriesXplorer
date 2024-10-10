@@ -1,4 +1,4 @@
-#' landing_page UI Function
+#' navigation_page UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-#' @importFrom bslib card card_header card_body layout_column_wrap nav_panel layout_sidebar sidebar
+#' @importFrom bslib card card_header card_body layout_column_wrap
 #' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
 #' @importFrom shinyjs onclick
@@ -38,7 +38,7 @@ mod_navigation_page_ui <- function(id, sub_tabs) {
                 inputId = ns("selected_locations"),
                 label = "Selected ICES Ecoregion:",
                 choices = sort(eco_shape$Ecoregion),
-                selected = "Greater North Sea",
+                selected = NULL,
                 multiple = FALSE,
                 width = "100%",
                 search = TRUE,
@@ -115,13 +115,13 @@ mod_navigation_page_ui <- function(id, sub_tabs) {
   )
 }
     
-#' landing_page Server Functions
+#' navigation_page Server Functions
 #'
 #' @noRd 
 mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
+    
     output$map <- leaflet::renderLeaflet({
       print("Rendering map")
       print(paste("eco_shape dimensions:", nrow(eco_shape), "x", ncol(eco_shape)))
@@ -129,67 +129,68 @@ mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
       map_ecoregion(eco_shape, map_shape)
     })
     proxy_map <- leafletProxy("map")
-
-    # create empty character vector to hold map selected locations
+    
+    # Create empty character vector to hold map selected locations
     selected_map <- reactiveValues(groups = character())
-
+    
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
-
+      
       if (input$map_shape_click$group == "Eco_regions") {
         selected_map$groups <- c(selected_map$groups, input$map_shape_click$id)
       }
-
+      
       updateVirtualSelect(
         inputId = "selected_locations",
         choices = eco_shape$Ecoregion,
         selected = input$map_shape_click$id
       )
-    })
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+    
+    observeEvent(input$selected_locations, {
+      req(input$selected_locations)
+      print(paste("Selected location:", input$selected_locations))
+      
+      temp_location <- input$selected_locations
+      temp_location <- str_replace_all(temp_location, " ", "_")
+      temp_location <- tolower(temp_location)
+      
+      print(paste("Updating selected_ecoregion to:", temp_location))
+      selected_ecoregion(temp_location)
+      
+      # Optional: Remove if not needed anymore
+      # session$sendCustomMessage("triggerNavbarRender", list())
+      
+      removed <- setdiff(selected_map$groups, input$selected_locations)
+      selected_map$groups <- input$selected_locations
 
-    observeEvent(input$selected_locations,  
-      {
-        if(!is.null(input$selected_locations)){
-
-        temp_location <- input$selected_locations
-        temp_location <- str_replace_all(temp_location, " ", "_")
-        selected_ecoregion(tolower(temp_location))
-        # Trigger navbar re-render
-        session$sendCustomMessage("triggerNavbarRender", list())
-        }
-        
-        
-        removed <- setdiff(selected_map$groups, input$selected_locations)
-        selected_map$groups <- input$selected_locations
-
-        proxy_map %>%
-          hideGroup(removed) %>%
-          showGroup(input$selected_locations)
-      },
-      ignoreNULL = FALSE
-    )
-
+      proxy_map %>%
+        hideGroup(removed) %>%
+        showGroup(input$selected_locations)
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+    
+    # Update buttons to navigate tabs
     onclick("overviewBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")
+      updateNavbarPage(session = parent_session, inputId = "main-navbar", selected = "Overview")
     })
     onclick("landingsBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Landings")
+      updateNavbarPage(session = parent_session, inputId = "main-navbar", selected = "Landings")
     })
     onclick("stockStatusBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Stock Status")
+      updateNavbarPage(session = parent_session, inputId = "main-navbar", selected = "Stock Status")
     })
     onclick("mixfishBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Mixed Fisheries")
+      updateNavbarPage(session = parent_session, inputId = "main-navbar", selected = "Mixed Fisheries")
     })
     onclick("VMS", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "VMS")
+      updateNavbarPage(session = parent_session, inputId = "main-navbar", selected = "VMS")
     })
     onclick("bycatchBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Bycatch")
+      updateNavbarPage(session = parent_session, inputId = "main-navbar", selected = "Bycatch")
     })
   })
 }
-    
+
 ## To be copied in the UI
 # mod_navigation_page_ui("navigation_page_1")
     
