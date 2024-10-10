@@ -16,6 +16,7 @@ mod_stock_status_ui <- function(id, sub_tabs) {
   ns <- NS(id)
   tagList(
     navset_tab(
+      if ("status_summary" %in% names(sub_tabs)) {
        nav_panel("Status Summary",
           layout_sidebar(
             sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
@@ -37,7 +38,7 @@ mod_stock_status_ui <- function(id, sub_tabs) {
                 
             )
           ))
-      )),
+      ))},
       
       nav_panel("Trends by group",
           layout_sidebar(

@@ -21,11 +21,7 @@ app_server <- function(input, output, session) {
   # Reactive value to store selected ecoregion
   selected_ecoregion <- reactiveVal(NULL)
   
-  # Debugging: Observe changes to selected_ecoregion
-  observe({
-    print(paste("selected_ecoregion value:", selected_ecoregion()))
-  })
-  
+
   # Initialize Modules
   mod_navigation_page_server("navigation_page_1", parent_session = session, selected_ecoregion = selected_ecoregion)
   mod_overview_server("overview_1", selected_ecoregion)
