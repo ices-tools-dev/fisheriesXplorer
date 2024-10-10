@@ -149,13 +149,11 @@ mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
     
     observeEvent(input$selected_locations, {
       req(input$selected_locations)
-      print(paste("Selected location:", input$selected_locations))
       
       temp_location <- input$selected_locations
       temp_location <- str_replace_all(temp_location, " ", "_")
       temp_location <- tolower(temp_location)
       
-      print(paste("Updating selected_ecoregion to:", temp_location))
       selected_ecoregion(temp_location)
       
       # Optional: Remove if not needed anymore
