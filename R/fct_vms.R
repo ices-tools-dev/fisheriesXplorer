@@ -1,9 +1,9 @@
-plot_effort_map_app <- function (effort, ecoregion, europe_shape, fishing_category) 
+CRS_LAEA_EUROPE <- "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+
+
+plot_effort_map_app <- function (effort, ecoregion, europe_shape, fishing_category, crs) 
 {
-  crs <- "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
-  
-  ecoregion <- sf::st_transform(ecoregion, crs = crs)
-  #move st_transform to prep_vms.R
+ 
   
   box <- sf::st_bbox(ecoregion)
   xlims <- c(box[1], box[3])
@@ -30,8 +30,7 @@ plot_effort_map_app <- function (effort, ecoregion, europe_shape, fishing_catego
 }
 
 
-
-plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer) 
+plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer, crs) 
 {
   what <- match.arg(layer, c("surface", "subsurface"))
   what <- paste0(what, "_sar")
@@ -41,11 +40,7 @@ plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer)
   else {
     legend_name = "Subsurface Swept\nArea Ratio"
   }
-  crs <- "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
-
-  ecoregion <- sf::st_transform(ecoregion, crs = crs)
-  #move st_transform to prep_vms.R
-  # sar <- sf::st_transform(sar, crs = crs)
+ 
   sar$val <- as.numeric(sar[[what]])
   sar <- dplyr::filter(sar, val > 0)
   box <- sf::st_bbox(ecoregion)

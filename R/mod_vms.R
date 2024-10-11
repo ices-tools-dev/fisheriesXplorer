@@ -59,15 +59,22 @@ mod_vms_server <- function(id){
  
     output$effort_layer <- renderPlot({
      
-       plot_effort_map_app(effort_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], europe_shape = europe_land_shp, fishing_category = input$fishing_cat_selector)+
+       plot_effort_map_app(effort_maps[["Greater North Sea"]], 
+                          ecoregion[["Greater North Sea"]], 
+                          europe_shape = europe_land_shp, 
+                          fishing_category = input$fishing_cat_selector,
+                          crs = CRS_LAEA_EUROPE) +
         ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
      
       })
     
     output$sar_layer <- renderPlot({
       req(!is.null(input$sar_layer_selector))
-     
-      plot_sar_map_app(sar_maps[["Greater North Sea"]], ecoregion[["Greater North Sea"]], europe_shape = europe_land_shp, layer = input$sar_layer_selector) +
+      plot_sar_map_app(sar_maps[["Greater North Sea"]], 
+                       ecoregion[["Greater North Sea"]], 
+                       europe_shape = europe_land_shp, 
+                       layer = input$sar_layer_selector,
+                       crs = CRS_LAEA_EUROPE) +
         ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
     })
   })

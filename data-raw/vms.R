@@ -18,8 +18,6 @@ names(effort_maps) <- ecoregions
 
 gears <- c("Static", "Midwater", "Otter", "Demersal seine","Dredge", "Beam")
 
-crs <- "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
-
 wrangle_effort <- function(effort_map) {
   effort_map <-
     effort_map %>%
@@ -36,13 +34,12 @@ wrangle_effort <- function(effort_map) {
         mw_fishinghours = as.numeric(mw_fishinghours)
       ) %>%
       filter(!is.na(mw_fishinghours)) %>% 
-      filter(mw_fishinghours != 0) %>% 
-    st_transform(effort, crs = crs)
+      filter(mw_fishinghours != 0)
   
 }
 
 effort_maps <- map(effort_maps, wrangle_effort)
-effort_maps <- map(effort_maps, ~ mutate(., geometry = st_as_sfc(wkt, crs = crs)) %>%
+effort_maps <- map(effort_maps, ~ mutate(., geometry = st_as_sfc(wkt, crs = 4326)) %>%
                      select(-wkt) %>% 
                      st_sf)
 
@@ -55,16 +52,12 @@ sar_maps <- map(ecoregions, get_sar_map)
 names(sar_maps) <- ecoregions
 sar_maps[["Azores"]] <- NULL
 
-#incorporate the following
-# sar <- sf::st_transform(sar, crs = crs)
-
 
 sar_maps <- map(sar_maps, ~ {if(!is.null(.)) mutate(., geometry = st_as_sfc(wkt, crs = 4326)) %>% 
                   select(-wkt) %>%
                   st_sf}) 
-
-
 usethis::use_data(sar_maps, overwrite = TRUE)
+
 
 ###### get europe shape for vms plot functions ######
 europe_land_shp <- ne_countries(scale = 10, type = "countries", 
