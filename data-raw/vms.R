@@ -4,6 +4,8 @@ library(icesVocab)
 library(purrr)
 library(dplyr)
 library(sf)
+library(rnaturalearth)
+library(rnaturalearthhires)
 
 ecoregions <- sort(get_ecoregion_list())
 ecoregions <- ecoregions[c(4:7,9:13, 15,16)]
@@ -54,6 +56,13 @@ sar_maps[["Azores"]] <- NULL
 sar_maps <- map(sar_maps, ~ {if(!is.null(.)) mutate(., geometry = st_as_sfc(wkt, crs = 4326)) %>% 
                   select(-wkt) %>%
                   st_sf}) 
-
-
 usethis::use_data(sar_maps, overwrite = TRUE)
+
+
+###### get europe shape for vms plot functions ######
+europe_land_shp <- ne_countries(scale = 10, type = "countries", 
+                                                continent = "europe", returnclass = "sf")
+europe_land_shp <- europe_land_shp[, c("iso_a3", "iso_n3", "admin", 
+                                 "geometry")]
+
+usethis::use_data(europe_land_shp, overwrite = T)
