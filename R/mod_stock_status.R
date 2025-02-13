@@ -120,7 +120,9 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     })
     
     ices_prop_pies_data <- reactive({
-      dat <- prepare_ices_stock_status(clean_status)
+      # dat <- prepare_ices_stock_status(clean_status)
+      status <- getStatus(year = 2024, EcoR = "Greater North Sea")
+      format_sag_status_new(status)
     })
     
     ges_prop_pies_data <- reactive({
@@ -139,7 +141,9 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
         }
     })
     output$status_summary_ices <- renderPlot({
-      plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
+      # plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
+      
+      plot_status_prop_pies(ices_prop_pies_data(), cap_month, cap_year)
         
     })
     output$status_summary_ges <- renderPlot({

@@ -33,7 +33,7 @@ getSID <- function(year, EcoR) {
     message("Downloading SID data for year: ", year)
     stock_list_long <- jsonlite::fromJSON(
         URLencode(
-            sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel, EcoRegion, YearOfLastAssessment, AssessmentKey, FisheriesGuild", year)
+            sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel, EcoRegion, YearOfLastAssessment, AssessmentKey, AdviceCategory, FisheriesGuild", year)
         )
     )$value
 
@@ -112,7 +112,7 @@ getSID <- function(year, EcoR) {
     return(stock_list_long)
 }
 
-df <- getSID(year = 2024, EcoR = "Celtic Seas")
+df <- getSID(year = 2024, EcoR = "Greater North Sea")
 # status <- icesSAG::getStockStatusValues(df$AssessmentKey)
 # Set up parallel execution (adjust workers based on system capability)
 plan(multisession, workers = parallel::detectCores() - 1)
@@ -138,163 +138,172 @@ status <- do.call(rbind.data.frame, status)
 df_merged <- merge(df, status, by = "AssessmentKey", all.x = TRUE)
 df_merged$FisheriesGuild <- tolower(df_merged$FisheriesGuild)
 
-
-# format_sag_status_new <- function(x) {
-#         df <- x
-#         # df <- dplyr::filter(df,(grepl(pattern = ecoregion, Ecoregion)))
-#         df <- dplyr::mutate(df,status = case_when(status == 0 ~ "UNDEFINED",
-#                                                   status == 1 ~ "GREEN",
-#                                                   status == 2 ~ "qual_GREEN", #qualitative green
-#                                                   status == 3 ~ "ORANGE",
-#                                                   status == 4 ~ "RED",
-#                                                   status == 5 ~ "qual_RED", #qualitative red
-#                                                   status == 6 ~ "GREY",
-#                                                   status == 7 ~ "qual_UP",
-#                                                   status == 8 ~ "qual_STEADY",
-#                                                   status == 9 ~ "qual_DOWN",
-#                                                   TRUE ~ "OTHER"),
-#                             fishingPressure = case_when(fishingPressure == "-" &
-#                                                                 type == "Fishing pressure" ~ "FQual",
-#                                                         TRUE ~ fishingPressure),
-#                             stockSize = case_when(stockSize == "-" &
-#                                                           type == "Stock Size" ~ "SSBQual",
-#                                                   TRUE ~ stockSize),
-#                             stockSize = gsub("MSY BT*|MSY Bt*|MSYBT|MSYBt", "MSYBt", stockSize),
-#                             variable = case_when(type == "Fishing pressure" ~ fishingPressure,
-#                                                  type == "Stock Size" ~ stockSize,
-#                                                  TRUE ~ type),
-#                             variable = case_when(lineDescription == "Management plan" &
-#                                                          type == "Fishing pressure" ~ "FMGT",
-#                                                  lineDescription == "Management plan" &
-#                                                          type == "Stock Size" ~ "SSBMGT",
-#                                                  TRUE ~ variable),
-#                             variable = case_when(
-#                                     grepl("Fpa", variable) ~ "FPA",
-#                                     grepl("Bpa", variable) ~ "BPA",
-#                                     grepl("^Qual*", variable) ~ "SSBQual",
-#                                     grepl("-", variable) ~ "FQual",
-#                                     grepl("^BMGT", variable) ~ "SSBMGT",
-#                                     grepl("MSYBtrigger", variable) ~ "BMSY",
-#                                     grepl("FMSY", variable) ~ "FMSY",
-#                                     TRUE ~ variable
-#                             )) 
-#         df <- dplyr::filter(df,variable != "-")
-        
-#         df <- dplyr::filter(df, lineDescription != "Management plan")
-#         df <- dplyr::filter(df, lineDescription != "Qualitative evaluation")
-#         df <- dplyr::mutate(df,key = paste(StockKeyLabel, lineDescription, type))
-#         df<- df[order(-df$year),]
-#         df <- df[!duplicated(df$key), ]
-#         df<- subset(df, select = -key)
-#         df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild))
-#         df<- tidyr::spread(df,type, status)
-        
-#         df2<- dplyr::filter(df,lineDescription != "Maximum Sustainable Yield")
-#         df2<- dplyr::filter(df2,lineDescription != "Maximum sustainable yield")
-        
-#         colnames(df2) <- c("StockKeyLabel","AssessmentKey","lineDescription","FishingPressure","StockSize" )
-#         df2 <-dplyr::mutate(df2, SBL = case_when(FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
-#                                                  FishingPressure == "RED" | StockSize == "RED" ~ "RED",
-#                                                  FishingPressure == "ORANGE"  |  StockSize == "ORANGE" ~ "RED",
-#                                                  TRUE ~ "GREY"))
-#         df2<- subset(df2, select = c(StockKeyLabel, SBL))
-#         df <- dplyr::left_join(df, df2)
-#         df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
-#         df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
-#         # colnames(df) <- c("StockKeyLabel","AssessmentYear","AdviceCategory","lineDescription","FishingPressure","StockSize", "SBL" )
-#         # sid <- dplyr::select(y,StockKeyLabel,
-#         #                      FisheriesGuild)
-#         # sid$FisheriesGuild <- tolower(sid$FisheriesGuild)
-#         # colnames(sid) <- c("StockKeyLabel", "AssessmentYear", "Ecoregion", "FisheriesGuild")
-#         # df <- merge(df, sid, all = FALSE)
-#         df
-# }
-
-library(dplyr)
-library(tidyr)
-
+# read rda file
+load("data/clean_status.rda")
+str(clean_status)
+names(clean_status)
+names(df_merged)
 format_sag_status_new <- function(x) {
-    # Ensure column names are valid
-    names(x) <- make.names(names(x), unique = TRUE)
-    
-    df <- x %>%
-        mutate(
-            status = case_when(
-                status == 0 ~ "UNDEFINED",
-                status == 1 ~ "GREEN",
-                status == 2 ~ "qual_GREEN",  # qualitative green
-                status == 3 ~ "ORANGE",
-                status == 4 ~ "RED",
-                status == 5 ~ "qual_RED",    # qualitative red
-                status == 6 ~ "GREY",
-                status == 7 ~ "qual_UP",
-                status == 8 ~ "qual_STEADY",
-                status == 9 ~ "qual_DOWN",
-                TRUE ~ "OTHER"
-            ),
-            fishingPressure = ifelse(fishingPressure == "-" & type == "Fishing pressure", "FQual", fishingPressure),
-            stockSize = ifelse(stockSize == "-" & type == "Stock Size", "SSBQual", stockSize),
-            stockSize = gsub("MSY BT*|MSY Bt*|MSYBT|MSYBt", "MSYBt", stockSize),
-            variable = case_when(
-                type == "Fishing pressure" ~ fishingPressure,
-                type == "Stock Size" ~ stockSize,
-                TRUE ~ type
-            ),
-            variable = case_when(
-                lineDescription == "Management plan" & type == "Fishing pressure" ~ "FMGT",
-                lineDescription == "Management plan" & type == "Stock Size" ~ "SSBMGT",
-                TRUE ~ variable
-            ),
-            variable = case_when(
-                grepl("Fpa", variable) ~ "FPA",
-                grepl("Bpa", variable) ~ "BPA",
-                grepl("^Qual*", variable) ~ "SSBQual",
-                grepl("-", variable) ~ "FQual",
-                grepl("^BMGT", variable) ~ "SSBMGT",
-                grepl("MSYBtrigger", variable) ~ "BMSY",
-                grepl("FMSY", variable) ~ "FMSY",
-                TRUE ~ variable
-            )
-        ) %>%
-        filter(variable != "-", 
-               !lineDescription %in% c("Management plan", "Qualitative evaluation")) %>%
-        mutate(
-            key = paste(StockKeyLabel, lineDescription, type)
-        ) %>%
-        arrange(desc(year)) %>%
-        distinct(key, .keep_all = TRUE) %>%
-        select(-key) %>%
-        pivot_wider(names_from = type, values_from = status)
-
-    # Create and merge SBL status
-    df2 <- df %>%
-        filter(!lineDescription %in% c("Maximum Sustainable Yield", "Maximum sustainable yield")) %>%
-        rename(FishingPressure = `Fishing pressure`, StockSize = `Stock Size`) %>%
-        mutate(
-            SBL = case_when(
-                FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
-                FishingPressure == "RED" | StockSize == "RED" ~ "RED",
-                FishingPressure == "ORANGE" | StockSize == "ORANGE" ~ "RED",
-                TRUE ~ "GREY"
-            )
-        ) %>%
-        select(StockKeyLabel, SBL)
-
-    df <- left_join(df, df2, by = "StockKeyLabel") %>%
-        mutate(
-            lineDescription = gsub("Maximum Sustainable Yield", "Maximum sustainable yield", lineDescription),
-            lineDescription = gsub("Precautionary Approach", "Precautionary approach", lineDescription)
-        )
-
-    return(df)
+        df <- x
+        # df <- dplyr::filter(df,(grepl(pattern = ecoregion, Ecoregion)))
+        df <- dplyr::mutate(df,status = case_when(status == 0 ~ "UNDEFINED",
+                                                  status == 1 ~ "GREEN",
+                                                  status == 2 ~ "qual_GREEN", #qualitative green
+                                                  status == 3 ~ "ORANGE",
+                                                  status == 4 ~ "RED",
+                                                  status == 5 ~ "qual_RED", #qualitative red
+                                                  status == 6 ~ "GREY",
+                                                  status == 7 ~ "qual_UP",
+                                                  status == 8 ~ "qual_STEADY",
+                                                  status == 9 ~ "qual_DOWN",
+                                                  TRUE ~ "OTHER"),
+                            fishingPressure = case_when(fishingPressure == "-" &
+                                                                type == "Fishing pressure" ~ "FQual",
+                                                        TRUE ~ fishingPressure),
+                            stockSize = case_when(stockSize == "-" &
+                                                          type == "Stock Size" ~ "SSBQual",
+                                                  TRUE ~ stockSize),
+                            stockSize = gsub("MSY BT*|MSY Bt*|MSYBT|MSYBt", "MSYBt", stockSize),
+                            variable = case_when(type == "Fishing pressure" ~ fishingPressure,
+                                                 type == "Stock Size" ~ stockSize,
+                                                 TRUE ~ type),
+                            variable = case_when(lineDescription == "Management plan" &
+                                                         type == "Fishing pressure" ~ "FMGT",
+                                                 lineDescription == "Management plan" &
+                                                         type == "Stock Size" ~ "SSBMGT",
+                                                 TRUE ~ variable),
+                            variable = case_when(
+                                    grepl("Fpa", variable) ~ "FPA",
+                                    grepl("Bpa", variable) ~ "BPA",
+                                    grepl("^Qual*", variable) ~ "SSBQual",
+                                    grepl("-", variable) ~ "FQual",
+                                    grepl("^BMGT", variable) ~ "SSBMGT",
+                                    grepl("MSYBtrigger", variable) ~ "BMSY",
+                                    grepl("FMSY", variable) ~ "FMSY",
+                                    TRUE ~ variable
+                            )) 
+        df <- dplyr::filter(df,variable != "-")
+        
+        df <- dplyr::filter(df, lineDescription != "Management plan")
+        df <- dplyr::filter(df, lineDescription != "Qualitative evaluation")
+        df <- dplyr::mutate(df,key = paste(StockKeyLabel, lineDescription, type))
+        df<- df[order(-df$year),]
+        df <- df[!duplicated(df$key), ]
+        df<- subset(df, select = -key)
+        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild))
+        df<- tidyr::spread(df,type, status)
+        
+        df2<- dplyr::filter(df,lineDescription != "Maximum Sustainable Yield")
+        df2<- dplyr::filter(df2,lineDescription != "Maximum sustainable yield")
+        
+        colnames(df2) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" )
+        df2 <-dplyr::mutate(df2, SBL = case_when(FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
+                                                 FishingPressure == "RED" | StockSize == "RED" ~ "RED",
+                                                 FishingPressure == "ORANGE"  |  StockSize == "ORANGE" ~ "RED",
+                                                 TRUE ~ "GREY"))
+        df2<- subset(df2, select = c(StockKeyLabel, SBL))
+        df <- dplyr::left_join(df, df2)
+        df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
+        df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
+        # colnames(df) <- c("StockKeyLabel","AssessmentYear","AdviceCategory","lineDescription","FishingPressure","StockSize", "SBL" )
+        # sid <- dplyr::select(y,StockKeyLabel,
+        #                      FisheriesGuild)
+        # sid$FisheriesGuild <- tolower(sid$FisheriesGuild)
+        # colnames(sid) <- c("StockKeyLabel", "AssessmentYear", "Ecoregion", "FisheriesGuild")
+        # df <- merge(df, sid, all = FALSE)
+        return(df)
 }
 
-clean_status <- format_sag_status_new(df_merged)
+# library(dplyr)
+# library(tidyr)
+
+# format_sag_status_new <- function(x) {
+#     # Ensure column names are valid
+#     names(x) <- make.names(names(x), unique = TRUE)
+    
+#     df <- x %>%
+#         mutate(
+#             status = case_when(
+#                 status == 0 ~ "UNDEFINED",
+#                 status == 1 ~ "GREEN",
+#                 status == 2 ~ "qual_GREEN",  # qualitative green
+#                 status == 3 ~ "ORANGE",
+#                 status == 4 ~ "RED",
+#                 status == 5 ~ "qual_RED",    # qualitative red
+#                 status == 6 ~ "GREY",
+#                 status == 7 ~ "qual_UP",
+#                 status == 8 ~ "qual_STEADY",
+#                 status == 9 ~ "qual_DOWN",
+#                 TRUE ~ "OTHER"
+#             ),
+#             fishingPressure = ifelse(fishingPressure == "-" & type == "Fishing pressure", "FQual", fishingPressure),
+#             stockSize = ifelse(stockSize == "-" & type == "Stock Size", "SSBQual", stockSize),
+#             stockSize = gsub("MSY BT*|MSY Bt*|MSYBT|MSYBt", "MSYBt", stockSize),
+#             variable = case_when(
+#                 type == "Fishing pressure" ~ fishingPressure,
+#                 type == "Stock Size" ~ stockSize,
+#                 TRUE ~ type
+#             ),
+#             variable = case_when(
+#                 lineDescription == "Management plan" & type == "Fishing pressure" ~ "FMGT",
+#                 lineDescription == "Management plan" & type == "Stock Size" ~ "SSBMGT",
+#                 TRUE ~ variable
+#             ),
+#             variable = case_when(
+#                 grepl("Fpa", variable) ~ "FPA",
+#                 grepl("Bpa", variable) ~ "BPA",
+#                 grepl("^Qual*", variable) ~ "SSBQual",
+#                 grepl("-", variable) ~ "FQual",
+#                 grepl("^BMGT", variable) ~ "SSBMGT",
+#                 grepl("MSYBtrigger", variable) ~ "BMSY",
+#                 grepl("FMSY", variable) ~ "FMSY",
+#                 TRUE ~ variable
+#             )
+#         ) %>%
+#         filter(variable != "-", 
+#                !lineDescription %in% c("Management plan", "Qualitative evaluation")) %>%
+#         mutate(
+#             key = paste(StockKeyLabel, lineDescription, type)
+#         ) %>%
+#         arrange(desc(year)) %>%
+#         distinct(key, .keep_all = TRUE) %>%
+#         select(-key) %>%
+#         pivot_wider(names_from = type, values_from = status)
+
+#     # Create and merge SBL status
+#     df2 <- df %>%
+#         filter(!lineDescription %in% c("Maximum Sustainable Yield", "Maximum sustainable yield")) %>%
+#         rename(FishingPressure = `Fishing pressure`, StockSize = `Stock Size`) %>%
+#         mutate(
+#             SBL = case_when(
+#                 FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
+#                 FishingPressure == "RED" | StockSize == "RED" ~ "RED",
+#                 FishingPressure == "ORANGE" | StockSize == "ORANGE" ~ "RED",
+#                 TRUE ~ "GREY"
+#             )
+#         ) %>%
+#         select(StockKeyLabel, SBL)
+
+#     df <- left_join(df, df2, by = "StockKeyLabel") %>%
+#         mutate(
+#             lineDescription = gsub("Maximum Sustainable Yield", "Maximum sustainable yield", lineDescription),
+#             lineDescription = gsub("Precautionary Approach", "Precautionary approach", lineDescription)
+#         )
+
+#     return(df)
+# }
+
+cleanStatus <- format_sag_status_new(df_merged)
+str(cleanStatus)
 str(clean_status)
+names(cleanStatus)
+colnames(cleanStatus) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
+
 plot_status_prop_pies <- function(x, cap_month = "November",
                          cap_year = "2018",
                          return_data = FALSE) {
-        df <- df_merged
+        df <- x
+        colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
         cap_lab <- ggplot2::labs(title = "", x = "", y = "",
                         caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen",
                                           cap_month,
@@ -310,10 +319,10 @@ plot_status_prop_pies <- function(x, cap_month = "November",
         df_stock <- dplyr::select(df,StockKeyLabel,
                        FisheriesGuild,
                        lineDescription,
-                       fishingPressure,
-                       stockSize)
-                    #    SBL)
-        df_stock <- tidyr::gather(df_stock,Variable, Colour, fishingPressure:stockSize, factor_key = TRUE)
+                       FishingPressure,
+                       StockSize,
+                       SBL)
+        df_stock <- tidyr::gather(df_stock,Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
         df2 <- dplyr::group_by(df_stock, FisheriesGuild, lineDescription, Variable, Colour)
         df2 <- dplyr::summarize(df2, COUNT = dplyr::n())
         df2 <- tidyr::spread(df2, Colour, COUNT)
@@ -349,6 +358,8 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                                                     "SBL\n" ))
         df2$FisheriesGuild <- tolower(df2$FisheriesGuild)
         df2$FisheriesGuild <- factor(df2$FisheriesGuild, levels= c("total", "benthic", "demersal", "pelagic", "crustacean", "elasmobranch"))
+        
+        
         p1 <- ggplot2::ggplot(data = df2, ggplot2::aes(x = "", y = fraction, fill = colour)) +
                 ggplot2::geom_bar(stat = "identity", width = 1) +
                 ggplot2::geom_text(ggplot2::aes(label = value),
@@ -364,193 +375,123 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                       axis.ticks=ggplot2::element_blank(),
                       strip.background = ggplot2::element_blank(),
                       plot.caption = ggplot2::element_text(size = 6)) +
-                cap_lab +
+                # cap_lab +
                 ggplot2::coord_polar(theta = "y", direction = 1) +
                 ggplot2::facet_grid(FisheriesGuild ~ header)
+                
+        # ggplotly(p1)     
+        # browser()
+        # Create a list of separate plots for each header when interactive mode is enabled
+        
+        # browser()
+        # plot_list <- df2 %>%
+        # split(list(.$FisheriesGuild, .$header)) %>%
+        # lapply(function(data) {
+        #     if (nrow(data) > 0) {
+        #         plot_ly(data, labels = ~colour, values = ~fraction, type = 'pie',
+        #                 textinfo = 'label+percent', marker = list(colors = colList)) %>%
+        #             layout(title = paste(data$FisheriesGuild[1], "-", data$header[1]))
+        #     } else {
+        #         NULL
+        #     }
+        # }) %>%
+        # purrr::compact() 
 
+        # # Ensure no NA values are passed to layout
+        # plot_list <- lapply(plot_list, function(p) {
+        #     if (!is.null(p)) {
+        #         p$x$layout <- Filter(Negate(is.na), p$x$layout)
+        #     }
+        #     p
+        # })
+
+        # # Determine the number of rows and columns for the subplot
+        # n_plots <- length(plot_list)
+        # n_cols <- 5
+        # n_rows <- 6#ceiling(n_plots / n_cols)
+        
+        # return(subplot(plot_list, nrows = n_rows, ncols = n_cols, shareX = TRUE, shareY = TRUE))
         if(return_data == T){
                 df2
         }else{
                 p1
         }
 }
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+
+plot_status_prop_pies(cleanStatus, cap_month = "November", cap_year = "2018", return_data = FALSE) 
+
 
 plot_status_prop_pies <- function(x, cap_month = "November", cap_year = "2018", return_data = FALSE) {
-    cap_lab <- labs(
-        title = "", x = "", y = "",
-        caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen", cap_month, cap_year)
-    )
-
-    colList <- c(
-        "GREEN" = "#00B26D", "GREY" = "#d3d3d3", "ORANGE" = "#ff7f00",
-        "RED" = "#d93b1c", "qual_RED" = "#d93b1c", "qual_GREEN" = "#00B26D"
-    )
-
-    df2 <- x %>%
-        select(StockKeyLabel, FisheriesGuild, lineDescription, fishingPressure, stockSize, SBL) %>%
-        pivot_longer(cols = fishingPressure:stockSize, names_to = "Variable", values_to = "Colour") %>%
-        group_by(FisheriesGuild, lineDescription, Variable, Colour) %>%
-        summarise(COUNT = n(), .groups = "drop") %>%
-        pivot_wider(names_from = Colour, values_from = COUNT, values_fill = 0) %>%
-        ungroup()
-
+    df <- x %>%
+        setNames(c("StockKeyLabel", "AssessmentKey", "lineDescription", "FisheriesGuild", "FishingPressure", "StockSize", "SBL"))
+    
+    colList <- c("GREEN" = "#00B26D", "GREY" = "#d3d3d3", "ORANGE" = "#ff7f00", "RED" = "#d93b1c",
+                 "qual_RED" = "#d93b1c", "qual_GREEN" = "#00B26D")
+    
+    df_stock <- df %>%
+        select(StockKeyLabel, FisheriesGuild, lineDescription, FishingPressure, StockSize, SBL) %>%
+        pivot_longer(cols = FishingPressure:StockSize, names_to = "Variable", values_to = "Colour")
+    
+    df2 <- df_stock %>%
+        count(FisheriesGuild, lineDescription, Variable, Colour) %>%
+        pivot_wider(names_from = Colour, values_from = n, values_fill = list(n = 0))
+    
     df3 <- df2 %>%
         select(-FisheriesGuild) %>%
         group_by(lineDescription, Variable) %>%
         summarise(across(everything(), sum), .groups = "drop") %>%
         mutate(FisheriesGuild = "total")
-
+    
     df2 <- bind_rows(df2, df3)
-
+    
     df4 <- df2 %>%
         filter(Variable == "SBL") %>%
         mutate(lineDescription = "") %>%
         distinct()
-
+    
+    df2 <- df2 %>% filter(Variable != "SBL") %>% bind_rows(df4)
+    
     df2 <- df2 %>%
-        filter(Variable != "SBL") %>%
-        bind_rows(df4) %>%
-        mutate(
-            lineDescription = recode(lineDescription, "Maximum sustainable yield" = "MSY", "Precautionary approach" = "PA"),
-            header = paste0(Variable, "\n", lineDescription)
-        ) %>%
+        mutate(lineDescription = recode(lineDescription, "Maximum sustainable yield" = "MSY", "Precautionary approach" = "PA"),
+               header = paste(Variable, "\n", lineDescription)) %>%
         pivot_longer(cols = GREEN:RED, names_to = "colour", values_to = "value") %>%
         filter(value > 0)
-
+    
     tot <- df2 %>%
         filter(FisheriesGuild == "total") %>%
         group_by(header) %>%
-        mutate(tot = sum(value)) %>%
-        ungroup()
-
-    max_tot <- unique(tot$tot)
-
+        summarise(tot = sum(value), .groups = "drop")
+    
     df2 <- df2 %>%
+        left_join(tot, by = "header") %>%
         group_by(FisheriesGuild, header) %>%
-        mutate(
-            sum = sum(value),
-            fraction = value * max_tot / sum
-        ) %>%
+        mutate(sum = sum(value), fraction = ifelse(sum > 0, value * tot / sum, 0)) %>%
         ungroup() %>%
         mutate(
-            header = factor(header, levels = c("fishingPressure\nMSY", "stockSize\nMSY", "fishingPressure\nPA", "stockSize\nPA", "SBL\n")),
+            header = factor(header, levels = c("FishingPressure\nMSY", "StockSize\nMSY", "FishingPressure\nPA", "StockSize\nPA", "SBL\n")),
             FisheriesGuild = factor(tolower(FisheriesGuild), levels = c("total", "benthic", "demersal", "pelagic", "crustacean", "elasmobranch"))
         )
-
-    p1 <- ggplot(df2, aes(x = "", y = fraction, fill = colour)) +
-        geom_bar(stat = "identity", width = 1) +
-        geom_text(aes(label = value), position = position_stack(vjust = 0.5), size = 3) +
-        scale_fill_manual(values = colList) +
-        theme_bw(base_size = 9) +
-        theme(
-            panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(),
-            legend.position = "none", axis.text = element_blank(), axis.ticks = element_blank(),
-            strip.background = element_blank(), plot.caption = element_text(size = 6)
-        ) +
-        cap_lab +
-        coord_polar(theta = "y", direction = 1) +
-        facet_grid(FisheriesGuild ~ header)
-
-    if (return_data) {
-        return(df2)
-    } else {
-        return(p1)
+    
+    if (return_data) return(df2)
+    
+    # Generate interactive pie charts for each combination of FisheriesGuild and header
+    plot_list <- df2 %>%
+        split(list(.$FisheriesGuild, .$header)) %>%
+        lapply(function(data) {
+            if (nrow(data) > 0) {
+                plot_ly(data, labels = ~colour, values = ~fraction, type = 'pie',
+                        textinfo = 'label+percent', marker = list(colors = colList)) %>%
+                    layout(title = paste(data$FisheriesGuild[1], "-", data$header[1]))
+            } else {
+                NULL
+            }
+        }) %>%
+        purrr::compact() # Remove NULL elements
+    
+    if (length(plot_list) == 0) {
+        stop("No valid data to plot.")
     }
+    
+    return(subplot(plot_list, nrows = 6, shareX = TRUE, shareY = TRUE))
 }
-str(clean_status)
-plot_status_prop_pies(clean_status)
 
-
-plot_status_prop_pies <- function(x, cap_month = "November", cap_year = "2018", return_data = FALSE) {
-    cap_lab <- labs(
-        title = "", x = "", y = "",
-        caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen", cap_month, cap_year)
-    )
-
-    colList <- c(
-        "GREEN" = "#00B26D", "GREY" = "#d3d3d3", "ORANGE" = "#ff7f00",
-        "RED" = "#d93b1c", "qual_RED" = "#d93b1c", "qual_GREEN" = "#00B26D"
-    )
-
-    df2 <- x %>%
-        select(StockKeyLabel, FisheriesGuild, lineDescription, fishingPressure, stockSize, SBL) %>%
-        pivot_longer(cols = c(fishingPressure, stockSize), names_to = "Variable", values_to = "Colour") %>%
-        group_by(FisheriesGuild, lineDescription, Variable, Colour) %>%
-        summarise(COUNT = n(), .groups = "drop") %>%
-        pivot_wider(names_from = Colour, values_from = COUNT, values_fill = list(COUNT = 0)) %>%
-        ungroup()
-
-    # Ensure all expected color columns exist
-    expected_cols <- c("GREEN", "GREY", "ORANGE", "RED", "qual_RED", "qual_GREEN")
-    for (col in expected_cols) {
-        if (!(col %in% colnames(df2))) {
-            df2[[col]] <- 0
-        }
-    }
-
-    df3 <- df2 %>%
-        select(-FisheriesGuild) %>%
-        group_by(lineDescription, Variable) %>%
-        summarise(across(all_of(expected_cols), sum), .groups = "drop") %>%
-        mutate(FisheriesGuild = "total")
-
-    df2 <- bind_rows(df2, df3)
-
-    df4 <- df2 %>%
-        filter(Variable == "SBL") %>%
-        mutate(lineDescription = "") %>%
-        distinct()
-
-    df2 <- df2 %>%
-        filter(Variable != "SBL") %>%
-        bind_rows(df4) %>%
-        mutate(
-            lineDescription = recode(lineDescription, "Maximum sustainable yield" = "MSY", "Precautionary approach" = "PA"),
-            header = paste0(Variable, "\n", lineDescription)
-        ) %>%
-        pivot_longer(cols = all_of(expected_cols), names_to = "colour", values_to = "value") %>%
-        filter(value > 0)
-
-    tot <- df2 %>%
-        filter(FisheriesGuild == "total") %>%
-        group_by(header) %>%
-        mutate(tot = sum(value)) %>%
-        ungroup()
-
-    max_tot <- unique(tot$tot)
-
-    df2 <- df2 %>%
-        group_by(FisheriesGuild, header) %>%
-        mutate(
-            sum = sum(value),
-            fraction = ifelse(sum == 0, 0, value * max_tot / sum)  # Avoid division by zero
-        ) %>%
-        ungroup() %>%
-        mutate(
-            header = factor(header, levels = c("fishingPressure\nMSY", "stockSize\nMSY", "fishingPressure\nPA", "stockSize\nPA", "SBL\n")),
-            FisheriesGuild = factor(tolower(FisheriesGuild), levels = c("total", "benthic", "demersal", "pelagic", "crustacean", "elasmobranch"))
-        )
-
-    p1 <- ggplot(df2, aes(x = "", y = fraction, fill = colour)) +
-        geom_bar(stat = "identity", width = 1) +
-        geom_text(aes(label = value), position = position_stack(vjust = 0.5), size = 3) +
-        scale_fill_manual(values = colList) +
-        theme_bw(base_size = 9) +
-        theme(
-            panel.grid = element_blank(), panel.border = element_blank(), panel.background = element_blank(),
-            legend.position = "none", axis.text = element_blank(), axis.ticks = element_blank(),
-            strip.background = element_blank(), plot.caption = element_text(size = 6)
-        ) +
-        cap_lab +
-        coord_polar(theta = "y", direction = 1) +
-        facet_grid(FisheriesGuild ~ header)
-
-    if (return_data) {
-        return(df2)
-    } else {
-        return(p1)
-    }
-}
