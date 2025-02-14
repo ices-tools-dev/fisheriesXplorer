@@ -10,6 +10,7 @@ library(data.table)
 library(memoise)
 library(future.apply)
 library(tidyr)
+library(jsonlite)
 
 load_sag_status_new <- function(sag) {
         stocks <- unique(sag[c("AssessmentKey","FishStock")])
@@ -495,3 +496,51 @@ plot_status_prop_pies <- function(x, cap_month = "November", cap_year = "2018", 
     return(subplot(plot_list, nrows = 6, shareX = TRUE, shareY = TRUE))
 }
 
+
+clean_status <- format_sag_status_new(getStatus(year = 2024, EcoR = "Greater North Sea"))
+
+format_annex_table <- function(status, year) {
+  # sid <- getSD(year)
+#   sid <- dplyr::filter(sid, !is.na(YearOfLastAssessment))
+#   sid <- dplyr::select(sid,
+#                        StockKeyLabel,
+#                        StockKeyDescription,
+#                        SpeciesScientificName,
+#                        SpeciesCommonName,
+#                        # FisheriesGuild,
+#                        DataCategory)
+#   sid <- sid %>% filter(StockKeyLabel %in% df$StockKeyLabel)
+#   df <- dplyr::left_join(df, sid, by = "StockKeyLabel")
+  # df <- df[c(1,10,11,12,13,14,2,3,4,5,8,6,7)]
+  year <- 2024
+  status <- clean_status
+  sid <- jsonlite::fromJSON(
+                URLencode(
+                        sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel, 
+                        EcoRegion, 
+                        YearOfLastAssessment, 
+                        AssessmentKey,
+                        StockKeyDescription,
+                        SpeciesScientificName,
+                        SpeciesCommonName, 
+                        AdviceCategory, 
+                        FisheriesGuild", year)
+                )
+        )$value
+    sid <- sid %>% filter(StockKeyLabel %in% status$StockKeyLabel)
+  df <- dplyr::left_join(status, sid, by = "StockKeyLabel")
+    # status <- test
+  df <- dplyr::mutate(df,
+                      D3C1 = FishingPressure,
+                      D3C2 = StockSize,
+                      GES = dplyr::case_when(
+                          FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
+                          FishingPressure == "RED" | StockSize == "RED" ~ "RED",
+                          FishingPressure == "GREY" | StockSize == "GREY" ~ "GREY",
+                          TRUE ~ "GREY"))
+
+
+  df$StockKeyDescription <- gsub("\\s*\\([^\\)]+\\)","",df$StockKeyDescription, perl = TRUE)
+
+  df
+}

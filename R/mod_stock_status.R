@@ -119,10 +119,18 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       HTML(select_text(texts,"status","sidebar"))
     })
     
+    SID <- reactive({
+      # dat <- prepare_ices_stock_status(clean_status)
+      getSID(year = 2024, EcoR = "Greater North Sea")
+      # format_sag_status_new(status)
+    })
+
+
     ices_prop_pies_data <- reactive({
       # dat <- prepare_ices_stock_status(clean_status)
-      status <- getStatus(year = 2024, EcoR = "Greater North Sea")
-      format_sag_status_new(status)
+      # status <- getStatus(year = 2024, EcoR = "Greater North Sea")
+     
+      format_sag_status_new(getStatus(SID()))
     })
     
     ges_prop_pies_data <- reactive({
@@ -222,11 +230,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     
     processed_data_reactable <- reactive({
 
-      annex_data <- all_data[[selected_ecoregion()]]$stock_annex_table
+      # annex_data <- all_data[[selected_ecoregion()]]$stock_annex_table
+      annex_data <- format_annex_table(ices_prop_pies_data(), 2024, SID())
       annex_data %>%
         group_by(StockKeyLabel, StockKeyDescription, SpeciesScientificName, 
                  SpeciesCommonName, FisheriesGuild.y, DataCategory, 
-                 AssessmentYear, AdviceCategory, lineDescription, GES, SBL) %>%
+                  AdviceCategory, lineDescription, GES, SBL) %>%
         summarize_all(~paste(unique(.), collapse = " ")) %>%
         ungroup() %>% 
       mutate("Fishing Pressure" = sapply(FishingPressure, icon_mapping),
@@ -243,7 +252,8 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
              "Common Name" = SpeciesCommonName,
              "Fisheries Guild" = FisheriesGuild.y,
              "Data Category" = DataCategory,
-             "Assessment Year" = AssessmentYear,
+            #  "Assessment Year" = AssessmentYear,
+            "Assessment Year" = YearOfLastAssessment,
              "Advice Category" = AdviceCategory,
              "Approach" = lineDescription,
              "Fishing Pressure",
@@ -253,7 +263,9 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     
     output$stock_status_table_reactable <- renderReactable({
       req(nrow(processed_data_reactable())!=0)
-      reactable(processed_data_reactable(), filterable = TRUE,
+      reactable(processed_data_reactable(), 
+                filterable = TRUE,
+                defaultPageSize = 100,
                 columns = list(
                                # "Stock code" = colDef(html = T, cell = merge_cells),
                                # "Stock Description" = colDef(html = T, cell = merge_cells),
@@ -263,7 +275,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
                                "Fisheries Guild" = colDef(html = T, width = 108),
                                # "Data Category" = colDef(html = T, cell = merge_cells),
                                "Data Category" = colDef(html = T, width = 80),
-                               # "Assessment Year" = colDef(html = T, cell = merge_cells),
+                               "Assessment Year" = colDef(html = T, width = 80),
                                # "Advice Category" = colDef(html = T, cell = merge_cells),
                               "Advice Category" = colDef(html = T, width = 80),
                               "Approach" = colDef(html = T, width = 108),

@@ -282,11 +282,21 @@ plot_CLD_bar_app <- function(x, guild, caption = TRUE, cap_year, cap_month, retu
 
 
 
-getStatus <- function(year, EcoR) {
+getSID <- function(year, EcoR) {
         message("Downloading SID data for year: ", year)
         stock_list_long <- jsonlite::fromJSON(
                 URLencode(
-                        sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel, EcoRegion, YearOfLastAssessment, AssessmentKey, AdviceCategory, FisheriesGuild", year)
+                        sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel,
+                        EcoRegion, 
+                        YearOfLastAssessment, 
+                        AssessmentKey,
+                        StockKeyDescription,
+                        SpeciesScientificName,
+                        SpeciesCommonName, 
+                        AdviceCategory,
+                        DataCategory,
+                        YearOfLastAssessment,
+                        FisheriesGuild", year)
                 )
         )$value
 
@@ -359,9 +369,10 @@ getStatus <- function(year, EcoR) {
         # Drop rows where AssessmentKey is still NA
         # stock_list_long <- stock_list_long[!is.na(AssessmentKey)]
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
-
-
         message("Data processing complete.")
+        return(stock_list_long)
+}
+getStatus <- function(stock_list_long) {
         #     return(stock_list_long)
         future::plan(future::multisession, workers = parallel::detectCores() - 1)
         # Ensure AssessmentKey is unique to avoid redundant API calls
@@ -377,7 +388,7 @@ getStatus <- function(year, EcoR) {
                         }
                 )
         })
-
+        
         status <- do.call(rbind, status_list)
         # Combine results into a single dataframe
         status <- do.call(rbind.data.frame, status)
@@ -390,6 +401,7 @@ getStatus <- function(year, EcoR) {
 
 format_sag_status_new <- function(x) {
         df <- x
+        
         # df <- dplyr::filter(df,(grepl(pattern = ecoregion, Ecoregion)))
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
                                                   status == 1 ~ "GREEN",
@@ -450,12 +462,7 @@ format_sag_status_new <- function(x) {
         df <- dplyr::left_join(df, df2)
         df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
         df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
-        # colnames(df) <- c("StockKeyLabel","AssessmentYear","AdviceCategory","lineDescription","FishingPressure","StockSize", "SBL" )
-        # sid <- dplyr::select(y,StockKeyLabel,
-        #                      FisheriesGuild)
-        # sid$FisheriesGuild <- tolower(sid$FisheriesGuild)
-        # colnames(sid) <- c("StockKeyLabel", "AssessmentYear", "Ecoregion", "FisheriesGuild")
-        # df <- merge(df, sid, all = FALSE)
+        colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
         return(df)
 }
 
@@ -464,7 +471,7 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                          cap_year = "2018",
                          return_data = FALSE) {
         df <- x
-        browser()
+        
         colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
         cap_lab <- ggplot2::labs(title = "", x = "", y = "",
                         caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen",
@@ -528,7 +535,7 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                           position = ggplot2::position_stack(vjust = 0.5),
                           size = 3) +
                 ggplot2::scale_fill_manual(values = colList) +
-                ggplot2::theme_bw(base_size = 9) +
+                ggplot2::theme_bw(base_size = 14) +
                 ggplot2::theme(panel.grid = ggplot2::element_blank(),
                       panel.border = ggplot2::element_blank(),
                       panel.background = ggplot2::element_blank(),
@@ -578,4 +585,27 @@ plot_status_prop_pies <- function(x, cap_month = "November",
         }else{
                 p1
         }
+}
+
+
+format_annex_table <- function(status, year, sid) {
+               
+        sid <- sid %>% filter(StockKeyLabel %in% status$StockKeyLabel)
+        df <- dplyr::left_join(status, sid, by = "StockKeyLabel")
+        # status <- test
+        df <- dplyr::mutate(df,
+                D3C1 = FishingPressure,
+                D3C2 = StockSize,
+                GES = dplyr::case_when(
+                        FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
+                        FishingPressure == "RED" | StockSize == "RED" ~ "RED",
+                        FishingPressure == "GREY" | StockSize == "GREY" ~ "GREY",
+                        TRUE ~ "GREY"
+                )
+        )
+
+
+        df$StockKeyDescription <- gsub("\\s*\\([^\\)]+\\)", "", df$StockKeyDescription, perl = TRUE)
+
+        df
 }
