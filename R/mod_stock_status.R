@@ -57,7 +57,7 @@ mod_stock_status_ui <- function(id) {
                 "Pelagic" = "pelagic")))),
           card_body(
             withSpinner(
-              plotOutput(ns("status_trends"), height = "68vh")))
+              plotlyOutput(ns("status_trends"), height = "68vh")))
             )
           )
       )),
@@ -125,8 +125,11 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       # format_sag_status_new(status)
     })
 
+    SAG <- reactive({
+      getSAG_ecoregion(2024, selected_ecoregion(), SID())
+    })
 
-    ices_prop_pies_data <- reactive({
+    clean_status <- reactive({
       # dat <- prepare_ices_stock_status(clean_status)
       # status <- getStatus(year = 2024, EcoR = "Greater North Sea")     
       format_sag_status_new(getStatus(SID()))
@@ -134,15 +137,15 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     
     catch_current <- reactive({
       # dat <- prepare_ges_stock_status(status_df = clean_status, catch_df = current_catches)
-      sag <- getSAG_ecoregion(2024, selected_ecoregion(), SID())
-      stockstatus_CLD_current(format_sag(sag, SID()))
+      # sag <- getSAG_ecoregion(2024, selected_ecoregion(), SID())
+      stockstatus_CLD_current(format_sag(SAG(), SID()))
     })
     
     output$status_summary <- renderPlot({
       req(!is.null(input$status_indicator_selector))
       
       if(input$status_indicator_selector == "ices") {
-        plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
+        plot_status_prop_pies_app(clean_status(), cap_month, cap_year)
       
         } else if((input$status_indicator_selector == "ges")) {
         
@@ -152,12 +155,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     output$status_summary_ices <- renderPlot({
       # plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
       
-      plot_status_prop_pies(ices_prop_pies_data(), cap_month, cap_year)
+      plot_status_prop_pies(clean_status(), cap_month, cap_year)
         
     })
     output$status_summary_ges <- renderPlot({
         # plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
-        plot_GES_pies(ices_prop_pies_data(), catch_current(),  cap_month, cap_year)
+        plot_GES_pies(clean_status(), catch_current(),  cap_month, cap_year)
     })
    
     
@@ -165,22 +168,29 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       
       #stopifnot(sum(is.na(current_catches$FisheriesGuild)) ==0)
       
-      if(input$status_trend_selector == "all_stocks") {
+      # if(input$status_trend_selector == "all_stocks") {
+      #   guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+      # } else {
+      #   guild <- input$status_trend_selector
+      # }
+      
+      stock_trends(format_sag(SAG(), SID())) #%>% filter(FisheriesGuild %in% guild)
+        # prepare_stock_trends()
+      
+        
+       
+      
+    })
+    
+     output$status_trends <- renderPlotly({
+      req(!is.null(input$status_trend_selector))
+        if(input$status_trend_selector == "all_stocks") {
         guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
       } else {
         guild <- input$status_trend_selector
       }
-      
-      dat <- trends %>% filter(FisheriesGuild %in% guild) %>% 
-        prepare_stock_trends()
-      
-    })
-    
-     output$status_trends <- renderPlot({
-      req(!is.null(input$status_trend_selector))
-
        # ggplotly(plot_stock_trends_app(trends_data(), guild = input$status_trend_selector, caption_year = cap_year, caption_month = cap_month))
-       plot_stock_trends_app(trends_data(), caption_year = cap_year, caption_month = cap_month)
+       plot_stock_trends(trends_data(), guild,  cap_year, cap_month)
        })
      
      
@@ -232,7 +242,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     processed_data_reactable <- reactive({
 
       # annex_data <- all_data[[selected_ecoregion()]]$stock_annex_table
-      annex_data <- format_annex_table(ices_prop_pies_data(), 2024, SID())
+      annex_data <- format_annex_table(clean_status(), 2024, SID())
       annex_data %>%
         group_by(StockKeyLabel, StockKeyDescription, SpeciesScientificName, 
                  SpeciesCommonName, FisheriesGuild.y, DataCategory, 

@@ -376,9 +376,10 @@ getSID <- function(year, EcoR) {
                 )
         )$value
 
-        stock_list_long %>%
+        stock_list_long <- stock_list_long %>%
                 mutate(EcoRegion = as.character(EcoRegion)) %>%
                 tidyr::separate_rows(EcoRegion, sep = ", ")
+
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
         # setDT(stock_list_long)
@@ -446,10 +447,12 @@ getSID <- function(year, EcoR) {
         # stock_list_long <- stock_list_long[!is.na(AssessmentKey)]
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
         message("Data processing complete.")
+        
         return(stock_list_long)
 }
+
 getStatus <- function(stock_list_long) {
-        #     return(stock_list_long)
+        
         future::plan(future::multisession, workers = parallel::detectCores() - 1)
         # Ensure AssessmentKey is unique to avoid redundant API calls
         unique_keys <- unique(stock_list_long$AssessmentKey)
@@ -687,32 +690,56 @@ format_annex_table <- function(status, year, sid) {
 }
 
 
-getSAG_ecoregion <- function(year, ecoregion, sid){
-        years <- ((year-4):year)
-        ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
-        # sid <- icesSD::getSD(NULL,year)
-        out <- data.frame()
-        res <- data.frame()
-        for(n in 1:5){
-                x <- years[n]
-                url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
-                tmpSAG <- tempfile(fileext = ".zip")
-                download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
-                names <-unzip(tmpSAG, list = TRUE)
-                res <- read.csv(unz(tmpSAG, names$Name[1]),
-                                stringsAsFactors = FALSE,
-                                header = TRUE,
-                                fill = TRUE)
-                res<- unique(res)
-                out <- rbind(out, res)
-        }
-        out <- dplyr::filter(out, Purpose == "Advice")
-        # out <- data.table::as.data.table(out) 
-        # out <- out[out[, .I[AssessmentKey == max(AssessmentKey)], by=FishStock]$V1]
+# getSAG_ecoregion <- function(year, ecoregion, sid){
+#         years <- ((year-4):year)
+#         ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
+#         # sid <- icesSD::getSD(NULL,year)
+#         out <- data.frame()
+#         res <- data.frame()
+#         for(n in 1:5){
+#                 x <- years[n]
+#                 url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
+#                 tmpSAG <- tempfile(fileext = ".zip")
+#                 download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
+#                 names <-unzip(tmpSAG, list = TRUE)
+#                 res <- read.csv(unz(tmpSAG, names$Name[1]),
+#                                 stringsAsFactors = FALSE,
+#                                 header = TRUE,
+#                                 fill = TRUE)
+#                 res<- unique(res)
+#                 out <- rbind(out, res)
+#         }
+#         out <- dplyr::filter(out, Purpose == "Advice")
+#         # out <- data.table::as.data.table(out) 
+#         # out <- out[out[, .I[AssessmentKey == max(AssessmentKey)], by=FishStock]$V1]
         
-        # out <- out[out[, data.table::.I[AssessmentYear == max(AssessmentYear)], by=FishStock]$V1]
-        out <- as.data.frame(out)
-        out <- dplyr::filter(out,out$FishStock %in% sid$StockKeyLabel)
+#         # out <- out[out[, data.table::.I[AssessmentYear == max(AssessmentYear)], by=FishStock]$V1]
+#         out <- as.data.frame(out)
+#         out <- dplyr::filter(out,out$FishStock %in% sid$StockKeyLabel)
+# }
+getSAG_ecoregion <- function(year, ecoregion, sid) {
+  years <- ((year - 4):year)
+  ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
+  
+  future::plan(future::multisession)  # Enable parallel execution
+  
+  results <- future.apply::future_lapply(years, function(x) {
+    url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
+    tmpSAG <- tempfile(fileext = ".zip")
+    download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
+    names <- unzip(tmpSAG, list = TRUE)
+    res <- read.csv(unz(tmpSAG, names$Name[1]),
+                    stringsAsFactors = FALSE,
+                    header = TRUE,
+                    fill = TRUE)
+    unique(res)
+  })
+  
+  out <- do.call(rbind, results)
+  out <- dplyr::filter(out, Purpose == "Advice")
+  out <- dplyr::filter(out, FishStock %in% sid$StockKeyLabel)
+  
+  return(out)
 }
 
 format_sag <- function(sag,sid){
@@ -871,4 +898,239 @@ plot_GES_pies <- function(x, y, cap_month = "August",
         }else{
                 p1
         }
+}
+
+
+stock_trends <- function(x){
+        x$FishingPressure <- as.numeric(x$FishingPressure)
+        x$StockSize <- as.numeric(x$StockSize)
+        x$FMSY <- as.numeric(x$FMSY)
+        x$MSYBtrigger <- as.numeric(x$MSYBtrigger)
+        x$Year <- as.numeric(x$Year)
+        df <- dplyr::mutate(x,FMEAN = mean(FishingPressure, na.rm = TRUE),
+                       SSBMEAN = mean(StockSize, na.rm = TRUE),
+                       FMEAN = ifelse(!grepl("F|F(ages 3-6)", FishingPressureDescription),
+                                      NA,
+                                      FMEAN),
+                       SSBMEAN = ifelse(!grepl("StockSize", StockSizeDescription),
+                                        NA,
+                                        SSBMEAN))
+        df <- dplyr::mutate(df,F_FMSY = ifelse(!is.na(FMSY),
+                                       FishingPressure / FMSY,
+                                       NA),
+                       SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger),
+                                                StockSize / MSYBtrigger,
+                                                NA))
+        df <- dplyr::mutate(df,F_FMEAN = ifelse(!is.na(FMEAN),
+                                        FishingPressure / FMEAN, 
+                                        NA),
+                       SSB_SSBMEAN = ifelse(!is.na(SSBMEAN),
+                                            StockSize / SSBMEAN,
+                                          NA))
+                                     
+        df <- df %>%
+                # dplyr::rename("StockKeyLabel" = FishStock) %>%
+                dplyr::select(
+                        Year,
+                        StockKeyLabel,
+                        FisheriesGuild,
+                        F_FMSY,
+                        SSB_MSYBtrigger,
+                        F_FMEAN,
+                        SSB_SSBMEAN
+                )
+        df2 <-tidyr::gather(df,Metric, Value, -Year, -StockKeyLabel, -FisheriesGuild) 
+        df2 <- dplyr::filter(df2,!is.na(Year))
+        
+        df3 <- dplyr::group_by(df2,StockKeyLabel, FisheriesGuild,Metric, Year)
+        df3 <- dplyr::summarize(df3,Value = mean(Value, na.rm = TRUE))
+        df3 <- dplyr::select(df3,FisheriesGuild,
+                       StockKeyLabel,
+                       Year,
+                       Metric,
+                       Value) 
+        df3 <- dplyr::filter(df3, !is.na(Value))
+        
+        means <- dplyr::group_by(df2,FisheriesGuild, Metric, Year) 
+        means <- dplyr::summarize(means, Value = mean(Value, na.rm = TRUE),
+                          StockKeyLabel = "MEAN")
+        means <- dplyr::select(means, FisheriesGuild,
+                       StockKeyLabel,
+                       Year,
+                       Metric,
+                       Value)
+        means <- dplyr::filter(means, !is.na(Value))
+        
+        df4 <- dplyr::bind_rows(df3,means) 
+        df4 <- dplyr::distinct(df4,.keep_all = TRUE)
+        return(df4)
+}
+
+
+# plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE){
+#         df<- dplyr::filter(x,FisheriesGuild == guild)
+#         adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
+#         values <- ggthemes::tableau_color_pal('Tableau 20')(length(adj_names))
+#         legend_pos <- "bottom"
+#         names(values) <- adj_names
+#         values <- c(values, c(MEAN = "black"))
+#         plot_title <- guild
+#         cap_lab <- ggplot2::labs(title = plot_title, x = "Year", y = "",
+#                 caption = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen",
+#                                   cap_month,
+#                                   cap_year))
+#         duplicates <- dplyr::group_by(df,Value)
+#         duplicates <- dplyr::filter(duplicates, dplyr::n()>1)
+#         duplicates <- dplyr::filter(duplicates,StockKeyLabel == "MEAN")
+#         df <- dplyr::anti_join(df,duplicates)
+#         df <- dplyr::filter(df,Metric %in% c("F_FMSY", "SSB_MSYBtrigger"))
+#         df$Metric[which(df$Metric == "F_FMSY")] <- "F/F[MSY]"
+#         df$Metric[which(df$Metric == "SSB_MSYBtrigger")] <- "SSB/MSY~B[trigger]"
+#         mean <- dplyr::filter(df, StockKeyLabel == "MEAN")
+#         df2 <- dplyr::filter(df,StockKeyLabel != "MEAN")
+        
+#         plot <- ggplot2::ggplot(df2, ggplot2::aes(x = Year, y = Value,
+#                       color = StockKeyLabel,
+#                       fill = StockKeyLabel)) +
+#                 ggplot2::geom_hline(yintercept = 1, col = "grey60") +
+#                 ggplot2::theme_bw(base_size = 14) +
+#                 ggplot2::scale_color_manual(values = values) +
+#                 ggplot2::scale_fill_manual(values = values) +
+#                 ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +
+#                 # ggplot2::scale_y_continuous(limits = c(0, 10)) + ##
+#                 ggplot2::guides(fill = FALSE) +
+#                 ggplot2::theme(legend.position = legend_pos,
+#                         strip.text = ggplot2::element_text(size = 9, angle = 0, hjust = 0),
+#                         strip.background = ggplot2::element_blank(),
+#                         strip.placement = "outside",
+#                         panel.grid.major = ggplot2::element_blank(),
+#                         panel.grid.minor = ggplot2::element_blank(),
+#                         legend.key = ggplot2::element_rect(colour = NA),
+#                         legend.title = ggplot2::element_blank(),
+#                         plot.caption = ggplot2::element_text(size = 10)) +
+#                 cap_lab +
+#                 ggplot2::facet_wrap(~ Metric, scales = "free_y", labeller = ggplot2::label_parsed, strip.position = "left", ncol = 1, nrow = 2)
+#         plot <- plot + ggplot2::geom_line(data = df,alpha = 0.8)
+#         plot <- plot + ggplot2::geom_line(data = mean,
+#                                alpha = 0.9, size = 1.15)
+        
+#         if(return_data == T){
+#                 df
+#         }else{
+#                 plotly::ggplotly(plot) %>% 
+#                 plotly::highlight(on = "plotly_hover", selected = plotly::attrs_selected(showlegend = FALSE))
+#         }
+# }
+
+
+# plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
+#   df <- dplyr::filter(x, FisheriesGuild == guild)
+#   adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
+#   values <- ggthemes::tableau_color_pal('Tableau 20')(length(adj_names))
+#   names(values) <- adj_names
+#   values <- c(values, c(MEAN = "black"))
+  
+#   plot_title <- guild
+#   cap_lab <- ggplot2::labs(
+#     title = plot_title, 
+#     x = "Year", 
+#     caption = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year)
+#   )
+
+#   df <- df %>%
+#     dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
+#     dplyr::mutate(Metric = dplyr::recode(Metric, "F_FMSY" = "F/F[MSY]", "SSB_MSYBtrigger" = "SSB/MSY~B[trigger]"))
+
+#   mean_df <- dplyr::filter(df, StockKeyLabel == "MEAN")
+#   df2 <- dplyr::filter(df, StockKeyLabel != "MEAN")
+
+#   plot <- ggplot2::ggplot(df2, aes(x = Year, y = Value, color = StockKeyLabel, fill = StockKeyLabel)) +
+#     ggplot2::geom_hline(yintercept = 1, col = "grey60") +
+#     ggplot2::geom_line(alpha = 0.8) +
+#     ggplot2::geom_line(data = mean_df, alpha = 0.9, size = 1.15) +
+#     ggplot2::scale_color_manual(values = values) +
+#     ggplot2::scale_fill_manual(values = values) +
+#     ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +
+#     ggplot2::theme_bw(base_size = 14) +
+#     ggplot2::theme(
+#       legend.position = "bottom",
+#       strip.text = element_text(size = 14, hjust = 0.5),
+#       strip.background = element_blank(),
+#       strip.placement = "outside",
+#       panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       plot.caption = element_text(size = 10),
+#       axis.title.y = element_blank()  # Removes default y-axis label
+#     ) +
+#     cap_lab +
+#     ggplot2::facet_wrap(~ Metric, scales = "free_y", labeller = label_parsed, strip.position = "left", ncol = 1, nrow = 2) 
+
+#   p <- plotly::ggplotly(plot) %>% plotly::highlight(on = "plotly_hover", selected = plotly::attrs_selected(showlegend = FALSE))
+
+#   if (return_data) {
+#     return(df)
+#   } else {
+#     return(p)
+#   }
+# }
+plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
+  df <- dplyr::filter(x, FisheriesGuild == guild)
+  adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
+  values <- ggthemes::tableau_color_pal('Tableau 20')(length(adj_names))
+  names(values) <- adj_names
+  values <- c(values, c(MEAN = "black"))
+
+  df <- df %>%
+    dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
+    dplyr::mutate(Metric = dplyr::recode(Metric, 
+                                         "F_FMSY" = "F/F[MSY]", 
+                                         "SSB_MSYBtrigger" = "SSB/MSY~B[trigger]"))
+
+  mean_df <- dplyr::filter(df, StockKeyLabel == "MEAN")
+  df2 <- dplyr::filter(df, StockKeyLabel != "MEAN")
+
+  # Function to create an individual plot for a given metric
+  create_plot <- function(metric_name, yaxis_title) {
+    df_metric <- dplyr::filter(df2, Metric == metric_name)
+    mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
+
+    plotly::plot_ly() %>%
+      plotly::add_trace(data = df_metric, x = ~Year, y = ~Value, color = ~StockKeyLabel,
+                        colors = values, type = "scatter", mode = "lines", 
+                        line = list(width = 1), name = ~StockKeyLabel) %>%
+      plotly::add_trace(data = mean_metric, x = ~Year, y = ~Value, name = "MEAN",
+                        type = "scatter", mode = "lines", line = list(color = "black", width = 5)) %>%
+      plotly::layout(
+        yaxis = list(title = yaxis_title, zeroline = FALSE),
+        shapes = list(
+          list(type = "line", x0 = min(df$Year), x1 = max(df$Year), 
+               y0 = 1, y1 = 1, line = list(color = "grey", width = 1))
+        )
+      ) %>%
+      plotly::highlight(on = "plotly_hover", selected = plotly::attrs_selected(showlegend = FALSE))
+  }
+
+  # Create individual subplots
+  plot1 <- create_plot("F/F[MSY]", "F/FMSY")
+  plot2 <- create_plot("SSB/MSY~B[trigger]", "SSB/MSY ~ B[trigger]")
+
+  # Combine plots into a subplot layout
+  final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+    plotly::layout(
+      title = guild,
+      xaxis = list(title = "Year"),
+      annotations = list(
+        list(
+          x = 1, y = -0.15, xref = 'paper', yref = 'paper',
+          text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
+          showarrow = FALSE, xanchor = 'right', yanchor = 'bottom'
+        )
+      )
+    )
+
+  if (return_data) {
+    return(df)
+  } else {
+    return(final_plot)
+  }
 }
