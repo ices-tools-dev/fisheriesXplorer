@@ -119,22 +119,23 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       HTML(select_text(texts,"status","sidebar"))
     })
     
-    SID <- reactive({
+    SID <- reactive({      
       # dat <- prepare_ices_stock_status(clean_status)
-      getSID(year = 2024, EcoR = "Greater North Sea")
+      getSID(year = 2024, EcoR = selected_ecoregion())
       # format_sag_status_new(status)
     })
 
 
     ices_prop_pies_data <- reactive({
       # dat <- prepare_ices_stock_status(clean_status)
-      # status <- getStatus(year = 2024, EcoR = "Greater North Sea")
-     
+      # status <- getStatus(year = 2024, EcoR = "Greater North Sea")     
       format_sag_status_new(getStatus(SID()))
     })
     
-    ges_prop_pies_data <- reactive({
-      dat <- prepare_ges_stock_status(status_df = clean_status, catch_df = current_catches)
+    catch_current <- reactive({
+      # dat <- prepare_ges_stock_status(status_df = clean_status, catch_df = current_catches)
+      sag <- getSAG_ecoregion(2024, selected_ecoregion(), SID())
+      stockstatus_CLD_current(format_sag(sag, SID()))
     })
     
     output$status_summary <- renderPlot({
@@ -155,8 +156,8 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
         
     })
     output$status_summary_ges <- renderPlot({
-        plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
-        
+        # plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
+        plot_GES_pies(ices_prop_pies_data(), catch_current(),  cap_month, cap_year)
     })
    
     
@@ -195,12 +196,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
        
        if(input$status_kobe_cld_selector == "All") {
          guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
-         tmp <- current_catches %>% filter(FisheriesGuild %in% guild)
+         tmp <- catch_current() %>% filter(FisheriesGuild %in% guild)
          tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
          
        } else {
          guild <- input$status_kobe_cld_selector
-        tmp <- current_catches %>% filter(FisheriesGuild %in% guild)
+        tmp <- catch_current() %>% filter(FisheriesGuild %in% guild)
         tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
         
        }

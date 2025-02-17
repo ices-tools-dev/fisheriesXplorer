@@ -544,3 +544,109 @@ format_annex_table <- function(status, year) {
 
   df
 }
+
+
+getSAG_ecoregion <- function(year, ecoregion, sid){
+        years <- ((year-4):year)
+        ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
+        # sid <- icesSD::getSD(NULL,year)
+        out <- data.frame()
+        res <- data.frame()
+        for(n in 1:5){
+                x <- years[n]
+                url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
+                tmpSAG <- tempfile(fileext = ".zip")
+                download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
+                names <-unzip(tmpSAG, list = TRUE)
+                res <- read.csv(unz(tmpSAG, names$Name[1]),
+                                stringsAsFactors = FALSE,
+                                header = TRUE,
+                                fill = TRUE)
+                res<- unique(res)
+                out <- rbind(out, res)
+        }
+        out <- dplyr::filter(out, Purpose == "Advice")
+        out <- data.table::as.data.table(out) 
+        # out <- out[out[, .I[AssessmentKey == max(AssessmentKey)], by=FishStock]$V1]
+        out <- out[out[, .I[AssessmentYear == max(AssessmentYear)], by=FishStock]$V1]
+        out <- as.data.frame(out)
+        out <- dplyr::filter(out,out$FishStock %in% sid$StockKeyLabel)
+}
+
+format_sag <- function(sag,sid){
+        # sid <- load_sid(year)
+        sid <- dplyr::filter(sid,!is.na(YearOfLastAssessment))
+        sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
+        sag <- dplyr::mutate(sag, StockKeyLabel=FishStock)
+        df1 <- merge(sag, sid, all.x = T, all.y = F)
+        # df1 <- left_join(x, y)
+        # df1 <- left_join(x, y, by = c("StockKeyLabel", "AssessmentYear"))
+        df1 <-as.data.frame(df1)
+        
+        df1 <- df1[, colSums(is.na(df1)) < nrow(df1)]
+        
+        df1$FisheriesGuild <- tolower(df1$FisheriesGuild)
+        
+        df1 <- subset(df1, select = -c(FishStock))
+        
+        check <-unique(df1[c("StockKeyLabel", "Purpose")])
+        check <- check[duplicated(check$StockKeyLabel),]
+        # check <-unique(df1[c("StockKeyLabel", "FisheriesGuild")])
+        out <- dplyr::anti_join(df1, check)
+}
+sag_complete_frmt <- format_sag(sag, sid)
+
+stockstatus_CLD_current <- function(x) {
+        df<- dplyr::select(x,Year,
+                           StockKeyLabel,
+                           FisheriesGuild,
+                           FishingPressure,
+                           AssessmentYear,
+                           FMSY,
+                           StockSize,
+                           MSYBtrigger,
+                           Catches,
+                           Landings,
+                           Discards)
+        df$FishingPressure <- as.numeric(df$FishingPressure)
+        df$StockSize <- as.numeric(df$StockSize)
+        df$FMSY <- as.numeric(df$FMSY)
+        df$MSYBtrigger <- as.numeric(df$MSYBtrigger)
+        df2 <- dplyr::group_by(df,StockKeyLabel)
+        df2 <- dplyr::filter(df2,Year == AssessmentYear - 1)
+        df2 <- dplyr::mutate(df2,F_FMSY =  ifelse(!is.na(FMSY),
+                                                                FishingPressure / FMSY,
+                                                                NA))
+        df2 <- dplyr::select(df2,StockKeyLabel,
+                                               FisheriesGuild,
+                                               F_FMSY,
+                                               Catches,
+                                               Landings,
+                                               Discards,
+                                               FMSY,
+                                               FishingPressure)
+        df3 <- dplyr::group_by(df,StockKeyLabel)
+        df3 <- dplyr::filter(df3, Year %in% c(AssessmentYear, (AssessmentYear - 1)))
+        df3 <- dplyr::mutate(df3, SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger),
+                                                                        StockSize / MSYBtrigger,
+                                                                        NA))
+        df3 <- dplyr::select(df3, StockKeyLabel,Year,
+                                               FisheriesGuild,
+                                               SSB_MSYBtrigger,
+                                               StockSize,
+                                               MSYBtrigger)
+        check <- unique(df3[c("StockKeyLabel", "Year", "MSYBtrigger")])
+        check <- check[order(-check$Year),]
+        check2 <- check[duplicated(check$StockKeyLabel),]
+        df3 <- dplyr::anti_join(df3,check2)
+        df4 <- dplyr::full_join(df2, df3)
+        df4 <- dplyr::mutate(df4, Status = ifelse(is.na(F_FMSY) | is.na(SSB_MSYBtrigger),
+                                      "GREY",
+                                      if_else(F_FMSY < 1 & SSB_MSYBtrigger >= 1,
+                                              "GREEN",
+                                              "RED",
+                                              "GREY")))
+        df4
+}
+
+sag_catch_current <- stockstatus_CLD_current(sag_complete_frmt)
