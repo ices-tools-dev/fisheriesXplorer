@@ -453,22 +453,23 @@ getSID <- function(year, EcoR) {
 
 getStatus <- function(stock_list_long) {
         
-        future::plan(future::multisession, workers = parallel::detectCores() - 1)
+        # future::plan(future::multisession, workers = parallel::detectCores() - 1)
         # Ensure AssessmentKey is unique to avoid redundant API calls
         unique_keys <- unique(stock_list_long$AssessmentKey)
 
         # Fetch stock status values in parallel
-        status_list <- future.apply::future_lapply(unique_keys, function(key) {
-                tryCatch(
-                        icesSAG::getStockStatusValues(key),
-                        error = function(e) {
-                                message(sprintf("Error fetching data for AssessmentKey: %s", key))
-                                return(NULL)
-                        }
-                )
-        })
-        
-        status <- do.call(rbind, status_list)
+        # status_list <- lapply(unique_keys, function(key) {
+        #         tryCatch(
+        #                 icesSAG::getStockStatusValues(key),
+        #                 error = function(e) {
+        #                         message(sprintf("Error fetching data for AssessmentKey: %s", key))
+        #                         return(NULL)
+        #                 }
+        #         )
+        # })
+        status <- icesSAG::getStockStatusValues(unique_keys)
+        # browser()
+        # status <- do.call(rbind, status)
         # Combine results into a single dataframe
         status <- do.call(rbind.data.frame, status)
         # Merge stock status values with SID data
@@ -718,12 +719,13 @@ format_annex_table <- function(status, year, sid) {
 #         out <- dplyr::filter(out,out$FishStock %in% sid$StockKeyLabel)
 # }
 getSAG_ecoregion <- function(year, ecoregion, sid) {
-  years <- ((year - 4):year)
+#   years <- ((year - 4):year)
+  years <- unique(sid$YearOfLastAssessment)
   ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
   
-  future::plan(future::multisession)  # Enable parallel execution
+#   future::plan(future::multisession)  # Enable parallel execution
   
-  results <- future.apply::future_lapply(years, function(x) {
+  results <- lapply(years, function(x) {
     url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
     tmpSAG <- tempfile(fileext = ".zip")
     download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
