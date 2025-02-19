@@ -240,7 +240,6 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     
     
     processed_data_reactable <- reactive({
-      # annex_data <- all_data[[selected_ecoregion()]]$stock_annex_table
       annex_data <- format_annex_table(clean_status(), 2024, SID())
       
       annex_data_cleaned <- annex_data %>%
@@ -258,64 +257,21 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
           "Approach" = lineDescription,
           "Fishing Pressure" = FishingPressure,
           "Stock Size" = StockSize
-        )  %>% 
-        # group_by(StockKeyLabel, StockKeyDescription, SpeciesScientificName,
-        #          SpeciesCommonName, FisheriesGuild.y, DataCategory,
-        #           AdviceCategory, lineDescription) %>%
-        # summarize_all(~paste(unique(.), collapse = " ")) %>%
-        # ungroup() %>%
+        )  %>%         
         mutate(Approach = tolower(Approach)) %>% # Ensure consistent case
         tidyr::pivot_wider(
           names_from = Approach,
           values_from = c(`Fishing Pressure`, `Stock Size`),
           names_glue = "{Approach}_{.value}"
-        ) %>%
-        # group_by(`Stock code`) %>%
-        # summarise(
-        #   `Stock Description` = dplyr::first(`Stock Description`),
-        #   `Scientific Name` = dplyr::first(`Scientific Name`),
-        #   `Common Name` = dplyr::first(`Common Name`),
-        #   `Fisheries Guild` = dplyr::first(`Fisheries Guild`),
-        #   `Data Category` = dplyr::first(`Data Category`),
-        #   `Assessment Year` = dplyr::first(`Assessment Year`),
-        #   `Advice Category` = dplyr::first(`Advice Category`),
-        #   `MSY_Fishing Pressure` = dplyr::first(`maximum sustainable yield_Fishing Pressure`),
-        #   `MSY_Stock Size` = dplyr::first(`maximum sustainable yield_Stock Size`),
-        #   `PA_Fishing Pressure` = dplyr::first(`precautionary approach_Fishing Pressure`),
-        #   `PA_Stock Size` = dplyr::first(`precautionary approach_Stock Size`)
-        # ) %>%
-        # ungroup() %>%
-        # summarize_all(~paste(unique(.), collapse = " ")) %>%
-        # ungroup() %>%
-        mutate(
-          # "Fishing Pressure" = sapply(FishingPressure, icon_mapping),
-          # "Stock Size" = sapply(StockSize, icon_mapping),
+        ) %>%      
+        mutate(          
           `MSY Fishing Pressure` = sapply(`maximum sustainable yield_Fishing Pressure`, icon_mapping),
           `MSY Stock Size` = sapply(`maximum sustainable yield_Stock Size`, icon_mapping),
           `PA Fishing Pressure` = sapply(`precautionary approach_Fishing Pressure`, icon_mapping),
-          `PA Stock Size` = sapply(`precautionary approach_Stock Size`, icon_mapping)
-          #  D3C1 = sapply(D3C1, icon_mapping),
-          #  D3C2 = sapply(D3C2, icon_mapping),
-          #  GES = sapply(GES, icon_mapping),
-          #  SBL = sapply(SBL, icon_mapping)
+          `PA Stock Size` = sapply(`precautionary approach_Stock Size`, icon_mapping)         
         ) %>%
         select(-`maximum sustainable yield_Fishing Pressure`, -`maximum sustainable yield_Stock Size`,
-               -`precautionary approach_Fishing Pressure`, -`precautionary approach_Stock Size`)
-        # select(
-        #   "Stock code" = StockKeyLabel,
-        #   "Stock Description" = StockKeyDescription,
-        #   "Scientific Name" = SpeciesScientificName,
-        #   "Common Name" = SpeciesCommonName,
-        #   "Fisheries Guild" = FisheriesGuild.y,
-        #   "Data Category" = DataCategory,
-        #   #  "Assessment Year" = AssessmentYear,
-        #   "Assessment Year" = YearOfLastAssessment,
-        #   "Data category" = DataCategory,
-        #   "Advice Category" = AdviceCategory,
-        #   "Approach" = lineDescription,
-        #   "Fishing Pressure",
-        #   "Stock Size"
-        # ) # , D3C1, D3C2, GES, SBL)
+               -`precautionary approach_Fishing Pressure`, -`precautionary approach_Stock Size`)        
     })
     
     
@@ -324,34 +280,15 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       
       reactable(processed_data_reactable(), 
                 filterable = TRUE,
-                defaultPageSize = 100,
+                defaultPageSize = 150,
                 resizable = TRUE, 
                 wrap = TRUE, 
                 bordered = TRUE,
-                columns = list(
-                               # "Stock code" = colDef(html = T, cell = merge_cells),
-                               # "Stock Description" = colDef(html = T, cell = merge_cells),
-                               # "Scientific Name" = colDef(html = T, cell = merge_cells),
-                               # "Common Name" = colDef(html = T, cell = merge_cells),
-                               # "Fisheries Guild" = colDef(html = T, cell = merge_cells),
-                              #  "Fisheries Guild" = colDef(html = T, width = 108),
-                              #  # "Data Category" = colDef(html = T, cell = merge_cells),
-                              #  "Data Category" = colDef(html = T, width = 80),
-                              #  "Assessment Year" = colDef(html = T, width = 80),
-                              #  # "Advice Category" = colDef(html = T, cell = merge_cells),
-                              # "Advice Category" = colDef(html = T, width = 80),
-                              # "Approach" = colDef(html = T, width = 108),
-                               # SBL = colDef(html = T, filterable = F, cell = merge_cells),
-                               # GES = colDef(html = T, filterable = F, cell = merge_cells),
-                               "MSY Fishing Pressure" = colDef(html = T, filterable = F),
-                               "MSY Stock Size" = colDef(html = T, filterable = F),
-                               "PA Fishing Pressure" = colDef(html = T, filterable = F),
-                               "PA Stock Size" = colDef(html = T, filterable = F)
-                              #  SBL = colDef(html = T, filterable = F, width = 74),
-                              #  GES = colDef(html = T, filterable = F, width = 74),
-                              #  D3C1 = colDef(html = T, filterable = F, width = 74),
-                              #  D3C2 = colDef(html = T, filterable = F, width = 74),
-                              #  "Stock Size" = colDef(html = T, filterable = F, width = 74)
+                columns = list(                               
+                               "MSY Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
+                               "MSY Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
+                               "PA Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
+                               "PA Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center"))
                                ),
                                columnGroups = list(
                                     reactable::colGroup(name = "Maximum sustainable yield", columns = c("MSY Fishing Pressure", "MSY Stock Size")),
