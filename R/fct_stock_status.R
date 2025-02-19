@@ -382,48 +382,7 @@ getSID <- function(year, EcoR) {
 
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
-        # setDT(stock_list_long)
-
-        # # Get unique valid years (excluding NA and 0)
-        # valid_years <- unique(stock_list_long$YearOfLastAssessment)
-        # valid_years <- valid_years[!is.na(valid_years) & valid_years != 0]
-
-
-        # # Parallelized API calls for ASD records
-        # ASDList <- rbindlist(future_lapply(valid_years, function(y) {
-        #     message("Fetching ASD advice records for year: ", y)
-        #     as.data.table(icesASD::getAdviceViewRecord(year = y))
-        # }), fill = TRUE)
-
-        # ASDList <- ASDList %>% group_by(stockCode) %>% filter(assessmentYear == max(assessmentYear, na.rm = TRUE, finite = TRUE)) %>% ungroup()
-        # ASDList <- ASDList %>% select(stockCode, assessmentKey, adviceComponent, adviceStatus)
-
-        # # Ensure ASDList is a valid data frame
-        # if (is.null(ASDList) || identical(ASDList, list()) || nrow(ASDList) == 0) {
-        #     ASDList <- data.frame(
-        #         StockKeyLabel = character(),
-        #         AssessmentKey = character(),
-        #         AssessmentComponent = character(),
-        #         stringsAsFactors = FALSE
-        #     )
-        # } else {
-        #     ASDList <- ASDList %>%
-        #         mutate(adviceComponent = na_if(adviceComponent, "N.A.")) %>%
-        #         rename(
-        #             StockKeyLabel = stockCode,
-        #             AssessmentKey = assessmentKey,
-        #             AssessmentComponent = adviceComponent
-        #         ) %>%
-        #         filter(adviceStatus == "Advice")
-        # }
-        # setDT(ASDList)
-
-        # message("Merging SID and ASD records...")
-        # # Efficient merge using data.table
-        # stock_list_long <- ASDList[stock_list_long, on = "StockKeyLabel"]
-
-        # Find missing AssessmentKeys using YearOfLastAssessment
-        # browser()
+        
         missing_keys <- which(is.na(stock_list_long$AssessmentKey) &
                 !is.na(stock_list_long$YearOfLastAssessment) &
                 stock_list_long$YearOfLastAssessment != 0)
@@ -457,21 +416,22 @@ getStatus <- function(stock_list_long) {
         # Ensure AssessmentKey is unique to avoid redundant API calls
         unique_keys <- unique(stock_list_long$AssessmentKey)
 
-        # Fetch stock status values in parallel
-        # status_list <- lapply(unique_keys, function(key) {
-        #         tryCatch(
-        #                 icesSAG::getStockStatusValues(key),
-        #                 error = function(e) {
-        #                         message(sprintf("Error fetching data for AssessmentKey: %s", key))
-        #                         return(NULL)
-        #                 }
-        #         )
-        # })
-        status <- icesSAG::getStockStatusValues(unique_keys)
+        #Fetch stock status values in parallel
+        status_list <- future.apply::future_lapply(unique_keys, function(key) {
+                tryCatch(
+                        icesSAG::getStockStatusValues(key),
+                        error = function(e) {
+                                message(sprintf("Error fetching data for AssessmentKey: %s", key))
+                                return(NULL)
+                        }
+                )
+        })
+        # status <- icesSAG::getStockStatusValues(unique_keys)
         # browser()
         # status <- do.call(rbind, status)
         # Combine results into a single dataframe
-        status <- do.call(rbind.data.frame, status)
+        status <- plyr::rbind.fill(lapply(status_list, as.data.frame))
+        # status <- do.call(rbind.data.frame, status_list)
         # Merge stock status values with SID data
         df_status <- merge(stock_list_long, status, by = "AssessmentKey", all.x = TRUE)
         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
@@ -718,37 +678,59 @@ format_annex_table <- function(status, year, sid) {
 #         out <- as.data.frame(out)
 #         out <- dplyr::filter(out,out$FishStock %in% sid$StockKeyLabel)
 # }
-getSAG_ecoregion <- function(year, ecoregion, sid) {
-#   years <- ((year - 4):year)
-  years <- unique(sid$YearOfLastAssessment)
-  ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
+# getSAG_ecoregion <- function(year, ecoregion, sid) {
+# #   years <- ((year - 4):year)
+#   years <- unique(sid$YearOfLastAssessment)
+#   ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
   
-#   future::plan(future::multisession)  # Enable parallel execution
+# #   future::plan(future::multisession)  # Enable parallel execution
   
-  results <- lapply(years, function(x) {
-    url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
-    tmpSAG <- tempfile(fileext = ".zip")
-    download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
-    names <- unzip(tmpSAG, list = TRUE)
-    res <- read.csv(unz(tmpSAG, names$Name[1]),
-                    stringsAsFactors = FALSE,
-                    header = TRUE,
-                    fill = TRUE)
-    unique(res)
-  })
+#   results <- lapply(years, function(x) {
+#     url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
+#     tmpSAG <- tempfile(fileext = ".zip")
+#     download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
+#     names <- unzip(tmpSAG, list = TRUE)
+#     res <- read.csv(unz(tmpSAG, names$Name[1]),
+#                     stringsAsFactors = FALSE,
+#                     header = TRUE,
+#                     fill = TRUE)
+#     unique(res)
+#   })
   
-  out <- do.call(rbind, results)
-  out <- dplyr::filter(out, Purpose == "Advice")
-  out <- dplyr::filter(out, FishStock %in% sid$StockKeyLabel)
+#   out <- do.call(rbind, results)
+#   out <- dplyr::filter(out, Purpose == "Advice")
+#   out <- dplyr::filter(out, FishStock %in% sid$StockKeyLabel)
   
-  return(out)
+#   return(out)
+# }
+
+getSAG_ecoregion_new <- function(assessment_keys) {
+        # sag <- icesSAG::getStockDownloadData(assessment_keys)
+        # # sag <- icesSAG::getSAG(stock_code, year,combine = TRUE, purpose = "Advice")
+        # # sag <- dplyr::filter(sag, Purpose == "Advice")
+        # # browser()
+        # sag <- plyr::rbind.fill(lapply(sag, as.data.frame))
+        # # sag <- do.call(rbind, sag)
+        # return(sag)
+        sag_list <- future.apply::future_lapply(assessment_keys, function(key) {
+                tryCatch(
+                        {
+                                icesSAG::getStockDownloadData(key)
+                        },
+                        error = function(e) NULL
+                ) # Handle errors without stopping
+        })
+
+        sag <- plyr::rbind.fill(lapply(sag_list, as.data.frame))
+        return(sag)
 }
+
 
 format_sag <- function(sag,sid){
         # sid <- load_sid(year)
         sid <- dplyr::filter(sid,!is.na(YearOfLastAssessment))
         sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
-        sag <- dplyr::mutate(sag, StockKeyLabel=FishStock)
+        # sag <- dplyr::mutate(sag, StockKeyLabel=FishStock)
         df1 <- merge(sag, sid, all.x = T, all.y = F)
         # df1 <- left_join(x, y)
         # df1 <- left_join(x, y, by = c("StockKeyLabel", "AssessmentYear"))
@@ -758,7 +740,7 @@ format_sag <- function(sag,sid){
         
         df1$FisheriesGuild <- tolower(df1$FisheriesGuild)
         
-        df1 <- subset(df1, select = -c(FishStock))
+        # df1 <- subset(df1, select = -c(FishStock))
         
         check <-unique(df1[c("StockKeyLabel", "Purpose")])
         check <- check[duplicated(check$StockKeyLabel),]
@@ -1076,63 +1058,76 @@ stock_trends <- function(x){
 #   }
 # }
 plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
-  df <- dplyr::filter(x, FisheriesGuild == guild)
-  adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
-  values <- ggthemes::tableau_color_pal('Tableau 20')(length(adj_names))
-  names(values) <- adj_names
-  values <- c(values, c(MEAN = "black"))
+        df <- dplyr::filter(x, FisheriesGuild == guild)
+        adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
+        values <- ggthemes::tableau_color_pal("Tableau 20")(length(adj_names))
+        names(values) <- adj_names
+        values <- c(values, c(MEAN = "black"))
 
-  df <- df %>%
-    dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
-    dplyr::mutate(Metric = dplyr::recode(Metric, 
-                                         "F_FMSY" = "F/F[MSY]", 
-                                         "SSB_MSYBtrigger" = "SSB/MSY~B[trigger]"))
+        df <- df %>%
+                dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
+                dplyr::mutate(Metric = dplyr::recode(Metric,
+                        "F_FMSY" = "F/F<sub>MSY</sub>",
+                        "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
+                ))
 
-  mean_df <- dplyr::filter(df, StockKeyLabel == "MEAN")
-  df2 <- dplyr::filter(df, StockKeyLabel != "MEAN")
+        mean_df <- dplyr::filter(df, StockKeyLabel == "MEAN")
+        df2 <- dplyr::filter(df, StockKeyLabel != "MEAN")
 
-  # Function to create an individual plot for a given metric
-  create_plot <- function(metric_name, yaxis_title) {
-    df_metric <- dplyr::filter(df2, Metric == metric_name)
-    mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
+        # Function to create an individual plot for a given metric
+        create_plot <- function(metric_name, yaxis_title) {
+                df_metric <- dplyr::filter(df2, Metric == metric_name)
+                mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
 
-    plotly::plot_ly() %>%
-      plotly::add_trace(data = df_metric, x = ~Year, y = ~Value, color = ~StockKeyLabel,
-                        colors = values, type = "scatter", mode = "lines", 
-                        line = list(width = 1), name = ~StockKeyLabel) %>%
-      plotly::add_trace(data = mean_metric, x = ~Year, y = ~Value, name = "MEAN",
-                        type = "scatter", mode = "lines", line = list(color = "black", width = 5)) %>%
-      plotly::layout(
-        yaxis = list(title = yaxis_title, zeroline = FALSE),
-        shapes = list(
-          list(type = "line", x0 = min(df$Year), x1 = max(df$Year), 
-               y0 = 1, y1 = 1, line = list(color = "grey", width = 1))
-        )
-      ) %>%
-      plotly::highlight(on = "plotly_hover", selected = plotly::attrs_selected(showlegend = FALSE))
-  }
+                plotly::plot_ly() %>%
+                        plotly::add_trace(
+                                data = df_metric, x = ~Year, y = ~Value, color = ~StockKeyLabel,
+                                colors = values, type = "scatter", mode = "lines",
+                                line = list(width = 3), name = ~StockKeyLabel
+                        ) %>%
+                        plotly::add_trace(
+                                data = mean_metric, x = ~Year, y = ~Value, name = "MEAN",
+                                type = "scatter", mode = "lines", line = list(color = "black", width = 5)
+                        ) %>%
+                        plotly::layout(
+                                yaxis = list(title = yaxis_title, zeroline = FALSE),
+                                shapes = list(
+                                        list(
+                                                type = "line", x0 = min(df$Year), x1 = max(df$Year),
+                                                y0 = 1, y1 = 1, line = list(color = "grey", width = 1)
+                                        )
+                                )
+                        ) %>%
+                        plotly::highlight(
+                                on = "plotly_click",
+                                selected = plotly::attrs_selected(
+                                        opacity = 0.5,
+                                        showlegend = TRUE
+                                )
+                        )
+        }
 
-  # Create individual subplots
-  plot1 <- create_plot("F/F[MSY]", "F/FMSY")
-  plot2 <- create_plot("SSB/MSY~B[trigger]", "SSB/MSY ~ B[trigger]")
+        # Create individual subplots
+        plot1 <- create_plot("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>")
+        plot2 <- create_plot("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>")
 
-  # Combine plots into a subplot layout
-  final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
-    plotly::layout(
-      title = guild,
-      xaxis = list(title = "Year"),
-      annotations = list(
-        list(
-          x = 1, y = -0.15, xref = 'paper', yref = 'paper',
-          text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
-          showarrow = FALSE, xanchor = 'right', yanchor = 'bottom'
-        )
-      )
-    )
+        # Combine plots into a subplot layout
+        final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+                plotly::layout(
+                        title = guild,
+                        xaxis = list(title = "Year"),
+                        annotations = list(
+                                list(
+                                        x = 1, y = -0.15, xref = "paper", yref = "paper",
+                                        text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
+                                        showarrow = FALSE, xanchor = "right", yanchor = "bottom"
+                                )
+                        )
+                )
 
-  if (return_data) {
-    return(df)
-  } else {
-    return(final_plot)
-  }
+        if (return_data) {
+                return(df)
+        } else {
+                return(final_plot)
+        }
 }

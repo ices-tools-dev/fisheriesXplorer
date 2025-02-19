@@ -26,14 +26,16 @@ mod_stock_status_ui <- function(id) {
             card_header("MSY & Precautionary Approach"),
             card_body(fillable = T, 
               withSpinner(
-                plotOutput(ns("status_summary_ices"), height = "72vh"))))
+                plotOutput(ns("status_summary_ices"), height = "72vh"),
+                caption = "Getting status data...")))
           ),
           column(6,          
            card(height = "85vh", full_screen = T,
             card_header("Good Environmental Status"),
             card_body(fillable = T,
               withSpinner(
-                plotOutput(ns("status_summary_ges"), height = "72vh")))
+                plotOutput(ns("status_summary_ges"), height = "72vh"),
+                caption = "Getting assessment data..."))
                 
             )
           ))
@@ -126,7 +128,9 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     })
 
     SAG <- reactive({
-      getSAG_ecoregion(2024, selected_ecoregion(), SID())
+      # getSAG_ecoregion(2024, selected_ecoregion(), SID())      
+      getSAG_ecoregion_new(SID()$AssessmentKey)
+      # getSAG_ecoregion_new(SID()$StockKeyLabel, SID()$YearOfLastAssessment)
     })
 
     clean_status <- reactive({
