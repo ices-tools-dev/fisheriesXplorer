@@ -849,7 +849,7 @@ plot_GES_pies <- function(x, y, cap_month = "August",
         # df5 <- df5 %>% group_by(Metric) %>% mutate(max = max(Value)/2)
 
         df5$fraction <- ifelse(df5$Metric == "Stocks", (df5$Value*tot)/stocks, df5$Value)
-        df5$Variable <- plyr::revalue(df5$Variable, c("FishingPressure"="D3C1", "StockSize"="D3C2"))
+        df5$Variable <- plyr::revalue(df5$Variable, c("FishingPressure"="Fishing Pressure", "StockSize"="Stock Size"))
         df5$Metric <- plyr::revalue(df5$Metric, c("Stocks"="Number of stocks", "Catch"="Proportion of catch \n(thousand tonnes)"))
         df5$Value2 <- ifelse(df5$Metric == "Proportion of catch \n(thousand tonnes)", df5$Value/1000, df5$Value)
         df5$sum2 <- ifelse(df5$Metric == "Proportion of catch \n(thousand tonnes)", df5$sum/1000, df5$sum)
@@ -860,10 +860,10 @@ plot_GES_pies <- function(x, y, cap_month = "August",
                 ggplot2::geom_bar(stat = "identity", width = 1) +
                 ggplot2::geom_text(ggplot2::aes(label = Value2),
                           position = ggplot2::position_stack(vjust = 0.5),
-                          size = 5) +
-                ggplot2::geom_text(ggplot2::aes(label = paste0("total = ", sum2) ,x = 0, y = 0), size = 2)+
+                          size = 7) +
+                ggplot2::geom_text(ggplot2::aes(label = paste0("total = ", sum2) ,x = 0, y = 0), size = 5)+
                 ggplot2::scale_fill_manual(values = colList) +
-                ggplot2::theme_bw(base_size = 16) +
+                ggplot2::theme_bw(base_size = 20) +
                 ggplot2::theme(panel.grid = ggplot2::element_blank(),
                       panel.border = ggplot2::element_blank(),
                       panel.background = ggplot2::element_blank(),
@@ -871,7 +871,7 @@ plot_GES_pies <- function(x, y, cap_month = "August",
                 ggplot2::theme(axis.text = ggplot2::element_blank(),
                       axis.ticks = ggplot2::element_blank(),
                       strip.background = ggplot2::element_blank(),
-                      plot.caption = ggplot2::element_text(size = 10)) +
+                      plot.caption = ggplot2::element_text(size = 13)) +
                 cap_lab +
                 ggplot2::coord_polar(theta = "y") +
                 ggplot2::facet_grid(Metric ~ Variable)
@@ -1075,7 +1075,7 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         df2 <- dplyr::filter(df, StockKeyLabel != "MEAN")
 
         # Function to create an individual plot for a given metric
-        create_plot <- function(metric_name, yaxis_title) {
+        create_plot <- function(metric_name, yaxis_title, show_legend=TRUE) {
                 df_metric <- dplyr::filter(df2, Metric == metric_name)
                 mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
 
@@ -1083,18 +1083,20 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                         plotly::add_trace(
                                 data = df_metric, x = ~Year, y = ~Value, color = ~StockKeyLabel,
                                 colors = values, type = "scatter", mode = "lines",
-                                line = list(width = 3), name = ~StockKeyLabel
+                                line = list(width = 3), name = ~StockKeyLabel,
+                                showlegend = show_legend
                         ) %>%
                         plotly::add_trace(
                                 data = mean_metric, x = ~Year, y = ~Value, name = "MEAN",
-                                type = "scatter", mode = "lines", line = list(color = "black", width = 5)
+                                type = "scatter", mode = "lines", line = list(color = "black", width = 5),
+                                showlegend = show_legend
                         ) %>%
                         plotly::layout(
-                                yaxis = list(title = yaxis_title, zeroline = FALSE),
+                                yaxis = list(title = yaxis_title, zeroline = TRUE),
                                 shapes = list(
                                         list(
-                                                type = "line", x0 = min(df$Year), x1 = max(df$Year),
-                                                y0 = 1, y1 = 1, line = list(color = "grey", width = 1)
+                                                type = "rect", x0 = min(df$Year), x1 = max(df$Year),
+                                                y0 = 1, y1 = 1, line = list(color = "#000000", width = 1)
                                         )
                                 )
                         ) %>%
@@ -1108,8 +1110,8 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         }
 
         # Create individual subplots
-        plot1 <- create_plot("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>")
-        plot2 <- create_plot("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>")
+        plot1 <- create_plot("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
+        plot2 <- create_plot("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
 
         # Combine plots into a subplot layout
         final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
