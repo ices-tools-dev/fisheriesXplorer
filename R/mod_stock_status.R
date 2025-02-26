@@ -248,7 +248,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       
       annex_data_cleaned <- annex_data %>%
       # mutate(icon = paste0('<img src="', paste0("app/www/", match_stockcode_to_illustration(StockKeyLabel, .)), '" height=30>')) %>% 
-      mutate(icon = paste0('<img src=\'', paste0("www/", match_stockcode_to_illustration(StockKeyLabel, .)), '\' height=30>')) %>% 
+      mutate(icon = paste0('<img src=\'', paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), '\' height=30>')) %>% 
       select(
           "Stock code" = StockKeyLabel,
           "Stock Description" = StockKeyDescription,
