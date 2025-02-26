@@ -247,9 +247,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       annex_data <- format_annex_table(clean_status(), 2024, SID())
       
       annex_data_cleaned <- annex_data %>%
+      # mutate(icon = paste0('<img src="', paste0("app/www/", match_stockcode_to_illustration(StockKeyLabel, .)), '" height=30>')) %>% 
+      mutate(icon = paste0('<img src=\'', paste0("www/", match_stockcode_to_illustration(StockKeyLabel, .)), '\' height=30>')) %>% 
       select(
           "Stock code" = StockKeyLabel,
           "Stock Description" = StockKeyDescription,
+          " " = icon,
           "Scientific Name" = SpeciesScientificName,
           "Common Name" = SpeciesCommonName,
           "Fisheries Guild" = FisheriesGuild.y,
@@ -275,7 +278,9 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
           `PA Stock Size` = sapply(`precautionary approach_Stock Size`, icon_mapping)         
         ) %>%
         select(-`maximum sustainable yield_Fishing Pressure`, -`maximum sustainable yield_Stock Size`,
-               -`precautionary approach_Fishing Pressure`, -`precautionary approach_Stock Size`)        
+               -`precautionary approach_Fishing Pressure`, -`precautionary approach_Stock Size`)
+
+              
     })
     
     
@@ -288,7 +293,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
                 resizable = TRUE, 
                 wrap = TRUE, 
                 bordered = TRUE,
-                columns = list(                               
+                columns = list( " " = colDef(html = T, filterable = F, style = list(textAlign = "center")),                            
                                "MSY Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
                                "MSY Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
                                "PA Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),

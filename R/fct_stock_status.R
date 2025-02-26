@@ -1133,3 +1133,11 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                 return(final_plot)
         }
 }
+
+match_stockcode_to_illustration <- function(StockKeyLabel, df) {
+
+  sapply(StockKeyLabel, function(key) {
+    temp <- list.files("inst/app/www", pattern = substr(key, 1, 3))
+    if (length(temp) == 0) "fish.png" else temp[1]
+  })
+}
