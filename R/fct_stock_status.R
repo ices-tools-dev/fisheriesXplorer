@@ -573,7 +573,7 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                 ggplot2::geom_bar(stat = "identity", width = 1) +
                 ggplot2::geom_text(ggplot2::aes(label = value),
                           position = ggplot2::position_stack(vjust = 0.5),
-                          size = 3) +
+                          size = 5) +
                 ggplot2::scale_fill_manual(values = colList) +
                 ggplot2::theme_bw(base_size = 14) +
                 ggplot2::theme(panel.grid = ggplot2::element_blank(),
@@ -583,7 +583,7 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                 ggplot2::theme(axis.text=ggplot2::element_blank(),
                       axis.ticks=ggplot2::element_blank(),
                       strip.background = ggplot2::element_blank(),
-                      plot.caption = ggplot2::element_text(size = 6)) +
+                      plot.caption = ggplot2::element_text(size = 8)) +
                 # cap_lab +
                 ggplot2::coord_polar(theta = "y", direction = 1) +
                 ggplot2::facet_grid(FisheriesGuild ~ header)
