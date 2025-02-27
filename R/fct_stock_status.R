@@ -957,7 +957,7 @@ stock_trends <- function(x){
                        SSB_SSBMEAN = ifelse(!is.na(SSBMEAN),
                                             StockSize / SSBMEAN,
                                           NA))
-                                     
+                                 
         df <- df %>%
                 # dplyr::rename("StockKeyLabel" = FishStock) %>%
                 dplyr::select(
@@ -982,8 +982,12 @@ stock_trends <- function(x){
         df3 <- dplyr::filter(df3, !is.na(Value))
         
         means <- dplyr::group_by(df2,FisheriesGuild, Metric, Year) 
-        means <- dplyr::summarize(means, Value = mean(Value, na.rm = TRUE),
-                          StockKeyLabel = "MEAN")
+        # means <- dplyr::summarize(means, Value = mean(Value, na.rm = TRUE),
+        #                   StockKeyLabel = "MEAN")
+        means <- dplyr::summarize(means, 
+                          Value = dplyr::case_when(dplyr::n() >= 2 ~ mean(Value, na.rm = TRUE), 
+                                                   TRUE ~ as.numeric(NA)), 
+                          StockKeyLabel = "Mean")
         means <- dplyr::select(means, FisheriesGuild,
                        StockKeyLabel,
                        Year,
@@ -1105,7 +1109,7 @@ stock_trends <- function(x){
 # }
 plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
         df <- dplyr::filter(x, FisheriesGuild == guild)
-        adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
+        adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
         values <- ggthemes::tableau_color_pal("Tableau 20")(length(adj_names))
         names(values) <- adj_names
         values <- c(values, c(MEAN = "black"))
@@ -1117,8 +1121,8 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                         "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
                 ))
 
-        mean_df <- dplyr::filter(df, StockKeyLabel == "MEAN")
-        df2 <- dplyr::filter(df, StockKeyLabel != "MEAN")
+        mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+        df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
 
         # Function to create an individual plot for a given metric
         create_plot <- function(metric_name, yaxis_title, show_legend=TRUE) {
@@ -1133,7 +1137,7 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                                 showlegend = show_legend
                         ) %>%
                         plotly::add_trace(
-                                data = mean_metric, x = ~Year, y = ~Value, name = "MEAN",
+                                data = mean_metric, x = ~Year, y = ~Value, name = "Mean",
                                 type = "scatter", mode = "lines", line = list(color = "black", width = 5),
                                 showlegend = show_legend
                         ) %>%
