@@ -445,10 +445,10 @@ format_sag_status_new <- function(x) {
         # df <- dplyr::filter(df,(grepl(pattern = ecoregion, Ecoregion)))
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
                                                   status == 1 ~ "GREEN",
-                                                  status == 2 ~ "qual_GREEN", #qualitative green
+                                                  status == 2 ~ "GREEN", #qualitative green
                                                   status == 3 ~ "ORANGE",
                                                   status == 4 ~ "RED",
-                                                  status == 5 ~ "qual_RED", #qualitative red
+                                                  status == 5 ~ "RED", #qualitative red
                                                   status == 6 ~ "GREY",
                                                   status == 7 ~ "qual_UP",
                                                   status == 8 ~ "qual_STEADY",
@@ -847,7 +847,9 @@ plot_GES_pies <- function(x, y, cap_month = "August",
         df5 <- dplyr::group_by(df5,Metric)
         df5 <- dplyr::mutate(df5,sum = sum(Value)/2)
         # df5 <- df5 %>% group_by(Metric) %>% mutate(max = max(Value)/2)
-
+        
+        # filter out metric == Stocks
+        df5 <- df5 %>% filter(Metric != "Stocks")
         df5$fraction <- ifelse(df5$Metric == "Stocks", (df5$Value*tot)/stocks, df5$Value)
         df5$Variable <- plyr::revalue(df5$Variable, c("FishingPressure"="Fishing Pressure", "StockSize"="Stock Size"))
         df5$Metric <- plyr::revalue(df5$Metric, c("Stocks"="Number of stocks", "Catch"="Proportion of catch \n(thousand tonnes)"))
@@ -856,10 +858,11 @@ plot_GES_pies <- function(x, y, cap_month = "August",
         df5$Value <- as.integer(df5$Value)
         df5$Value2 <- as.integer(df5$Value2)
         df5$sum2 <- as.integer(df5$sum2)
+        df5 <- df5 %>% filter(Value2 > 0)
         p1 <- ggplot2::ggplot(data = df5, ggplot2::aes(x = "", y = fraction, fill = Color)) +
                 ggplot2::geom_bar(stat = "identity", width = 1) +
                 ggplot2::geom_text(ggplot2::aes(label = Value2),
-                          position = ggplot2::position_stack(vjust = 0.5),
+                          position = ggplot2::position_stack(vjust = 0.5),                          
                           size = 7) +
                 ggplot2::geom_text(ggplot2::aes(label = paste0("total = ", sum2) ,x = 0, y = 0), size = 5)+
                 ggplot2::scale_fill_manual(values = colList) +
@@ -883,7 +886,50 @@ plot_GES_pies <- function(x, y, cap_month = "August",
                 p1
         }
 }
+plot_GES_pies_interactive <- function(x, y, cap_month = "August",
+                                      cap_year = "2019",
+                                      return_data = FALSE) {
+    df <- x
+    colList <- c("GREEN" = "#00B26D",
+                 "GREY" = "#d3d3d3",
+                 "ORANGE" = "#ff7f00",
+                 "RED" = "#d93b1c",
+                 "qual_RED" = "#d93b5c",
+                 "qual_GREEN" = "#00B28F")
 
+    df_stock <- dplyr::filter(df, lineDescription == "Maximum sustainable yield") %>%
+        dplyr::select(StockKeyLabel, FishingPressure, StockSize) %>%
+        tidyr::pivot_longer(cols = FishingPressure:StockSize, names_to = "Variable", values_to = "Colour")
+
+    df3 <- dplyr::filter(y, StockKeyLabel %in% df_stock$StockKeyLabel) %>%
+        dplyr::mutate(CATCH = ifelse(is.na(Catches) & !is.na(Landings), Landings, Catches)) %>%
+        dplyr::select(StockKeyLabel, CATCH)
+
+    df4 <- dplyr::left_join(df_stock, df3, by = "StockKeyLabel") %>%
+        replace(is.na(.), 0) %>%
+        dplyr::group_by(Variable, Colour) %>%
+        dplyr::summarise(CATCH = sum(CATCH), .groups = "drop") %>%
+        tidyr::pivot_wider(names_from = Colour, values_from = CATCH, values_fill = 0) %>%
+        tidyr::pivot_longer(cols = GREEN:RED, names_to = "Color", values_to = "Catch")
+
+    df4$Metric <- "Proportion of catch (thousand tonnes)"
+    df4$fraction <- df4$Catch
+    df4$Value2 <- as.integer(df4$Catch / 1000)
+    df4$sum2 <- as.integer(sum(df4$Catch) / 1000)
+
+    if (return_data) {
+        return(df4)
+    }
+
+    # Create interactive pie chart using plotly
+    p <- plotly::plot_ly(df4, labels = ~Color, values = ~fraction, type = "pie",
+                          textinfo = "label+percent", text = ~paste("Catch:", Value2, "kt"),
+                          hoverinfo = "text", marker = list(colors = colList)) %>%
+        plotly::layout(title = paste("ICES Stock Assessment Database,", cap_month, cap_year),
+                       showlegend = TRUE)
+
+    p
+}
 
 stock_trends <- function(x){
         x$FishingPressure <- as.numeric(x$FishingPressure)
