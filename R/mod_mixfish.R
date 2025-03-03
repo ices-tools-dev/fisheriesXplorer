@@ -26,7 +26,9 @@ mod_mixfish_ui <- function(id){
                                params = list(
                                  scenario = list(inputId = "scenario", "Management Scenario:"),
                                  stock = list(inputId = "stock", "Fish Stock"))),
-               plotOutput(ns("headline_bars"), height = "65vh"))
+                                  withSpinner(
+               plotOutput(ns("headline_bars"), height = "65vh"),
+               caption = "Getting mix-fish results..."))
         )
         )
       
