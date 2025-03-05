@@ -1128,6 +1128,8 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         create_plot <- function(metric_name, yaxis_title, show_legend=TRUE) {
                 df_metric <- dplyr::filter(df2, Metric == metric_name)
                 mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
+                
+                df_metric <- plotly::highlight_key(df_metric, key = ~StockKeyLabel)
 
                 plotly::plot_ly() %>%
                         plotly::add_trace(
@@ -1151,10 +1153,12 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                                 )
                         ) %>%
                         plotly::highlight(
-                                on = "plotly_click",
+                                on = 'plotly_hover',
+                                off = 'plotly_doubleclick',
                                 selected = plotly::attrs_selected(
-                                        opacity = 0.5,
-                                        showlegend = TRUE
+                                        opacity = 0.7,
+                                        showlegend = TRUE,
+                                        line = list(width = 5) 
                                 )
                         )
         }
@@ -1168,14 +1172,16 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                 plotly::layout(
                         title = guild,
                         xaxis = list(title = "Year"),
+                        margin = list(b = 100),
                         annotations = list(
                                 list(
-                                        x = 1, y = -0.15, xref = "paper", yref = "paper",
+                                        x = 1, y = -0.25, xref = "paper", yref = "paper",
                                         text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
                                         showarrow = FALSE, xanchor = "right", yanchor = "bottom"
                                 )
                         )
-                )
+                )  
+                
 
         if (return_data) {
                 return(df)

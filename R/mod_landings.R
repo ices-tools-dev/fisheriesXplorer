@@ -86,7 +86,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
 
       params <- plotting_params$landings[[input$landings_layer_selector]]
 
-      fig <- ggplotly(plot_catch_trends_app(formatted_catch_data, type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))) %>%
+      fig <- ggplotly(plot_catch_trends_app_new(formatted_catch_data, type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))) %>%
         plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
       
       for (i in 1:length(fig$x$data)) {
