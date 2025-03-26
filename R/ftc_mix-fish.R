@@ -235,7 +235,7 @@ download_github_data <- function(repo_owner, repo_name, file_path) {
 # }
 
 
-plot_catchScenStk_int <- function(data, adv, ofwhich = FALSE,
+plot_catchScenStk_int <- function(data, adv, #ofwhich = FALSE,
                                   xlab = "Scenario", ylab = "Catch [t]") {
   
   # Add dummy advice range values if missing
@@ -312,53 +312,91 @@ plot_catchScenStk_plotly <- function(data, adv, ofwhich = FALSE,
     adv$lower <- adv$advice
   }
   
-  # Define a large number to replace Inf
-  large_number <- max(data$catch, na.rm = TRUE) 
   
   # Create a list to store the subplots
   subplots <- list()
   
   # Get unique stocks
   unique_stocks <- unique(data$stock)
+  n_stocks <- length(unique_stocks)
+  n_cols <- min(4, n_stocks)  # Max 4 columns
+  n_rows <- ceiling(n_stocks / n_cols)  # Adjust row count based on column count
   
   for (fishstock in unique_stocks) {
     stock_data <- dplyr::filter(data, stock == fishstock)
     stock_adv <- dplyr::filter(adv, stock == fishstock)
     
-    p <- plotly::plot_ly(stock_data, x = ~scenario, y = ~catch, type = 'bar', name = fishstock, 
-                         marker = list(color = 'grey35')) %>%
+    p <- plotly::plot_ly(stock_data, 
+                        x = ~scenario, 
+                        y = ~catch, 
+                        type = 'bar', 
+                        name = fishstock, 
+                        marker = list(color = I('grey35')),
+                        hovertemplate = paste0(
+                          "Stock: ", fishstock, "<br>",
+                          "Scenario: %{x}<br>",
+                          "Catches (tonnes): %{y:.0f}<extra></extra>"                          
+                        )) %>% 
       plotly::layout(
-        xaxis = list(title = xlab),
+        xaxis = list(title = xlab, tickangle = 45),
         yaxis = list(title = ylab, range = c(0, max(stock_data$catch)+0.1*max(stock_data$catch))),
+        # margin = list(l = 50, r = 50, t = 50, b = 50),
         shapes = list(
           list(type = 'rect', x0 = -0.5, x1 = 5, y0 = 0, y1 = stock_adv$advice[1], 
-               fillcolor = 'green', opacity = 0.25, line = list(width = 0)),
+               fillcolor = 'green', opacity = 0.17, line = list(width = 0)),
           list(type = 'rect', x0 = -0.5, x1 = 5, y0 = stock_adv$advice[1], y1 = stock_adv$upper[1], 
-               fillcolor = 'yellow', opacity = 0.25, line = list(width = 0)),
+               fillcolor = 'yellow', opacity = 0.17, line = list(width = 0)),
           list(type = 'rect', x0 = -0.5, x1 = 5, y0 = stock_adv$upper[1], y1 = max(stock_data$catch)+0.1*max(stock_data$catch), 
-               fillcolor = 'red', opacity = 0.25, line = list(width = 0)),
+               fillcolor = 'red', opacity = 0.17, line = list(width = 0)),
           list(type = "line", x0 = -0.5, x1 = 5, y0 = stock_adv$advice[1], y1 = stock_adv$advice[1], 
                line = list(color = "black", width = 2, dash = "solid")),
           list(type = "line", x0 = -0.5, x1 = 5, y0 = stock_adv$upper[1], y1 = stock_adv$upper[1], 
                line = list(color = "black", width = 2, dash = "dash")),
           list(type = "line", x0 = -0.5, x1 = 5, y0 = stock_adv$lower[1], y1 = stock_adv$lower[1], 
                line = list(color = "black", width = 2, dash = "dash"))
-        )
+        ),
+        annotations = list(
+             x = 0.5,
+             y = 1.05,
+             text = paste0(fishstock),
+             xref = "paper",
+             yref = "paper",
+             xanchor = "center",  # center of text
+             yanchor = "bottom",  # bottom of text
+             showarrow = FALSE
+           )
       )
     
-    if (ofwhich) {
-      p <- p %>%
-        plotly::add_trace(data = stock_adv, x = ~scenario, y = ~advice_ofwhich, type = 'scatter', mode = 'lines', 
-                          line = list(color = '#85AD00', dash = 'dash'), name = 'Advice of which') %>%
-        plotly::add_trace(data = stock_data, x = ~scenario, y = ~catch_ofwhich, type = 'bar', name = 'Catch of which', 
-                          marker = list(color = '#85AD00', pattern = list(shape = 'crosshatch')))
-    }
+    # if (ofwhich) {
+    #   p <- p %>%
+    #     plotly::add_trace(data = stock_adv, x = ~scenario, y = ~advice_ofwhich, type = 'scatter', mode = 'lines', 
+    #                       line = list(color = '#85AD00', dash = 'dash'), name = 'Advice of which') %>%
+    #     plotly::add_trace(data = stock_data, x = ~scenario, y = ~catch_ofwhich, type = 'bar', name = 'Catch of which', 
+    #                       marker = list(color = '#85AD00', pattern = list(shape = 'crosshatch')))
+    # }
     
     subplots[[fishstock]] <- p
   }
   
   # Combine subplots into one figure
-  fig <- plotly::subplot(subplots, nrows = ceiling(length(unique_stocks) / 4), margin = 0.03)#, titleY = TRUE, titleX = TRUE, margin = 0.05)
-  fig <- fig  %>% plotly::layout(height = 200 * ceiling(length(unique_stocks) / 4))
+  fig <- plotly::subplot(subplots, 
+                        nrows = ceiling(length(unique_stocks) / 4),
+                        shareX = TRUE,  
+                        shareY = FALSE, 
+                        titleY = FALSE, 
+                        titleX = TRUE,
+                        margin = 0.05) %>% #
+                        plotly::layout(
+                                        height = 200 * n_rows,
+                                        grid = list(rows = n_rows, 
+                                                    columns = n_cols, 
+                                                    pattern = "independent"),
+                                                    showlegend = FALSE
+                                                    
+                                                    
+                                                    
+                                                    # margin = list(l = 50, r = 50, t = 50, b = 50) 
+  )
+#   fig <- fig  %>% plotly::layout(height = 200 * ceiling(length(unique_stocks) / 4))
   fig
 }
