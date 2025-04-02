@@ -383,29 +383,29 @@ getSID <- function(year, EcoR) {
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
         
-        missing_keys <- which(is.na(stock_list_long$AssessmentKey) &
-                !is.na(stock_list_long$YearOfLastAssessment) &
-                stock_list_long$YearOfLastAssessment != 0)
+        # missing_keys <- which(is.na(stock_list_long$AssessmentKey) &
+        #         !is.na(stock_list_long$YearOfLastAssessment) &
+        #         stock_list_long$YearOfLastAssessment != 0)
 
-        if (length(missing_keys) > 0) {
-                message("Finding missing assessment keys...")
+        # if (length(missing_keys) > 0) {
+        #         message("Finding missing assessment keys...")
 
-                # Retrieve assessment keys (returns list)
-                assessment_keys <- lapply(missing_keys, function(i) {
-                        keys <- icesSAG::findAssessmentKey(stock_list_long$StockKeyLabel[i],
-                                year = stock_list_long$YearOfLastAssessment[i]
-                        )
-                        if (length(keys) > 0) keys[1] else NA # Take only the first key or return NA
-                })
+        #         # Retrieve assessment keys (returns list)
+        #         assessment_keys <- lapply(missing_keys, function(i) {
+        #                 keys <- icesSAG::findAssessmentKey(stock_list_long$StockKeyLabel[i],
+        #                         year = stock_list_long$YearOfLastAssessment[i]
+        #                 )
+        #                 if (length(keys) > 0) keys[1] else NA # Take only the first key or return NA
+        #         })
 
-                # Convert list to vector and assign
-                stock_list_long$AssessmentKey[missing_keys] <- unlist(assessment_keys)
-        }
+        #         # Convert list to vector and assign
+        #         stock_list_long$AssessmentKey[missing_keys] <- unlist(assessment_keys)
+        # }
 
         # Drop rows where AssessmentKey is still NA
         # stock_list_long <- stock_list_long[!is.na(AssessmentKey)]
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
-        message("Data processing complete.")
+        message("SID Data processing complete.")
         
         return(stock_list_long)
 }

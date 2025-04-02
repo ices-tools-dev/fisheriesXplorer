@@ -387,7 +387,7 @@ plot_catchScenStk_plotly <- function(data, adv, ofwhich = FALSE,
                         titleX = TRUE,
                         margin = 0.05) %>% #
                         plotly::layout(
-                                        height = 200 * n_rows,
+                                        # height = 200 * n_rows,
                                         grid = list(rows = n_rows, 
                                                     columns = n_cols, 
                                                     pattern = "independent"),
