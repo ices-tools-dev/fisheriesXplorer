@@ -36,7 +36,7 @@ mod_vms_ui <- function(id) {
                                         open = F,
                                         uiOutput(ns("benthic_impact_text"))),
             card(height = "85vh", full_screen = T,
-              card_header("Fishing Benthic Impact"),
+              card_header("SAR"),
               card_body(
                 div(style = "margin-top: 20px; margin-bottom: 14.432px", 
                     radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",inline = T,

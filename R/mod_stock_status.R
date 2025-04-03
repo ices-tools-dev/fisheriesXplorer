@@ -259,7 +259,6 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
           "Data Category" = DataCategory,
           #  "Assessment Year" = AssessmentYear,
           "Assessment Year" = YearOfLastAssessment,
-          "Data category" = DataCategory,
           "Advice Category" = AdviceCategory,
           "Approach" = lineDescription,
           "Fishing Pressure" = FishingPressure,
