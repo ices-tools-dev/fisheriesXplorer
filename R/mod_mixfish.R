@@ -26,7 +26,9 @@ mod_mixfish_ui <- function(id){
                                params = list(
                                  scenario = list(inputId = "scenario", "Management Scenario:"),
                                  stock = list(inputId = "stock", "Fish Stock"))),
-               plotOutput(ns("headline_bars"), height = "65vh"))
+                                  withSpinner(
+               plotlyOutput(ns("headline_bars"), height = "65vh"),
+               caption = "Getting mix-fish results..."))
         )
         )
       
@@ -48,7 +50,8 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     
     ####### headline bar plot
     data_reactive <- reactive({
-      catchScenarioStk
+      # catchScenarioStk
+      download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
       
     })
     
@@ -60,18 +63,8 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     
     
     catchRange <- reactiveValues()
-    catchRange$df <- rbind(
-      data.frame(stock = "COD-NS", advice = 14276, lower = 9701, upper = 14276),
-      data.frame(stock = "HAD", advice = 128708, lower = 111702, upper = 128708),
-      data.frame(stock = "PLE-EC", advice = 6365, lower = 4594, upper = 6365),
-      data.frame(stock = "PLE-NS", advice = 142507, lower = 101854, upper = 195622),
-      data.frame(stock = "POK", advice = 49614, lower = 30204, upper = 49614),
-      data.frame(stock = "SOL-EC", advice = 1810, lower = 1068, upper = 2069),
-      data.frame(stock = "SOL-NS", advice = 15330, lower = 9523, upper = 21805),
-      data.frame(stock = "TUR", advice = 3609, lower = 2634, upper = 4564),
-      data.frame(stock = "WHG-NS", advice = 88426, lower = 70169, upper = 91703),
-      data.frame(stock = "WIT", advice = 1206, lower = 875, upper = 1206)
-    )
+    catchRange$df <- download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice","shiny/Figure1_HeadlinePlot_advice.csv")
+    
     
     
     observeEvent(input$`my-filters-stock`, {
@@ -80,13 +73,13 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     })
     
     
-    output$headline_bars <- renderPlot({
+    output$headline_bars <- renderPlotly({
       
       if(is.null(input$`my-filters-stock`)){
-        plot_catchScenStk(data =  data_filter_module(), adv = catchRange$df)
+        plot_catchScenStk_plotly(data =  data_filter_module(), adv = catchRange$df)
         
       } else {
-        plot_catchScenStk(data =  data_filter_module(), adv = catchRange$df_filtered)
+        plot_catchScenStk_plotly(data =  data_filter_module(), adv = catchRange$df_filtered)
         
       }
       

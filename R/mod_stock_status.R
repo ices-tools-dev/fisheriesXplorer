@@ -26,14 +26,16 @@ mod_stock_status_ui <- function(id) {
             card_header("MSY & Precautionary Approach"),
             card_body(fillable = T, 
               withSpinner(
-                plotOutput(ns("status_summary_ices"), height = "72vh"))))
+                plotOutput(ns("status_summary_ices"), height = "72vh"),
+                caption = "Getting status data...")))
           ),
           column(6,          
            card(height = "85vh", full_screen = T,
             card_header("Good Environmental Status"),
             card_body(fillable = T,
               withSpinner(
-                plotOutput(ns("status_summary_ges"), height = "72vh")))
+                plotOutput(ns("status_summary_ges"), height = "72vh"),
+                caption = "Getting assessment data..."))
                 
             )
           ))
@@ -57,7 +59,7 @@ mod_stock_status_ui <- function(id) {
                 "Pelagic" = "pelagic")))),
           card_body(
             withSpinner(
-              plotOutput(ns("status_trends"), height = "68vh")))
+              plotlyOutput(ns("status_trends"), height = "68vh")))
             )
           )
       )),
@@ -119,19 +121,35 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       HTML(select_text(texts,"status","sidebar"))
     })
     
-    ices_prop_pies_data <- reactive({
-      dat <- prepare_ices_stock_status(clean_status)
+    SID <- reactive({      
+      # dat <- prepare_ices_stock_status(clean_status)
+      getSID(year = 2024, EcoR = selected_ecoregion())
+      # format_sag_status_new(status)
+    })
+
+    SAG <- reactive({
+      # getSAG_ecoregion(2024, selected_ecoregion(), SID())      
+      getSAG_ecoregion_new(SID()$AssessmentKey)
+      # getSAG_ecoregion_new(SID()$StockKeyLabel, SID()$YearOfLastAssessment)
+    })
+
+    clean_status <- reactive({
+      # dat <- prepare_ices_stock_status(clean_status)
+      # status <- getStatus(year = 2024, EcoR = "Greater North Sea")     
+      format_sag_status_new(getStatus(SID()))
     })
     
-    ges_prop_pies_data <- reactive({
-      dat <- prepare_ges_stock_status(status_df = clean_status, catch_df = current_catches)
+    catch_current <- reactive({
+      # dat <- prepare_ges_stock_status(status_df = clean_status, catch_df = current_catches)
+      # sag <- getSAG_ecoregion(2024, selected_ecoregion(), SID())
+      stockstatus_CLD_current(format_sag(SAG(), SID()))
     })
     
     output$status_summary <- renderPlot({
       req(!is.null(input$status_indicator_selector))
       
       if(input$status_indicator_selector == "ices") {
-        plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
+        plot_status_prop_pies_app(clean_status(), cap_month, cap_year)
       
         } else if((input$status_indicator_selector == "ges")) {
         
@@ -139,12 +157,14 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
         }
     })
     output$status_summary_ices <- renderPlot({
-      plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
+      # plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
+      
+      plot_status_prop_pies(clean_status(), cap_month, cap_year)
         
     })
     output$status_summary_ges <- renderPlot({
-        plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
-        
+        # plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
+        plot_GES_pies(clean_status(), catch_current(),  cap_month, cap_year)
     })
    
     
@@ -152,22 +172,29 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       
       #stopifnot(sum(is.na(current_catches$FisheriesGuild)) ==0)
       
-      if(input$status_trend_selector == "all_stocks") {
+      # if(input$status_trend_selector == "all_stocks") {
+      #   guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+      # } else {
+      #   guild <- input$status_trend_selector
+      # }
+      
+      stock_trends(format_sag(SAG(), SID())) #%>% filter(FisheriesGuild %in% guild)
+        # prepare_stock_trends()
+      
+        
+       
+      
+    })
+    
+     output$status_trends <- renderPlotly({
+      req(!is.null(input$status_trend_selector))
+        if(input$status_trend_selector == "all_stocks") {
         guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
       } else {
         guild <- input$status_trend_selector
       }
-      
-      dat <- trends %>% filter(FisheriesGuild %in% guild) %>% 
-        prepare_stock_trends()
-      
-    })
-    
-     output$status_trends <- renderPlot({
-      req(!is.null(input$status_trend_selector))
-
        # ggplotly(plot_stock_trends_app(trends_data(), guild = input$status_trend_selector, caption_year = cap_year, caption_month = cap_month))
-       plot_stock_trends_app(trends_data(), caption_year = cap_year, caption_month = cap_month)
+       plot_stock_trends(trends_data(), guild,  cap_year, cap_month)
        })
      
      
@@ -183,12 +210,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
        
        if(input$status_kobe_cld_selector == "All") {
          guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
-         tmp <- current_catches %>% filter(FisheriesGuild %in% guild)
+         tmp <- catch_current() %>% filter(FisheriesGuild %in% guild)
          tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
          
        } else {
          guild <- input$status_kobe_cld_selector
-        tmp <- current_catches %>% filter(FisheriesGuild %in% guild)
+        tmp <- catch_current() %>% filter(FisheriesGuild %in% guild)
         tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month , return_data = TRUE) 
         
        }
@@ -217,61 +244,65 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     
     
     processed_data_reactable <- reactive({
+      annex_data <- format_annex_table(clean_status(), 2024, SID())
+      
+      annex_data_cleaned <- annex_data %>%
+      # mutate(icon = paste0('<img src="', paste0("app/www/", match_stockcode_to_illustration(StockKeyLabel, .)), '" height=30>')) %>% 
+      mutate(icon = paste0('<img src=\'', paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), '\' height=30>')) %>% 
+      select(
+          "Stock code" = StockKeyLabel,
+          "Stock Description" = StockKeyDescription,
+          " " = icon,
+          "Scientific Name" = SpeciesScientificName,
+          "Common Name" = SpeciesCommonName,
+          "Fisheries Guild" = FisheriesGuild.y,
+          "Data Category" = DataCategory,
+          #  "Assessment Year" = AssessmentYear,
+          "Assessment Year" = YearOfLastAssessment,
+          "Advice Category" = AdviceCategory,
+          "Approach" = lineDescription,
+          "Fishing Pressure" = FishingPressure,
+          "Stock Size" = StockSize
+        )  %>%         
+        mutate(Approach = tolower(Approach)) %>% # Ensure consistent case
+        tidyr::pivot_wider(
+          names_from = Approach,
+          values_from = c(`Fishing Pressure`, `Stock Size`),
+          names_glue = "{Approach}_{.value}"
+        ) %>%      
+        mutate(          
+          `MSY Fishing Pressure` = sapply(`maximum sustainable yield_Fishing Pressure`, icon_mapping),
+          `MSY Stock Size` = sapply(`maximum sustainable yield_Stock Size`, icon_mapping),
+          `PA Fishing Pressure` = sapply(`precautionary approach_Fishing Pressure`, icon_mapping),
+          `PA Stock Size` = sapply(`precautionary approach_Stock Size`, icon_mapping)         
+        ) %>%
+        select(-`maximum sustainable yield_Fishing Pressure`, -`maximum sustainable yield_Stock Size`,
+               -`precautionary approach_Fishing Pressure`, -`precautionary approach_Stock Size`)
 
-      annex_data <- all_data[[selected_ecoregion()]]$stock_annex_table
-      annex_data %>%
-        group_by(StockKeyLabel, StockKeyDescription, SpeciesScientificName, 
-                 SpeciesCommonName, FisheriesGuild.y, DataCategory, 
-                 AssessmentYear, AdviceCategory, lineDescription, GES, SBL) %>%
-        summarize_all(~paste(unique(.), collapse = " ")) %>%
-        ungroup() %>% 
-      mutate("Fishing Pressure" = sapply(FishingPressure, icon_mapping),
-             "Stock Size" = sapply(StockSize, icon_mapping),
-             D3C1 = sapply(D3C1, icon_mapping),
-             D3C2 = sapply(D3C2, icon_mapping),
-             GES = sapply(GES, icon_mapping),
-             SBL = sapply(SBL, icon_mapping)
-      ) %>%
-        
-      select("Stock code" = StockKeyLabel,
-             "Stock Description" = StockKeyDescription,
-             "Scientific Name" = SpeciesScientificName,
-             "Common Name" = SpeciesCommonName,
-             "Fisheries Guild" = FisheriesGuild.y,
-             "Data Category" = DataCategory,
-             "Assessment Year" = AssessmentYear,
-             "Advice Category" = AdviceCategory,
-             "Approach" = lineDescription,
-             "Fishing Pressure",
-             "Stock Size", D3C1, D3C2, GES, SBL)
+              
     })
     
     
     output$stock_status_table_reactable <- renderReactable({
       req(nrow(processed_data_reactable())!=0)
-      reactable(processed_data_reactable(), filterable = TRUE,
-                columns = list(
-                               # "Stock code" = colDef(html = T, cell = merge_cells),
-                               # "Stock Description" = colDef(html = T, cell = merge_cells),
-                               # "Scientific Name" = colDef(html = T, cell = merge_cells),
-                               # "Common Name" = colDef(html = T, cell = merge_cells),
-                               # "Fisheries Guild" = colDef(html = T, cell = merge_cells),
-                               "Fisheries Guild" = colDef(html = T, width = 108),
-                               # "Data Category" = colDef(html = T, cell = merge_cells),
-                               "Data Category" = colDef(html = T, width = 80),
-                               # "Assessment Year" = colDef(html = T, cell = merge_cells),
-                               # "Advice Category" = colDef(html = T, cell = merge_cells),
-                              "Advice Category" = colDef(html = T, width = 80),
-                              "Approach" = colDef(html = T, width = 108),
-                               # SBL = colDef(html = T, filterable = F, cell = merge_cells),
-                               # GES = colDef(html = T, filterable = F, cell = merge_cells),
-                               "Fishing Pressure" = colDef(html = T, filterable = F, width = 74),
-                               SBL = colDef(html = T, filterable = F, width = 74),
-                               GES = colDef(html = T, filterable = F, width = 74),
-                               D3C1 = colDef(html = T, filterable = F, width = 74),
-                               D3C2 = colDef(html = T, filterable = F, width = 74),
-                               "Stock Size" = colDef(html = T, filterable = F, width = 74)
-                               )
+      
+      reactable(processed_data_reactable(), 
+                filterable = TRUE,
+                defaultPageSize = 150,
+                resizable = TRUE, 
+                wrap = TRUE, 
+                bordered = TRUE,
+                columns = list( " " = colDef(html = T, filterable = F, style = list(textAlign = "center")),                            
+                               "MSY Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
+                               "MSY Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
+                               "PA Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
+                               "PA Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center"))
+                               ),
+                               columnGroups = list(
+                                    reactable::colGroup(name = "Maximum sustainable yield", columns = c("MSY Fishing Pressure", "MSY Stock Size")),
+                                    reactable::colGroup(name = "Precautionary approach", columns = c("PA Fishing Pressure", "PA Stock Size"))
+                                  )
+
       )
     })
   })

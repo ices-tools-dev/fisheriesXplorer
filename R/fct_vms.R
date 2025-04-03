@@ -3,11 +3,11 @@ CRS_LAEA_EUROPE <- "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +el
 
 plot_effort_map_app <- function (effort, ecoregion, europe_shape, fishing_category, crs) 
 {
- 
-  
+  ecoregion <- sf::st_transform(ecoregion, crs = CRS_LAEA_EUROPE)
   box <- sf::st_bbox(ecoregion)
   xlims <- c(box[1], box[3])
   ylims <- c(box[2], box[4])
+  
   
   if(fishing_category != "all") {
     effort <- effort %>% dplyr::filter(fishing_category_FO == fishing_category)
@@ -43,6 +43,7 @@ plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer, crs)
  
   sar$val <- as.numeric(sar[[what]])
   sar <- dplyr::filter(sar, val > 0)
+  ecoregion <- sf::st_transform(ecoregion, crs = CRS_LAEA_EUROPE)
   box <- sf::st_bbox(ecoregion)
   xlims <- c(box[1], box[3])
   ylims <- c(box[2], box[4])

@@ -36,7 +36,7 @@ mod_vms_ui <- function(id) {
                                         open = F,
                                         uiOutput(ns("benthic_impact_text"))),
             card(height = "85vh", full_screen = T,
-              card_header("Fishing Benthic Impact"),
+              card_header("SAR"),
               card_body(
                 div(style = "margin-top: 20px; margin-bottom: 14.432px", 
                     radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",inline = T,
@@ -58,14 +58,14 @@ mod_vms_server <- function(id, selected_ecoregion){
     ns <- session$ns
  
     output$effort_layer <- renderPlot({
-     
+      
        plot_effort_map_app(effort_maps[["Greater North Sea"]], 
                           ecoregion[["Greater North Sea"]], 
                           europe_shape = europe_land_shp, 
                           fishing_category = input$fishing_cat_selector,
                           crs = CRS_LAEA_EUROPE) +
-        ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
-     
+        ggtitle(paste0("Average MW Fishing hours ", paste(2018, 2021, sep = "-")))
+        # ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
       })
     
     output$sar_layer <- renderPlot({
@@ -75,7 +75,8 @@ mod_vms_server <- function(id, selected_ecoregion){
                        europe_shape = europe_land_shp, 
                        layer = input$sar_layer_selector,
                        crs = CRS_LAEA_EUROPE) +
-        ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
+          ggtitle(paste0("Average MW Fishing hours ", paste(2018, 2021, sep = "-")))
+        # ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
     })
   })
 }

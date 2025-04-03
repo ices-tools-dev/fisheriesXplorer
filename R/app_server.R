@@ -6,7 +6,7 @@
 #' @importFrom stringr str_split
 #' @noRd
 app_server <- function(input, output, session) {
-  
+  future::plan(future::multisession)
   showModal(modalDialog(
     title = "Important message",
     HTML("Welcome to the development version of the fisheriesXplorer application. <u>The contents are indicative and should not be quoted or used elsewhere</u>.")

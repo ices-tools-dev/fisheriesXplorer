@@ -193,6 +193,86 @@ plot_catch_trends_app <- function(x,type = c("COMMON_NAME", "COUNTRY", "GUILD"),
         }
 }
 
+plot_catch_trends_app_new <- function(x, type = c("COMMON_NAME", "COUNTRY", "GUILD"),
+                                      line_count = 10,
+                                      plot_type = c("line", "area"),
+                                      official_catches_year = cap_year - 1,
+                                      return_data = FALSE) {
+    capyear <- official_catches_year - 1
+    cap_text <- sprintf("Historical Nominal Catches 1950-2010,\nOfficial Nominal Catches 2006-%s\nPreliminary Catches %s\nICES, Copenhagen.", capyear, official_catches_year)
+
+    df <- dplyr::rename(x, type_var = dplyr::all_of(type))
+    
+    if (type == "COMMON_NAME") {
+        df$type_var <- gsub("European ", "", df$type_var)
+        df$type_var <- gsub("Sandeels.*", "sandeel", df$type_var)
+        df$type_var <- gsub("Finfishes nei", "undefined finfish", df$type_var)
+        df$type_var <- gsub("Blue whiting.*", "blue whiting", df$type_var)
+        df$type_var <- gsub("Saithe.*", "saithe", df$type_var)
+        df$type_var <- ifelse(grepl("Norway", df$type_var), df$type_var, tolower(df$type_var))
+    }
+    
+    plot <- df %>%
+        dplyr::group_by(type_var) %>%
+        dplyr::summarise(typeTotal = sum(VALUE, na.rm = TRUE)) %>%
+        dplyr::arrange(dplyr::desc(typeTotal)) %>%
+        dplyr::filter(typeTotal >= 1) %>%
+        dplyr::mutate(RANK = dplyr::min_rank(dplyr::desc(typeTotal))) %>%
+        dplyr::inner_join(df, by = "type_var") %>%
+        dplyr::mutate(type_var = ifelse(RANK > line_count, "other", type_var)) %>%
+        dplyr::group_by(type_var, YEAR) %>%
+        dplyr::summarise(typeTotal = sum(VALUE, na.rm = TRUE) / 1000) %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(!is.na(YEAR))
+    
+    unique_types <- unique(plot$type_var)
+#     print(length(unique_types))  # Debugging step
+#     print(unique_types)  # Debugging step
+#     colors <- setNames(RColorBrewer::brewer.pal(min(length(unique_types), 11), "Set1"), unique_types)
+#     colors["other"] <- "#7F7F7F"
+#     print(length(colors))  # Debugging step
+#     print(colors)  # Debugging step
+# Create a highlight key
+    plot <- plotly::highlight_key(plot, key = ~type_var)
+    
+    p <- plotly::plot_ly(plot, x = ~YEAR, y = ~typeTotal, color = ~type_var)
+    
+    if (plot_type == "area") {
+        # p <- p %>% plotly::add_trace(fill = "tozeroy", mode = "none")
+        p <- p %>% plotly::add_trace(type = 'scatter', mode = 'none', stackgroup = 'one')
+    } else {
+        p <- p %>% plotly::add_trace(type = "scatter", mode = "lines", line = list(width = 3))
+    }
+    
+    p <- p %>% plotly::layout(
+        title = "Catch Trends",
+        xaxis = list(title = "Year"),
+        yaxis = list(title = "Landings (thousand tonnes)"),
+        margin = list(b = 100),
+        annotations = list(
+            list(
+                x = 1, y = -0.28, text = cap_text,
+                showarrow = FALSE, xref = "paper", yref = "paper",
+                xanchor = "right", yanchor = "bottom"
+            )
+        )
+    )
+    p <- p %>% plotly::highlight(
+                                on = 'plotly_hover',
+                                off = 'plotly_doubleclick',
+                                selected = plotly::attrs_selected(
+                                        opacity = 0.7,
+                                        showlegend = TRUE,
+                                        line = list(width = 5) 
+                                )
+                        )
+    
+    if (return_data) {
+        return(plot)
+    } else {
+        return(p)
+    }
+}
 
 plot_discard_trends_app <- function(x, year, caption = FALSE, cap_year, cap_month, return_data = FALSE){
         df <- dplyr::filter(x,Year %in% seq(year-5, year -1))

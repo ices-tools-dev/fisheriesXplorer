@@ -72,9 +72,9 @@ golem_add_external_resources <- function() {
     "www",
     app_sys("app/www")
   )
-
+  
   tags$head(
-    tags$link(rel = "shortcut icon", href = "www/favicon.png"),
+    tags$link(rel = "shortcut icon", href = "www/fishriesXplorer_PNG.png"),
     bundle_resources(
       path = app_sys("app/www"),
       app_title = "fisheriesXplorer"
