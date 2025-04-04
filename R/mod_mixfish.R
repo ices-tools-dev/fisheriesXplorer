@@ -50,8 +50,8 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     
     ####### headline bar plot
     data_reactive <- reactive({
-      # catchScenarioStk
-      download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
+      NrS_catchScenarioStk
+      # download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
       
     })
     
@@ -63,7 +63,7 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     
     
     catchRange <- reactiveValues()
-    catchRange$df <- download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice","shiny/Figure1_HeadlinePlot_advice.csv")
+    catchRange$df <- NrS_catchRange
     
     
     
