@@ -29,7 +29,9 @@ mod_vms_ui <- function(id) {
                 selected = "All"),
               withSpinner(suppressWarnings(plotOutput(ns("effort_layer"), height = "65vh", width = "100%", fill =T)))
             )
-          ))),
+          )
+          )
+          ),
       column(6,
        layout_sidebar(bg = "white", fg = "black", 
                       sidebar = sidebar(width = "100%", bg = "white", fg = "black", 
@@ -38,10 +40,10 @@ mod_vms_ui <- function(id) {
             card(height = "85vh", full_screen = T,
               card_header("SAR"),
               card_body(
-                div(style = "margin-top: 20px; margin-bottom: 14.432px", 
-                    radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",inline = T,
-                  choices = c("Surface" = "surface", "Subsurface" = "subsurface"))
-                  ),
+                # div(style = "margin-top: 20px; margin-bottom: 14.432px", 
+                selectInput(ns("sar_layer_selector"), "Select fishing benthic impact level", 
+                  choices = c("Surface" = "surface", "Subsurface" = "subsurface"),
+                  selected = "Surface"),
                 suppressWarnings(withSpinner( suppressWarnings(plotOutput(ns("sar_layer"), height = "65vh", width = "100%", fill =T))))
               )
             )
