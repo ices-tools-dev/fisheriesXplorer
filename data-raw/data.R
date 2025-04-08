@@ -29,6 +29,8 @@ ecoregions <- c(
   "Greenland Sea", "Faroes", "Oceanic Northeast Atlantic", "Azores"
 )
 
+
+# write a swich function that based on the ecoregions returns the acronim of the ecoregion
 # Create empty lists to store the sf objects
 effort_list <- list()
 sar_list <- list()

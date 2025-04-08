@@ -1,6 +1,24 @@
 #catches
 library(dplyr)
 
+
+get_ecoregion_acronym <- function(ecoregion) {
+  switch(ecoregion,
+         "Baltic Sea" = "BtS",
+         "Bay of Biscay and the Iberian Coast" = "BI",
+         "Celtic Seas" = "CS",
+         "Greater North Sea" = "NrS",
+         "Norwegian Sea" = "NwS",
+         "Icelandic Waters" = "IS",
+         "Barents Sea" = "BrS",
+         "Greenland Sea" = "GS",
+         "Faroes" = "FO",
+         "Oceanic Northeast Atlantic" = "ONA",
+         "Azores" = "AZ",
+         stop("Unknown ecoregion")
+  )
+}
+
 current_catches <- read.csv(file = "data-raw/GNS/catch_current.csv")
 
 # current_catches <- current_catches %>% group_by(StockKeyLabel) %>% mutate(total = ifelse(all(is.na(Catches) & is.na(Landings)), yes = NA, no = max(Catches, Landings, na.rm = TRUE))) %>% 
