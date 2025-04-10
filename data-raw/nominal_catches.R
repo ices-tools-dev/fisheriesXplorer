@@ -31,31 +31,32 @@ get_ecoregion_acronym <- function(ecoregion) {
 
 load_asfis_species <- function() {
 
-  url <- "http://www.fao.org/fishery/static/ASFIS/ASFIS_sp.zip"
+#   url <- "http://www.fao.org/fishery/static/ASFIS/ASFIS_sp.zip"
 
-  filename <- tempfile(fileext = ".zip")
+#   filename <- tempfile(fileext = ".zip")
 
-  utils::download.file(url, destfile = filename, mode = "wb")
+#   utils::download.file(url, destfile = filename, mode = "wb")
 
-  ## unzip the file to a temporary directory
-    tempdir <- tempdir()
-    on.exit(unlink(tempdir, recursive = TRUE), add = TRUE)
-    unzip(filename, exdir = tempdir)
- ## read csv file
-    filename <- list.files(tempdir, pattern = "ASFIS_sp", full.names = TRUE)
-    if (length(filename) == 0) {
-      stop("No ASFIS_sp file found in the zip archive.")
-    }
+#   ## unzip the file to a temporary directory
+#     tempdir <- tempdir()
+#     on.exit(unlink(tempdir, recursive = TRUE), add = TRUE)
+#     unzip(filename, exdir = tempdir)
+#  ## read csv file
+#     filename <- list.files(tempdir, pattern = "ASFIS_sp", full.names = TRUE)
+#     if (length(filename) == 0) {
+#       stop("No ASFIS_sp file found in the zip archive.")
+#     }
     
-    # choose the csv file
-    filename <- filename[grep(".*csv", filename)]
+#     # choose the csv file
+#     filename <- filename[grep(".*csv", filename)]
 
-    if (length(filename) == 0) {
-      stop("No CSV file found in the zip archive.")
-    }
+#     if (length(filename) == 0) {
+#       stop("No CSV file found in the zip archive.")
+#     }
 
     # read the csv file
-    species <- read.csv(filename, na.strings = "", stringsAsFactors = FALSE)
+#     species <- read.csv(filename, na.strings = "", stringsAsFactors = FALSE)
+    species <- read.csv("./data-raw/ASFIS_sp_2024.csv", na.strings = "", stringsAsFactors = FALSE)
     species <- dplyr::select(species, English_name, Scientific_Name, Alpha3_Code)
     return(species)
 }
@@ -419,8 +420,6 @@ catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic herring")] <- "he
 catch_dat$GUILD[which(catch_dat$COMMON_NAME == "cod")] <- "Demersal"
 catch_dat$GUILD[which(catch_dat$SPECIES_CODE == "POK")] <- "Demersal"
 catch_dat$GUILD[which(catch_dat$SPECIES_CODE == "REB")] <- "Demersal"
-
-
 catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "European pilchard(=Sardine)")] <- "Sardine"
 catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Scomber mackerels nei")] <- "Mackerels"
 catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Mackerels nei")] <- "Mackerels"
@@ -454,101 +453,27 @@ catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Pacific cupped oyster")] <- "cru
 catch_dat$GUILD <- tolower(catch_dat$GUILD)
 
 catch_dat <- unique(catch_dat)
-# dim(catch_dat_test)
-# dim(catch_dat)
-# # find dumplicates
-# duplicates <- catch_dat[duplicated(catch_dat),]
-# unique(duplicates$VALUE)
-# catches_frmt <- format_catches_noecoregion(hist, official, species_list, sid)
 
-
-write.taf(catch_dat, dir = paste0("./data-raw/", acronym, "/"), quote = TRUE)
-
-
+write.taf(catch_dat, file = paste0("catch_dat_", acronym, ".csv"), dir = paste0("./data-raw/", acronym, "/"), quote = TRUE)
 }
 
-# load species list
-species_list <- read.taf("boot/initial/data/species_list.csv")
-sid <- read.taf("boot/initial/data/sid.csv")
-sag <- read.taf("boot/initial/data/sag.csv")
+for (ecoregion in ecoregions) {
+  acronym <- get_ecoregion_acronym(ecoregion)
+  
+  file_path <- paste0("./data-raw/", acronym, "/catch_dat_", acronym, ".csv")
+  
+  if (file.exists(file_path)) {
+    catch_dat <- read.csv(file_path)
+    
+    # Assign it to a variable named after the acronym
+    assign(acronym, catch_dat)
+    
+    # Save it with that name
+    usethis::use_data(list = acronym, overwrite = TRUE)
+    
+    message("Saved: ", acronym)
+  } else {
+    warning("File not found: ", file_path)
+  }
+}
 
-unique(sag$FishStock)
-# 1: ICES official catch statistics
-
-hist <- read.taf("boot/initial/data/ICES_historical_catches.csv")
-official <- read.taf("boot/initial/data/ICES_2006_2022_catches.csv")
-# prelim <- read.taf("bootstrap/initial/data/ICES_nominal_catches/ICES_preliminary_catches.csv")
-
-hist <- load_historical_catches()
-hist$Country[which(hist$Country == "Germany, New L\xe4nder")]<- "Germany"
-write.taf(hist, file = "boot/initial/data/ICES_historical_catches.csv", quote = TRUE)
-
-official <- load_official_catches()
-official <- official[, -1]
-# colnames(official)[1] <- "Species"
-
-write.taf(official, file = "boot/initial/data/ICES_2006_2022_catches.csv", quote = TRUE)
-
-catch_dat <- 
-        format_catches(2024, ecoregion, 
-                       hist, official, NULL, species_list, sid)
-
-
-
-catch_dat$COUNTRY[which(catch_dat$COUNTRY == "Russian Federation")] <- "Russia"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic mackerel")] <- "mackerel"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic horse mackerel")] <- "horse mackerel"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic cod")] <- "cod"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic herring")] <- "herring"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "cod")] <- "Demersal"
-catch_dat$GUILD[which(catch_dat$SPECIES_CODE == "POK")] <- "Demersal"
-catch_dat$GUILD[which(catch_dat$SPECIES_CODE == "REB")] <- "Demersal"
-
-
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "European pilchard(=Sardine)")] <- "Sardine"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Scomber mackerels nei")] <- "Mackerels"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Mackerels nei")] <- "Mackerels"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic chub mackerel")] <- "Chub mackerel"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Mackerels")] <- "pelagic"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Chub mackerel")] <- "pelagic"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Jack and horse mackerels nei")] <- "Jack and horse mackerels"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic horse mackerel")] <- "Jack and horse mackerels"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "horse mackerel")] <- "Jack and horse mackerels"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic mackerel")] <- "mackerel"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Jack and horse mackerels")] <- "pelagic"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Monkfishes nei")] <- "Anglerfishes nei"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Anglerfishes nei")] <- "benthic"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Pelagic fishes nei")] <- "pelagic"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Raja rays nei")] <- "elasmobranch"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Bathyraja rays nei")] <- "elasmobranch"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Albacore")] <- "pelagic"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Pouting(=Bib)")] <- "demersal"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Gadiformes nei")] <- "demersal"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Octopuses, etc. nei")] <- "Octopuses"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Blue mussel")] <- "crustacean"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Sea mussels nei")] <- "crustacean"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Cockles nei")] <- "crustacean"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Common edible cockle")] <- "crustacean"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Tuberculate cockle")] <- "crustacean"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Pouting(=Bib)")] <- "demersal"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Gadiformes nei")] <- "demersal"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Cupped oysters nei")] <- "crustacean"
-catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Pacific cupped oyster")] <- "crustacean"
-
-catch_dat$GUILD <- tolower(catch_dat$GUILD)
-
-catch_dat <- unique(catch_dat)
-# dim(catch_dat_test)
-# dim(catch_dat)
-# # find dumplicates
-# duplicates <- catch_dat[duplicated(catch_dat),]
-# unique(duplicates$VALUE)
-# catches_frmt <- format_catches_noecoregion(hist, official, species_list, sid)
-
-
-write.taf(catch_dat, dir = "data", quote = TRUE)
-
-
-formatted_catch_data <- read.csv(file = "data-raw/GNS/catch_dat.csv")
-
-usethis::use_data(formatted_catch_data, overwrite = TRUE)
