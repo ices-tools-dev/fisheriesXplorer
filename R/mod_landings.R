@@ -65,7 +65,17 @@ mod_landings_ui <- function(id) {
 mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
- 
+    SID <- reactive({      
+      # dat <- prepare_ices_stock_status(clean_status)
+      getSID(year = 2024, EcoR = selected_ecoregion())
+      # format_sag_status_new(status)
+    })
+
+    SAG <- reactive({
+      # getSAG_ecoregion(2024, selected_ecoregion(), SID())      
+      getSAG_ecoregion_new(SID()$AssessmentKey)
+      # getSAG_ecoregion_new(SID()$StockKeyLabel, SID()$YearOfLastAssessment)
+    })
     output$landings_text <- renderUI({
       HTML(select_text(texts,"landings_discards","landings"))
     })
@@ -99,10 +109,10 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
       fig
     })
     
-    year <- 2022
+    year <- 2024
     
     output$discard_trends <- renderPlotly({
-      fig2 <- ggplotly(plot_discard_trends_app(catch_trends, year, cap_year , cap_month, caption = F)) 
+      fig2 <- ggplotly(plot_discard_trends_app_plotly(CLD_trends(format_sag(SAG(), SID())), year, cap_year , cap_month, caption = F)) 
       for (i in 1:length(fig2$x$data)) {
         if (!is.null(fig2$x$data[[i]]$name)) {
           fig2$x$data[[i]]$name <- gsub("\\(", "", str_split(fig2$x$data[[i]]$name, ",")[[1]][1])
@@ -111,10 +121,15 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
       fig2
     })
     output$recorded_discards <- renderPlotly({
-      ggplotly(plot_discard_current_app(catch_trends, year, cap_year , cap_month, position_letter = ""))
+      catch_trends2 <- CLD_trends(format_sag(SAG(), SID())) %>% filter(Discards > 0)
+      # ggplotly(plot_discard_current(CLD_trends(format_sag(SAG(), SID())), year, cap_year , cap_month, position_letter = ""))
+      plot_discard_current_plotly(catch_trends2, year = year, cap_year = cap_year, cap_month = cap_month)
     })
+
     output$all_discards <- renderPlotly({
-      ggplotly(plot_discard_current_app(catch_trends, year-1, cap_year , cap_month, position_letter = "" ))
+      # dat <- plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year, cap_year = cap_year , cap_month = cap_month, return_data = TRUE)
+      # ggplotly(plot_discard_current_order(CLD_trends(format_sag(SAG(), SID())), year-1, dat, cap_year , cap_month, position_letter = ""))
+      plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year = year, cap_year = cap_year, cap_month = cap_month)
     })
     
   })

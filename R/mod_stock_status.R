@@ -179,11 +179,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       # }
       
       stock_trends(format_sag(SAG(), SID())) #%>% filter(FisheriesGuild %in% guild)
-        # prepare_stock_trends()
-      
-        
-       
-      
+        # prepare_stock_trends()      
     })
     
      output$status_trends <- renderPlotly({
