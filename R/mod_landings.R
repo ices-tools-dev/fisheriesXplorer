@@ -65,6 +65,7 @@ mod_landings_ui <- function(id) {
 mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    
     SID <- reactive({      
       # dat <- prepare_ices_stock_status(clean_status)
       getSID(year = 2024, EcoR = selected_ecoregion())
@@ -93,11 +94,15 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
         "GUILD" = list("n" = 6, type = "line"),
         "COUNTRY" = list("n" = 9, type = "area")
       )
-      AZ
+      
       params <- plotting_params$landings[[input$landings_layer_selector]]
       
       ecoregion <- selected_ecoregion()
-      
+      acronym <- get_ecoregion_acronym(ecoregion)
+  
+  # Load the corresponding .rda file
+      rda_path <- paste0("./data/", acronym, ".rda")
+      load(rda_path)
       fig <- ggplotly(plot_catch_trends_app_new(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))) %>%
         plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
       

@@ -63,31 +63,33 @@ load_asfis_species <- function() {
 
 
 load_historical_catches<- function(){
-        url <- "http://ices.dk/data/Documents/CatchStats/HistoricalLandings1950-2010.zip"
-        tmpFileHistoric <- tempfile(fileext = ".zip")
-        download.file(url, destfile = tmpFileHistoric, mode = "wb", quiet = FALSE)
-        out <- read.csv(unz(tmpFileHistoric, "HistoricalLandings1950-2010/ICES_1950-2010.csv"),
-                                      stringsAsFactors = FALSE,
-                                      header = TRUE,
-                                      fill = TRUE,
-                                      na.strings = c("...", "-", "ns", "."))
+        # url <- "http://ices.dk/data/Documents/CatchStats/HistoricalLandings1950-2010.zip"
+        # tmpFileHistoric <- tempfile(fileext = ".zip")
+        # download.file(url, destfile = tmpFileHistoric, mode = "wb", quiet = FALSE)
+        # out <- read.csv(unz(tmpFileHistoric, "HistoricalLandings1950-2010/ICES_1950-2010.csv"),
+        #                               stringsAsFactors = FALSE,
+        #                               header = TRUE,
+        #                               fill = TRUE,
+        #                               na.strings = c("...", "-", "ns", "."))
+        hist <- read.csv("./data-raw/ICES_historical_catches.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
 }
 
 
 
 
 load_official_catches<- function(){
-        url <- "http://ices.dk/data/Documents/CatchStats/OfficialNominalCatches.zip"
-        tmpFileCatch <- tempfile(fileext = ".zip")
-        download.file(url, destfile = tmpFileCatch, mode = "wb", quiet = TRUE)
-        out <- read.csv(unz(tmpFileCatch,
-                        grep("ICESCatchDataset.*.csv", unzip(tmpFileCatch,
-                             list = TRUE)$Name,
-                             value = TRUE)),
-                             stringsAsFactors = FALSE,
-                             header = TRUE,
-                             fill = TRUE)
-        out <- Filter(function(x)!all(is.na(x)), out)
+        # url <- "http://ices.dk/data/Documents/CatchStats/OfficialNominalCatches.zip"
+        # tmpFileCatch <- tempfile(fileext = ".zip")
+        # download.file(url, destfile = tmpFileCatch, mode = "wb", quiet = TRUE)
+        # out <- read.csv(unz(tmpFileCatch,
+        #                 grep("ICESCatchDataset.*.csv", unzip(tmpFileCatch,
+        #                      list = TRUE)$Name,
+        #                      value = TRUE)),
+        #                      stringsAsFactors = FALSE,
+        #                      header = TRUE,
+        #                      fill = TRUE)
+        # out <- dplyr::filter(function(x)!all(is.na(x)), out)
+        official <- read.csv("./data-raw/ICES_2006_2022_catches.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
 }
 
 
@@ -155,8 +157,8 @@ format_catches <- function(year, ecoregion, historical, official, preliminary = 
                                    "IX b1", "X b", "XII a1", "XII b", "XIV b1","X (not specified)", "X a (not specified)", 
                                    "XII (not specified)")
         }
-        fo_2020 <- historical %>% filter(Division == "ICES Area (not specified)")
-        fo_2020 <-fo_2020%>% filter(Country == "Faeroe Islands")
+        fo_2020 <- historical %>% dplyr::filter(Division == "ICES Area (not specified)")
+        fo_2020 <-fo_2020%>% dplyr::filter(Country == "Faeroe Islands")
         
         
         
@@ -390,8 +392,8 @@ fish_category <- unique(fish_category)
 #REB is both pelagic and demersal
 sid$FisheriesGuild[which(sid$StockKeyLabel == "caa.27.5a")] <- "Demersal"
 #Should we include seals? maybe not
-sid <- sid %>% filter(SpeciesScientificName != "Pagophilus groenlandicus")
-sid <- sid %>% filter(SpeciesScientificName != "Cystophora cristata")
+sid <- sid %>% dplyr::filter(SpeciesScientificName != "Pagophilus groenlandicus")
+sid <- sid %>% dplyr::filter(SpeciesScientificName != "Cystophora cristata")
 
 
 species_list <- load_asfis_species()
@@ -400,13 +402,14 @@ hist <- load_historical_catches()
 hist$Country[which(hist$Country == "Germany, New L\xe4nder")]<- "Germany"
 
 official <- load_official_catches()
-official <- official[, -1]
+# official <- official[, -1]
 
 ## Ceate folders using the acronyms of the ecoregions
 for (ecoregion in ecoregions) {
+
   acronym <- get_ecoregion_acronym(ecoregion)
   mkdir(paste0("./data-raw/", acronym))
-
+        
     catch_dat <- 
         format_catches(2024, ecoregion, 
                        hist, official, NULL, species_list, sid)
@@ -457,23 +460,26 @@ catch_dat <- unique(catch_dat)
 write.taf(catch_dat, file = paste0("catch_dat_", acronym, ".csv"), dir = paste0("./data-raw/", acronym, "/"), quote = TRUE)
 }
 
+
 for (ecoregion in ecoregions) {
   acronym <- get_ecoregion_acronym(ecoregion)
   
   file_path <- paste0("./data-raw/", acronym, "/catch_dat_", acronym, ".csv")
   
   if (file.exists(file_path)) {
+    # Read the CSV file
     catch_dat <- read.csv(file_path)
     
     # Assign it to a variable named after the acronym
     assign(acronym, catch_dat)
     
-    # Save it with that name
-    usethis::use_data(list = acronym, overwrite = TRUE)
+    # Save the data in an .rda file using a structured name
+    save(list = acronym, file = paste0("./data/", acronym, ".rda"))
     
     message("Saved: ", acronym)
   } else {
     warning("File not found: ", file_path)
   }
 }
+
 

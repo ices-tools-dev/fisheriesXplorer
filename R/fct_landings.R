@@ -1,3 +1,23 @@
+get_ecoregion_acronym <- function(ecoregion) {
+  switch(ecoregion,
+         "Baltic Sea" = "BtS",
+         "Bay of Biscay and the Iberian Coast" = "BI",
+         "Celtic Seas" = "CS",
+         "Greater North Sea" = "NrS",
+         "Norwegian Sea" = "NwS",
+         "Icelandic Waters" = "IS",
+         "Barents Sea" = "BrS",
+         "Greenland Sea" = "GS",
+         "Faroes" = "FO",
+         "Oceanic Northeast Atlantic" = "ONA",
+         "Azores" = "AZ",
+         stop("Unknown ecoregion")
+  )
+}
+
+
+
+
 CLD_trends <- function(x){
         df<- dplyr::select(x,Year,
                        StockKeyLabel,
