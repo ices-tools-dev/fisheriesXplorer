@@ -409,7 +409,7 @@ plot_discard_current <- function(x, year, position_letter = "c)",
   df5 <- dplyr::left_join(df5,df3, by = c("Year", "StockKeyLabel"))
   
   df5$sum <- rowSums(df5[ , c(8:9,11)], na.rm = T)
-  df5 <- dplyr::group_by(df5,Year, StockKeyLabel)%>% top_n(1,sum)
+  df5 <- dplyr::group_by(df5,Year, StockKeyLabel) %>% dplyr::slice_max(order_by = sum, n = 1, with_ties = FALSE)
   
   # df5 <- dplyr::left_join(df5,df4, by = c("Year", "StockKeyLabel", "AssessmentYear"))
   
