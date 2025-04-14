@@ -26,10 +26,12 @@ mod_vms_ui <- function(id) {
             card_body(
               selectInput(ns("fishing_cat_selector"), "Select fishing category", 
                 choices = c("All"= "all", "Beam trawls", "Bottom otter trawls", "Bottom seines", "Dredges", "Pelagic trawls and seines", "Static gears"),
-                selected = "Beam trawls"),
+                selected = "All"),
               withSpinner(suppressWarnings(plotOutput(ns("effort_layer"), height = "65vh", width = "100%", fill =T)))
             )
-          ))),
+          )
+          )
+          ),
       column(6,
        layout_sidebar(bg = "white", fg = "black", 
                       sidebar = sidebar(width = "100%", bg = "white", fg = "black", 
@@ -38,10 +40,10 @@ mod_vms_ui <- function(id) {
             card(height = "85vh", full_screen = T,
               card_header("SAR"),
               card_body(
-                div(style = "margin-top: 20px; margin-bottom: 14.432px", 
-                    radioButtons(ns("sar_layer_selector"), "Select fishing benthic impact level",inline = T,
-                  choices = c("Surface" = "surface", "Subsurface" = "subsurface"))
-                  ),
+                # div(style = "margin-top: 20px; margin-bottom: 14.432px", 
+                selectInput(ns("sar_layer_selector"), "Select fishing benthic impact level", 
+                  choices = c("Surface" = "surface", "Subsurface" = "subsurface"),
+                  selected = "Surface"),
                 suppressWarnings(withSpinner( suppressWarnings(plotOutput(ns("sar_layer"), height = "65vh", width = "100%", fill =T))))
               )
             )
@@ -56,26 +58,29 @@ mod_vms_ui <- function(id) {
 mod_vms_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
- 
-    output$effort_layer <- renderPlot({
+    
+    
+    output$effort_layer <- renderPlot({ 
       
-       plot_effort_map_app(effort_maps[["Greater North Sea"]], 
-                          ecoregion[["Greater North Sea"]], 
+      ecoR <- selected_ecoregion()     
+       plot_effort_map_app(effort_maps[[ecoR]], 
+                          ecoregion[[ecoR]], 
                           europe_shape = europe_land_shp, 
                           fishing_category = input$fishing_cat_selector,
                           crs = CRS_LAEA_EUROPE) +
-        ggtitle(paste0("Average MW Fishing hours ", paste(2018, 2021, sep = "-")))
+        ggtitle(paste0("Average MW Fishing hours ", paste(2019, 2022, sep = "-")))
         # ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
       })
     
     output$sar_layer <- renderPlot({
       req(!is.null(input$sar_layer_selector))
-      plot_sar_map_app(sar_maps[["Greater North Sea"]], 
-                       ecoregion[["Greater North Sea"]], 
+      ecoR <- selected_ecoregion()
+      plot_sar_map_app(sar_maps[[ecoR]], 
+                       ecoregion[[ecoR]], 
                        europe_shape = europe_land_shp, 
                        layer = input$sar_layer_selector,
                        crs = CRS_LAEA_EUROPE) +
-          ggtitle(paste0("Average MW Fishing hours ", paste(2018, 2021, sep = "-")))
+          ggtitle(paste0("Average MW Fishing hours ", paste(2019, 2022, sep = "-")))
         # ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
     })
   })
@@ -86,3 +91,4 @@ mod_vms_server <- function(id, selected_ecoregion){
     
 ## To be copied in the server
 # mod_vms_server("vms_1")
+

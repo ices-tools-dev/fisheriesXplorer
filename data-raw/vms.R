@@ -13,7 +13,7 @@ ecoregions <- ecoregions[c(4:7,9:13, 15,16)]
 
 ####### Get effort maps ############## Get effort maps ############## Get effort maps #######
 
-effort_maps <- map(ecoregions, get_effort_map)
+effort_maps <- map(ecoregions, get_effort_map, year = 2022)
 names(effort_maps) <- ecoregions
 
 gears <- c("Static", "Midwater", "Otter", "Demersal seine","Dredge", "Beam")
@@ -48,7 +48,7 @@ usethis::use_data(effort_maps, overwrite = TRUE)
 
 ####### Get SAR maps ############## Get SAR maps ############## Get SAR maps #######
 
-sar_maps <- map(ecoregions, get_sar_map)
+sar_maps <- map(ecoregions, get_sar_map, year = 2022)
 names(sar_maps) <- ecoregions
 sar_maps[["Azores"]] <- NULL
 
