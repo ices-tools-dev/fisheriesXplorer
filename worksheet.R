@@ -650,3 +650,29 @@ stockstatus_CLD_current <- function(x) {
 }
 
 sag_catch_current <- stockstatus_CLD_current(sag_complete_frmt)
+
+
+# function to download data from github
+download_github_data <- function(repo_owner, repo_name, file_path) {
+    # Fetch file metadata from GitHub API
+    response <- gh::gh("GET /repos/{owner}/{repo}/contents/{path}", 
+                   owner = repo_owner, 
+                   repo = repo_name, 
+                   path = file_path)
+    
+    # Extract raw file URL
+    download_url <- response$download_url
+    
+    # Download and read the file
+    df <- read.csv(download_url)
+    
+    return(df)
+}
+
+NrS_catchScenarioStk <- download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
+NrS_catchRange <- download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice","shiny/Figure1_HeadlinePlot_advice.csv")
+save(NrS_catchScenarioStk, file = "D:/GitHub_2023/fisheriesXplorer/data/NrS_catchScenarioStk.rda")
+save(NrS_catchRange, file = "D:/GitHub_2023/fisheriesXplorer/data/NrS_catchRange.rda")
+
+
+devtools::load_all(); run_app()
