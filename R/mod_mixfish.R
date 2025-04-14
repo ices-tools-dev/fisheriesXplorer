@@ -9,30 +9,42 @@
 #' @importFrom shiny NS tagList 
 #' @importFrom mixfishtools plot_catchScenStk
 #' @importFrom datamods select_group_server select_group_ui
-mod_mixfish_ui <- function(id){
+mod_mixfish_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    navset_tab(
-      nav_panel("Mixed fisheries projections",
+    tabsetPanel(
+      tabPanel(
+        "Mixed-fisheries headline",
         layout_sidebar(
-          sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                                    open = FALSE,
-                                    uiOutput(ns("mf_projections_text"))),
-        card(height = "80vh", full_screen = T,fill = F,
-             card_header("Filter by scenario and stock"),
-             card_body(fillable = T, fill = T, class = "p-1",
-                      select_group_ui(label = NULL,
-                               id = ns("my-filters"),
-                               params = list(
-                                 scenario = list(inputId = "scenario", "Management Scenario:"),
-                                 stock = list(inputId = "stock", "Fish Stock"))),
-                                  withSpinner(
-               plotlyOutput(ns("headline_bars"), height = "65vh"),
-               caption = "Getting mix-fish results..."))
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("mf_projections_text"))
+          ),
+          card(
+            height = "80vh", full_screen = T, fill = F,
+            card_header("Filter by scenario and stock"),
+            card_body(
+              fillable = T, fill = T, class = "p-1",
+              select_group_ui(
+                label = NULL,
+                id = ns("my-filters"),
+                params = list(
+                  scenario = list(inputId = "scenario", "Management Scenario:"),
+                  stock = list(inputId = "stock", "Fish Stock")
+                )
+              ),
+              withSpinner(
+                plotlyOutput(ns("headline_bars"), height = "65vh"),
+                caption = "Getting mix-fish results..."
+              )
+            )
+          )
         )
-        )
-      
-    )
+      ),
+      tabPanel(
+        "Stock comoposition"
+      )
     )
   )
 }
