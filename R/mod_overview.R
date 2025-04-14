@@ -53,15 +53,15 @@ mod_overview_server <- function(id, selected_ecoregion){
         height = "auto")
     }, deleteFile = F)
   
-    
+    # ecoregion <- selected_ecoregion()
     output$executive_summary <- renderUI({
-      HTML(select_text(texts,"overview","executive_summary"))
+      HTML(select_text(texts, paste0("overview_",get_ecoregion_acronym(selected_ecoregion())),"executive_summary"))
     })
     output$introduction <- renderUI({
-      HTML(select_text(texts,"overview","introduction"))
+      HTML(select_text(texts,paste0("overview_",get_ecoregion_acronym(selected_ecoregion())),"introduction"))
     })
     output$who_is_fishing <- renderUI({
-      HTML(select_text(texts,"overview","who_is_fishing"))
+      HTML(select_text(texts,paste0("overview_",get_ecoregion_acronym(selected_ecoregion())),"who_is_fishing"))
     })
   })
 }
