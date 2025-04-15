@@ -30,8 +30,8 @@ mod_mixfish_ui <- function(id) {
                 label = NULL,
                 id = ns("my-filters"),
                 params = list(
-                  scenario = list(inputId = "scenario", "Management Scenario:"),
-                  stock = list(inputId = "stock", "Fish Stock")
+                  scenario = list(inputId = "scenario", label = "Management Scenario:", placeholder = "Select scenario"),
+                  stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock")
                 )
               ),
               withSpinner(
