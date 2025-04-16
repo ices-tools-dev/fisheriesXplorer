@@ -58,37 +58,6 @@ mod_overview_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-  #   output$staticMap1 <- output$staticMap2 <- renderImage({
-  #     ecoregion <- get_ecoregion_acronym(selected_ecoregion())       
-  #     path <- file.path(paste0("inst/app/www/", ecoregion,".jpg"))
-  #   list(src = path,
-  #       width = "100%",
-  #       height = "auto",
-  #       contentType = "image/jpeg",
-  #       alt = "Map")
-  #   }, deleteFile = F)
-  
-  #     # Add JavaScript to enable fullscreen when clicking the image
-  # observe({
-  #   insertUI(
-  #     selector = "body",
-  #     where = "beforeEnd",
-  #     ui = tags$script(htmltools::HTML("
-  #       document.addEventListener('click', function(e) {
-  #         if (e.target.id === 'staticMap1') {
-  #           if (!document.fullscreenElement) {
-  #             e.target.requestFullscreen().catch(err => {
-  #               alert('Error attempting fullscreen: ' + err.message);
-  #             });
-  #           } else {
-  #             document.exitFullscreen();
-  #           }
-  #         }
-  #       });
-  #     "))
-  #   )
-  # })
-
   output$staticMap1 <- renderUI({
   ecoregion <- get_ecoregion_acronym(selected_ecoregion())
   path <- file.path("inst/app/www", paste0(ecoregion, ".jpg"))
