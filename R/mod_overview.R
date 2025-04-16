@@ -10,6 +10,18 @@
 mod_overview_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    # Fullscreen script added here once
+    tags$script(HTML("
+      function toggleFullScreen(elem) {
+        if (!document.fullscreenElement) {
+          elem.requestFullscreen().catch(err => {
+            alert('Error attempting to enable fullscreen: ' + err.message);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      }
+    ")),
     tabsetPanel(
       type = "hidden",
       id = ns("overview"),
@@ -17,10 +29,10 @@ mod_overview_ui <- function(id) {
       layout_sidebar(
         fillable = T, bg = "white", fg = "black", 
         sidebar = sidebar(bg = "white", fg = "black",
-            width = "40%", 
+            width = "50%", 
             card(min_height = "50vh", height = "80vh", full_screen = T, 
-              tags$style(type = "text/css", "#staticMap {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
-                withSpinner(plotOutput(ns("staticMap1"), width = "35vw", height = "35vh")))
+              tags$style(type = "text/css", "#staticMap1 {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
+                withSpinner(uiOutput(ns("staticMap1"), width = "100%")))
         ),
           tabsetPanel(
             tabPanel("Executive Summary",
@@ -46,14 +58,51 @@ mod_overview_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    output$staticMap1 <- output$staticMap2 <- renderImage({
-      path <- file.path("inst/app/www/ecoregion.png")
-    list(src = path,
-        width = "auto",
-        height = "auto")
-    }, deleteFile = F)
+  #   output$staticMap1 <- output$staticMap2 <- renderImage({
+  #     ecoregion <- get_ecoregion_acronym(selected_ecoregion())       
+  #     path <- file.path(paste0("inst/app/www/", ecoregion,".jpg"))
+  #   list(src = path,
+  #       width = "100%",
+  #       height = "auto",
+  #       contentType = "image/jpeg",
+  #       alt = "Map")
+  #   }, deleteFile = F)
   
-    
+  #     # Add JavaScript to enable fullscreen when clicking the image
+  # observe({
+  #   insertUI(
+  #     selector = "body",
+  #     where = "beforeEnd",
+  #     ui = tags$script(htmltools::HTML("
+  #       document.addEventListener('click', function(e) {
+  #         if (e.target.id === 'staticMap1') {
+  #           if (!document.fullscreenElement) {
+  #             e.target.requestFullscreen().catch(err => {
+  #               alert('Error attempting fullscreen: ' + err.message);
+  #             });
+  #           } else {
+  #             document.exitFullscreen();
+  #           }
+  #         }
+  #       });
+  #     "))
+  #   )
+  # })
+
+  output$staticMap1 <- renderUI({
+  ecoregion <- get_ecoregion_acronym(selected_ecoregion())
+  path <- file.path("inst/app/www", paste0(ecoregion, ".jpg"))
+
+  # You can serve local files using a temporary copy if needed
+  tmp <- normalizePath(path)
+
+  tags$img(
+    id = ns("staticMap1"),  # ID is now really on the <img>
+    src = base64enc::dataURI(file = tmp, mime = "image/jpeg"),
+    style = "width: 100%; cursor: pointer;",
+    onclick = "toggleFullScreen(this)"
+  )
+})
     output$executive_summary <- renderUI({
       HTML(select_text(texts,"overview","executive_summary"))
     })
