@@ -1,19 +1,4 @@
-# function to download data from github
-download_github_data <- function(repo_owner, repo_name, file_path) {
-    # Fetch file metadata from GitHub API
-    response <- gh::gh("GET /repos/{owner}/{repo}/contents/{path}", 
-                   owner = repo_owner, 
-                   repo = repo_name, 
-                   path = file_path)
-    
-    # Extract raw file URL
-    download_url <- response$download_url
-    
-    # Download and read the file
-    df <- read.csv(download_url)
-    
-    return(df)
-}
+
 
 
 # plot_catchScenStk_interactive <- function(data, adv, ofwhich = FALSE,
