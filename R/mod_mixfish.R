@@ -88,13 +88,14 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     
     ####### headline bar plot
     data_reactive_catchScenarioStk <- reactive({
-      ecoregion <- selected_ecoregion()
+      
+      ecoR <- selected_ecoregion()
       # NrS_catchScenarioStk
-      catchScenarioStk <- catchScenarioStk %>% filter(ecoregion == get_ecoregion_acronym(selected_ecoregion()))
+      catchScenarioStk <- catchScenarioStk %>% filter(ecoregion == get_ecoregion_acronym(ecoR))
       # download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
-     browser()
-    })
     
+    })
+     
     data_filter_module <- select_group_server(
       id = "my-filters",
       data_r = data_reactive_catchScenarioStk(),
@@ -102,23 +103,38 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     )
     
     
-    catchRange <- reactiveValues()
-    catchRange$df <- NrS_catchRange
+    data_reactive_catchRange <- reactive({
+      
+      ecoR <- selected_ecoregion()
+      catchRange <- catchRange %>% filter(ecoregion == get_ecoregion_acronym(ecoR))      
+  })
+    # catchRange$df <- NrS_catchRange
+    # catchRange$df <- catchRange %>% filter(ecoregion == get_ecoregion_acronym(ecoregion))
     
     
     
-    observeEvent(input$`my-filters-stock`, {      
-      catchRange$df_filtered <- filter(catchRange$df, stock %in% input$`my-filters-stock`)
+    # observeEvent(input$`my-filters-stock`, {      
+    #   catchRange$df_filtered <- filter(catchRange$df, stock %in% input$`my-filters-stock`)
+    # })
+    
+    data_reactive_all <- reactive({
+      ecoR <- selected_ecoregion()
+      eco_acronym <- get_ecoregion_acronym(ecoR)
+      
+      list(
+        catchScenarioStk = catchScenarioStk %>% filter(ecoregion == eco_acronym),
+        catchRange = catchRange %>% filter(ecoregion == eco_acronym)
+      )
     })
-    
-    
+
     output$headline_bars <- renderPlotly({      
-      if(is.null(input$`my-filters-stock`)){
-        plot_catchScenStk_plotly(data =  data_filter_module(), adv = catchRange$df)
+      # if(is.null(input$`my-filters-stock`)){
+      browser()
+        plot_catchScenStk_plotly(data =  data_reactive_all()$catchScenarioStk, adv = data_reactive_all()$catchRange)
         
-      } else {
-        plot_catchScenStk_plotly(data =  data_filter_module(), adv = catchRange$df_filtered)        
-      }      
+      # } else {
+      #   plot_catchScenStk_plotly(data =  data_filter_module(), adv = catchRange$df_filtered)        
+      # }      
     })
 
     output$comp_bars <- renderPlot({
