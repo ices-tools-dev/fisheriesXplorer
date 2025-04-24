@@ -30,6 +30,8 @@ download_github_data <- function(repo_owner, repo_name, file_path) {
 # Define the regions to download data for
 regions <- c("NrS","CS","IrS","IW")#"BoB",
 
+
+#### catchScenarioStk
 ## download data from github for each region
 for (region in regions) {
   # Construct the file path for the region
@@ -47,14 +49,13 @@ catchScenarioStk <- do.call(rbind, lapply(regions, function(region) {
   return(df)
 }))
 
-# catchScenarioStk_NrS
-# catchScenarioStk_BoB
-# catchScenarioStk_CS
-# catchScenarioStk_IrS
-# catchScenarioStk_IW
+
 # Save the combined data frame as a rda file
 save(catchScenarioStk, file = "data/catchScenarioStk.rda")
 
+
+
+#### catchRange
 for (region in regions) {
   # Construct the file path for the region
   file_path <- paste0("shiny/Figure1_HeadlinePlot_advice.csv")
@@ -64,11 +65,7 @@ for (region in regions) {
   
 }
 
-catchRange_NrS
-catchRange_BoB
-catchRange_CS
-catchRange_IrS
-catchRange_IW
+
 # Combine the data into a single data frame
 catchRange <- do.call(rbind, lapply(regions, function(region) {
   df <- get(paste0("catchRange_", region))
@@ -78,6 +75,30 @@ catchRange <- do.call(rbind, lapply(regions, function(region) {
 }))
 
 save(catchRange, file = "data/catchRange.rda")
+
+
+
+
+
+#### reTable
+for (region in regions) {
+  # Construct the file path for the region
+  file_path <- paste0("shiny/refTable.csv")
+  
+  # Download the data from GitHub
+  assign(paste0("refTable_", region), download_github_data("ices-taf", paste0("2024_", region,"_MixedFisheriesAdvice"), file_path))
+  }
+
+
+# Combine the data into a single data frame
+refTable <- do.call(rbind, lapply(regions, function(region) {
+  df <- get(paste0("refTable_", region))
+  df <- df %>% select(stock, order, col)
+  df$ecoregion <- region  # Add the ecoregion column
+  return(df)
+}))
+
+save(refTable, file = "data/refTable.rda")
 # # Download the data from GitHub
 # NrS_catchScenarioStk <- download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
 # download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
