@@ -288,7 +288,7 @@ plot_catchScenStk_int <- function(data, adv, #ofwhich = FALSE,
 
 plot_catchScenStk_plotly <- function(data, adv, ofwhich = FALSE,
                                      xlab = "Scenario", ylab = "Catch [t]") {
-  
+  data <- data %>% filter(stock %in% adv$stock)
   # Add dummy advice range values if missing
   if(!"upper" %in% names(adv)){
     adv$upper <- adv$advice

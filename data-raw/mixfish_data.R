@@ -20,7 +20,7 @@ download_github_data <- function(repo_owner, repo_name, file_path) {
     
     # Download and read the file
     df <- read.csv(download_url, sep = c(",", ";"), header = TRUE)
-    df <- df %>% select(stock, scenario, catch)
+    
     return(df)
 }
 
@@ -42,6 +42,7 @@ for (region in regions) {
 # Combine the data into a single data frame
 catchScenarioStk <- do.call(rbind, lapply(regions, function(region) {
   df <- get(paste0("catchScenarioStk_", region))
+  df <- df %>% select(stock, scenario, catch)
   df$ecoregion <- region  # Add the ecoregion column
   return(df)
 }))
@@ -54,7 +55,32 @@ catchScenarioStk <- do.call(rbind, lapply(regions, function(region) {
 # Save the combined data frame as a rda file
 save(catchScenarioStk, file = "data/catchScenarioStk.rda")
 
+for (region in regions) {
+  # Construct the file path for the region
+  file_path <- paste0("shiny/Figure1_HeadlinePlot_advice.csv")
+  
+  # Download the data from GitHub
+  assign(paste0("catchRange_", region), download_github_data("ices-taf", paste0("2024_", region,"_MixedFisheriesAdvice"), file_path))
+  
+}
 
+catchRange_NrS
+catchRange_BoB
+catchRange_CS
+catchRange_IrS
+catchRange_IW
+# Combine the data into a single data frame
+catchRange <- do.call(rbind, lapply(regions, function(region) {
+  df <- get(paste0("catchRange_", region))
+  df <- df %>% select(stock, advice, lower,  upper)
+  df$ecoregion <- region  # Add the ecoregion column
+  return(df)
+}))
+
+save(catchRange, file = "data/catchRange.rda")
 # # Download the data from GitHub
 # NrS_catchScenarioStk <- download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
 # download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
+
+
+# flref
