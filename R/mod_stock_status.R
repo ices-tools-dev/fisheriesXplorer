@@ -15,6 +15,8 @@
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    div(style = "padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+        textOutput(ns("ecoregion_label"))),
     navset_tab(
        nav_panel("Status Summary",
           layout_sidebar(
@@ -116,7 +118,12 @@ mod_stock_status_ui <- function(id) {
 mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
- 
+
+    output$ecoregion_label <- renderText({
+      req(selected_ecoregion())
+      paste("Ecoregion:", selected_ecoregion())
+    })
+
     output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       HTML(select_text(texts,"status","sidebar"))
     })

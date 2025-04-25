@@ -14,6 +14,8 @@
 mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    div(style = "padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+        textOutput(ns("ecoregion_label"))),
     tabsetPanel(
       tabPanel("Landings",
         layout_sidebar(bg = "white", fg = "black", 
@@ -66,6 +68,11 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
+    output$ecoregion_label <- renderText({
+      req(selected_ecoregion())
+      paste("Ecoregion:", selected_ecoregion())
+    })
+
     SID <- reactive({      
       # dat <- prepare_ices_stock_status(clean_status)
       getSID(year = 2024, EcoR = selected_ecoregion())

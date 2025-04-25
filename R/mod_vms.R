@@ -14,6 +14,8 @@
 mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    div(style = "padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+        textOutput(ns("ecoregion_label"))),
     br(),
     fluidRow(
       column(6,
@@ -59,7 +61,11 @@ mod_vms_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
-    
+    output$ecoregion_label <- renderText({
+      req(selected_ecoregion())
+      paste("Ecoregion:", selected_ecoregion())
+    })
+
     output$effort_layer <- renderPlot({ 
       
       ecoR <- selected_ecoregion()     
