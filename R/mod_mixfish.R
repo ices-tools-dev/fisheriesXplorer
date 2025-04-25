@@ -12,6 +12,8 @@
 mod_mixfish_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    div(style = "padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+        textOutput(ns("ecoregion_label"))),
     tabsetPanel(
       tabPanel(
         "Mixed-fisheries headline",
@@ -82,6 +84,11 @@ mod_mixfish_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
+    output$ecoregion_label <- renderText({
+      req(selected_ecoregion())
+      paste("Ecoregion:", selected_ecoregion())
+    })
+
     output$mf_projections_text <- renderUI({
       HTML(select_text(texts,"mixfish","projection_sidebar"))
     })  
