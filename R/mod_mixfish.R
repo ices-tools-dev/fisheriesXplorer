@@ -84,9 +84,7 @@ mod_mixfish_server <- function(id, selected_ecoregion){
     
     output$mf_projections_text <- renderUI({
       HTML(select_text(texts,"mixfish","projection_sidebar"))
-    })
-    
-  
+    })  
     
     data_reactive_all <- reactive({
       
@@ -118,12 +116,7 @@ mod_mixfish_server <- function(id, selected_ecoregion){
 
     
     output$comp_bars <- renderPlot({
-      # if(is.null(input$`my-filters-stock`)){
-      #   plot_catchScenStk_plotly(data =  data_filter_module(), adv = catchRange$df)
-
-      # } else {
-      #   plot_catchScenStk_plotly(data =  data_filter_module(), adv = catchRange$df_filtered)
-      # }
+      
       library(mixfishtools)
       data(refTable)
       data(stfMtStkSum)
