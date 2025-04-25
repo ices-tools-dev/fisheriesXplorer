@@ -89,19 +89,20 @@ mod_mixfish_server <- function(id, selected_ecoregion){
   
     
     data_reactive_all <- reactive({
+      
       ecoR <- selected_ecoregion()
       eco_acronym <- get_ecoregion_acronym(ecoR)
       
       list(
-        catchScenarioStk = catchScenarioStk %>% filter(ecoregion == eco_acronym),
-        catchRange = catchRange %>% filter(ecoregion == eco_acronym),
-        refTable = refTable %>% filter(ecoregion == eco_acronym)
+        catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
+        catchRange_filtered = catchRange %>% filter(ecoregion == eco_acronym),
+        refTable_filtered = refTable %>% filter(ecoregion == eco_acronym)
       )
     })
 
     data_filter_module <- select_group_server(
       id = "my-filters",
-      data_r = reactive(data_reactive_all()$catchScenarioStk),
+      data_r = reactive(data_reactive_all()$catchScenarioStk_filtered),
       vars_r = reactive(c("scenario", "stock"))
     )
 
@@ -110,8 +111,8 @@ mod_mixfish_server <- function(id, selected_ecoregion){
       
       plot_catchScenStk_plotly(
         data = data_filter_module(),
-        adv = data_reactive_all()$catchRange,
-        refTable = data_reactive_all()$refTable
+        adv = data_reactive_all()$catchRange_filtered,
+        refTable = data_reactive_all()$refTable_filtered
       )
 })
 
