@@ -45,7 +45,15 @@ app_ui <- function(request) {
         mod_stock_status_ui("stock_status_1")
       ),
       tabPanel("Mixed Fisheries",
-               mod_mixfish_ui("mixfish_1")),
+              #  mod_mixfish_ui("mixfish_1")
+              layout_sidebar(
+                sidebar = sidebar(
+                  mod_mixfish_plot_selection_ui("mixfish_selection_1"),
+                  width = "20vw"
+                ),
+                mod_mixfish_plot_display_ui("mixfish_viz_1"),
+              )
+               ),
       tabPanel(
         "VMS",
         mod_vms_ui("vms_1")
