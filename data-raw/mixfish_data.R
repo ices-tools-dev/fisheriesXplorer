@@ -28,7 +28,7 @@ download_github_data <- function(repo_owner, repo_name, file_path) {
 
 
 # Define the regions to download data for
-regions <- c("NrS","CS","IrS","IW")#"BoB",
+regions <- c("NrS","CS","IrS","IW", "BoB")#"BoB",
 
 
 #### catchScenarioStk
