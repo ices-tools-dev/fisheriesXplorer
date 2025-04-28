@@ -45,7 +45,14 @@ for (region in regions) {
 catchScenarioStk <- do.call(rbind, lapply(regions, function(region) {
   df <- get(paste0("catchScenarioStk_", region))
   df <- df %>% select(stock, scenario, catch)
-  df$ecoregion <- region  # Add the ecoregion column
+  # if region is CS, rename df$ecoregion to CSx, else df$ecoregion = region
+  if (region == "CS") {
+    df$ecoregion <- paste0(region, "x")
+  } else {
+    df$ecoregion <- region
+  }
+  # df$ecoregion <- region  # Add the ecoregion column
+
   return(df)
 }))
 
@@ -70,7 +77,11 @@ for (region in regions) {
 catchRange <- do.call(rbind, lapply(regions, function(region) {
   df <- get(paste0("catchRange_", region))
   df <- df %>% select(stock, advice, lower,  upper)
-  df$ecoregion <- region  # Add the ecoregion column
+  if (region == "CS") {
+    df$ecoregion <- paste0(region, "x")
+  } else {
+    df$ecoregion <- region
+  }
   return(df)
 }))
 
@@ -94,7 +105,11 @@ for (region in regions) {
 refTable <- do.call(rbind, lapply(regions, function(region) {
   df <- get(paste0("refTable_", region))
   df <- df %>% select(stock, order, col)
-  df$ecoregion <- region  # Add the ecoregion column
+  if (region == "CS") {
+    df$ecoregion <- paste0(region, "x")
+  } else {
+    df$ecoregion <- region
+  }
   return(df)
 }))
 
