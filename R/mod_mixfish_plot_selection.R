@@ -33,7 +33,7 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
     observeEvent(input$subRegion, {
         selected_subRegion(input$subRegion)
     })
-    
+
     observeEvent(input$plot1, {
       selected_plot("plot1")
     })
@@ -48,7 +48,7 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
       
       new_choices <- switch(acr,
         "CS" = c("Celtic Sea","Irish Sea"),
-        "BI" = c("Bay of Biscay","Iberian waters"),
+        "BI" = c("Bay of Biscay","Iberian Waters"),
         ## otherwise, just offer the full ecoregion name itself
         eco
       )
