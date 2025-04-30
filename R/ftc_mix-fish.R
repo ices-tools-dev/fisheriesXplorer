@@ -520,10 +520,10 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,ofwhich = FALSE,
 }
 #############################################################################
 
-plot_catchComp <- function(stfMtStkSum, refTable, filters=NULL,
+plot_catchComp_plotly <- function(dataComposition, refTable, filters=NULL,
   selectors = "metier", divider = NULL, yvar = "landings"){
 
-    data <- subset(stfMtStkSum, scenario == "min")
+    data <- subset(dataComposition, scenario == "min")
     # add country and area identifiers (if desired)
       tmp <- strsplit(data$metier, ".", fixed = TRUE)
       data$area <- unlist(lapply(tmp, FUN = function(x) {
@@ -535,7 +535,7 @@ plot_catchComp <- function(stfMtStkSum, refTable, filters=NULL,
       }))
       # replace stock with ICES stock code
       data$stock <- refTable$stock[match(data$stock, refTable$stock_short)]
-browser()
+
 
   # filters filter the data
   # selectors select the level of data aggregation. They get pasted together
@@ -594,58 +594,58 @@ browser()
 
 
 
-plot_catchComp_plotly <- function(data, refTable, filters=NULL,
-  selectors = "metier", divider = NULL, yvar = "landings"){
+# plot_catchComp_plotly <- function(data, refTable, filters=NULL,
+#   selectors = "metier", divider = NULL, yvar = "landings"){
 
-  # Check if the necessary columns exist in the data
-  required_columns <- c(selectors, "stock", yvar, divider)
-  missing_columns <- setdiff(required_columns, names(data))
-  if(length(missing_columns) > 0){
-    stop(paste("The following required columns are missing from the data:", paste(missing_columns, collapse = ", ")))
-  }
+#   # Check if the necessary columns exist in the data
+#   required_columns <- c(selectors, "stock", yvar, divider)
+#   missing_columns <- setdiff(required_columns, names(data))
+#   if(length(missing_columns) > 0){
+#     stop(paste("The following required columns are missing from the data:", paste(missing_columns, collapse = ", ")))
+#   }
 
-  # filters filter the data
-  if(!is.null(filters)){
-    for (var in names(filters)){
-      if(!var %in% names(data)){
-        stop(paste("Filter column", var, "not found in data"))
-      }
-      data <- dplyr::filter(data, .data[[var]] %in% filters[[var]])
-    }
-  }
+#   # filters filter the data
+#   if(!is.null(filters)){
+#     for (var in names(filters)){
+#       if(!var %in% names(data)){
+#         stop(paste("Filter column", var, "not found in data"))
+#       }
+#       data <- dplyr::filter(data, .data[[var]] %in% filters[[var]])
+#     }
+#   }
 
-  if(length(divider) > 1){
-    stop("only 1 variable can be provided as a divider")
-  }
+#   if(length(divider) > 1){
+#     stop("only 1 variable can be provided as a divider")
+#   }
 
-  # check area codes. NA = notSpecified
-  if(any(is.na(data$area))){
-    data$area[is.na(data$area)] <- "notSpecified"
-  }
+#   # check area codes. NA = notSpecified
+#   if(any(is.na(data$area))){
+#     data$area[is.na(data$area)] <- "notSpecified"
+#   }
 
-  # aggregate by selectors by concatenating selectors into 1 label
-  data$label <- apply(dplyr::select(dplyr::ungroup(data), dplyr::all_of(selectors)), 1, paste, collapse = "_")
-  data <- data %>% dplyr::group_by(dplyr::across(dplyr::all_of(c("label", "stock", divider)))) %>%
-    dplyr::summarise(VAR = sum(.data[[yvar]], na.rm = TRUE), .groups = 'drop')
+#   # aggregate by selectors by concatenating selectors into 1 label
+#   data$label <- apply(dplyr::select(dplyr::ungroup(data), dplyr::all_of(selectors)), 1, paste, collapse = "_")
+#   data <- data %>% dplyr::group_by(dplyr::across(dplyr::all_of(c("label", "stock", divider)))) %>%
+#     dplyr::summarise(VAR = sum(.data[[yvar]], na.rm = TRUE), .groups = 'drop')
 
-  # get colour scale by merging with refTable
-  data <- dplyr::left_join(data, refTable, by = "stock")
-  tmp <- unique(data[, c("stock", "col", "order")])
-  tmp <- tmp[order(tmp$order), ]
-  stkColors <- tmp$col
-  names(stkColors) <- tmp$stock
+#   # get colour scale by merging with refTable
+#   data <- dplyr::left_join(data, refTable, by = "stock")
+#   tmp <- unique(data[, c("stock", "col", "order")])
+#   tmp <- tmp[order(tmp$order), ]
+#   stkColors <- tmp$col
+#   names(stkColors) <- tmp$stock
 
-  # ensure plotting order
-  data$stock <- factor(data$stock, levels = tmp$stock)
+#   # ensure plotting order
+#   data$stock <- factor(data$stock, levels = tmp$stock)
 
-  # plot
-  p <- plotly::plot_ly(data, x = ~label, y = ~VAR, color = ~stock, colors = stkColors, type = 'bar') %>%
-    plotly::layout(barmode = 'stack', xaxis = list(title = ''), yaxis = list(title = ''), 
-           legend = list(title = list(text = 'stock')))
+#   # plot
+#   p <- plotly::plot_ly(data, x = ~label, y = ~VAR, color = ~stock, colors = stkColors, type = 'bar') %>%
+#     plotly::layout(barmode = 'stack', xaxis = list(title = ''), yaxis = list(title = ''), 
+#            legend = list(title = list(text = 'stock')))
 
-  if(!is.null(divider)){
-    p <- p %>% plotly::layout(facets = as.formula(paste('~', divider)), scales = 'free')
-  }
+#   if(!is.null(divider)){
+#     p <- p %>% plotly::layout(facets = as.formula(paste('~', divider)), scales = 'free')
+#   }
 
-  return(p)
-}
+#   return(p)
+# }
