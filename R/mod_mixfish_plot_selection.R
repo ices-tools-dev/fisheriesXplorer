@@ -41,7 +41,7 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
     observeEvent(input$plot2, {
       selected_plot("plot2")
     })
-    ## ← new: watch ecoregion and update subRegion choices
+    ## watch ecoregion and update subRegion choices
     shiny::observeEvent(selected_ecoregion(), {
       eco <- selected_ecoregion()
       acr <- get_ecoregion_acronym(eco)

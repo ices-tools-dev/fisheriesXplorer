@@ -388,7 +388,7 @@ plot_catchScenStk_int <- function(data, adv, #ofwhich = FALSE,
 # }
 
 
-plot_catchScenStk_plotly <- function(data, adv, refTable,ofwhich = FALSE,
+plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
                                      xlab = "Scenario", ylab = "Catch [t]") {
   data <- dplyr::filter(data, stock %in% adv$stock)
   
