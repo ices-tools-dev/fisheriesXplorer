@@ -20,28 +20,56 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    # data_reactive_all <- reactive({
+    #   req(selected_ecoregion())
+    #   get_active_region_acronym <- function(subregion, ecoregion) {
+    #     region <- if (!is.null(subregion)) subregion else ecoregion
+    #     get_ecoregion_acronym(region)
+    #   }
+    #   # sReg <- selected_subRegion()
+    #   #   ecoR <- selected_ecoregion()
+    #   eco_acronym <- get_active_region_acronym(selected_subRegion(), selected_ecoregion())
+    #   print("Running data_reactive_all")
+    #   browser()
+    #   list(
+    #     catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
+    #     catchRange_filtered = catchRange %>% filter(ecoregion == eco_acronym),
+    #     refTable_filtered = refTable %>% filter(ecoregion == eco_acronym)
+    #   )
+    # })
     data_reactive_all <- reactive({
-      req(selected_subRegion())
+      req(selected_ecoregion())
+      eco_acronym <- get_active_region_acronym(selected_subRegion(), selected_ecoregion())
+
+      validate(
+        need(eco_acronym %in% catchScenarioStk$ecoregion, "Invalid ecoregion filter.")
+      )
+
+      print(paste("Filtering using acronym:", eco_acronym))
       
-      sReg <- selected_subRegion()
-      #   ecoR <- selected_ecoregion()
-      eco_acronym <- get_ecoregion_acronym(sReg)
-      print("Running data_reactive_all")
+      catchScenarioStk_filtered <- catchScenarioStk %>% filter(ecoregion == eco_acronym)
+      catchRange_filtered <- catchRange %>% filter(ecoregion == eco_acronym)
+      refTable_filtered <- refTable %>% filter(ecoregion == eco_acronym)
       
       list(
-        catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
-        catchRange_filtered = catchRange %>% filter(ecoregion == eco_acronym),
-        refTable_filtered = refTable %>% filter(ecoregion == eco_acronym)
+        catchScenarioStk_filtered = catchScenarioStk_filtered,
+        catchRange_filtered = catchRange_filtered,
+        refTable_filtered = refTable_filtered
       )
+      # list(
+      #   catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
+      #   catchRange_filtered       = catchRange %>% filter(ecoregion == eco_acronym),
+      #   refTable_filtered         = refTable %>% filter(ecoregion == eco_acronym)
+      # )
     })
 
     dataComp <- reactive({
       req(plot_name())
       library(mixfishtools)
-      data(refTable)
+      refTableComp <- data(refTable)
       data(stfMtStkSum)
       print("Running dataComp")
-      list(refTable = refTable, stfMtStkSum = stfMtStkSum)
+      list(refTableComp = refTableComp, stfMtStkSum = stfMtStkSum)
     })
 
     # Dynamically render the correct filter UI
@@ -94,8 +122,11 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
 
 
     output$plot <- renderPlotly({
-      req(plot_name())      
+      req(plot_name())
+      # df <- data_filter_module()
+      # req(df)
       print("Rendering plot")
+      # data_reactive_all <- data_reactive_all()
       switch(plot_name(),
         "plot1" = plot_catchScenStk_plotly(
           data = data_filter_module(),
@@ -104,7 +135,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
         ),
         "plot2" = plot_catchComp_plotly(
           dataComposition = data_filter_module(),
-          refTable = dataComp()$refTable,
+          refTable = dataComp()$refTableComp,
           filters = NULL,
           selectors = "year",
           divider = "fleet",
@@ -112,5 +143,34 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
         )
       )
     })
+    # output$plot <- renderPlotly({
+    #   req(plot_name())
+    #   df <- data_filter_module()
+    #   req(df)
+
+    #   if (plot_name() == "plot1") {
+    #     req(input$scenario, input$stock)
+    #   } else if (plot_name() == "plot2") {
+    #     req(input$year, input$fleet)
+    #   }
+
+    #   print("Rendering plot")
+    #   switch(plot_name(),
+    #     "plot1" = plot_catchScenStk_plotly(
+    #       data = df,
+    #       adv = data_reactive_all()$catchRange_filtered,
+    #       refTable = data_reactive_all()$refTable_filtered
+    #     ),
+    #     "plot2" = plot_catchComp_plotly(
+    #       dataComposition = df,
+    #       refTable = dataComp()$refTable,
+    #       filters = NULL,
+    #       selectors = "year",
+    #       divider = "fleet",
+    #       yvar = "catch"
+    #     )
+    #   )
+    # })
+
   })
 }
