@@ -22,7 +22,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
 
     data_reactive_all <- reactive({
       req(selected_subRegion())
-
+      
       sReg <- selected_subRegion()
       #   ecoR <- selected_ecoregion()
       eco_acronym <- get_ecoregion_acronym(sReg)
