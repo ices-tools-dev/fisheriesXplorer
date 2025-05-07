@@ -66,10 +66,14 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
     dataComp <- reactive({
       req(plot_name())
       library(mixfishtools)
-      refTableComp <- data(refTable)
+      # refTableComp <- data(refTable)
       data(stfMtStkSum)
+      # unique(stfMtStkSum$stock)
+      # # replace stock with ICES stock code
+      # stfMtStkSum$stock <- refTable$stock[match(data$stock, refTable$stock_short)]
+      browser()
       print("Running dataComp")
-      list(refTableComp = refTableComp, stfMtStkSum = stfMtStkSum)
+      list(stfMtStkSum = stfMtStkSum)
     })
 
     # Dynamically render the correct filter UI
@@ -135,7 +139,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
         ),
         "plot2" = plot_catchComp_plotly(
           dataComposition = data_filter_module(),
-          refTable = dataComp()$refTableComp,
+          refTable = data_reactive_all()$refTable_filtered,
           filters = NULL,
           selectors = "year",
           divider = "fleet",
