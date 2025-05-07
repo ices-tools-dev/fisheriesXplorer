@@ -47,31 +47,26 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
 
       print(paste("Filtering using acronym:", eco_acronym))
       
-      catchScenarioStk_filtered <- catchScenarioStk %>% filter(ecoregion == eco_acronym)
-      catchRange_filtered <- catchRange %>% filter(ecoregion == eco_acronym)
-      refTable_filtered <- refTable %>% filter(ecoregion == eco_acronym)
+      # catchScenarioStk_filtered <- catchScenarioStk %>% filter(ecoregion == eco_acronym)
+      # catchRange_filtered <- catchRange %>% filter(ecoregion == eco_acronym)
+      # refTable_filtered <- refTable %>% filter(ecoregion == eco_acronym)
       
-      list(
-        catchScenarioStk_filtered = catchScenarioStk_filtered,
-        catchRange_filtered = catchRange_filtered,
-        refTable_filtered = refTable_filtered
-      )
       # list(
-      #   catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
-      #   catchRange_filtered       = catchRange %>% filter(ecoregion == eco_acronym),
-      #   refTable_filtered         = refTable %>% filter(ecoregion == eco_acronym)
+      #   catchScenarioStk_filtered = catchScenarioStk_filtered,
+      #   catchRange_filtered = catchRange_filtered,
+      #   refTable_filtered = refTable_filtered
       # )
+      list(
+        catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
+        catchRange_filtered       = catchRange %>% filter(ecoregion == eco_acronym),
+        refTable_filtered         = refTable %>% filter(ecoregion == eco_acronym)
+      )
     })
 
     dataComp <- reactive({
       req(plot_name())
       library(mixfishtools)
-      # refTableComp <- data(refTable)
       data(stfMtStkSum)
-      # unique(stfMtStkSum$stock)
-      # # replace stock with ICES stock code
-      # stfMtStkSum$stock <- refTable$stock[match(data$stock, refTable$stock_short)]
-      browser()
       print("Running dataComp")
       list(stfMtStkSum = stfMtStkSum)
     })
