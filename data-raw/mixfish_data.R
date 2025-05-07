@@ -102,19 +102,6 @@ for (region in regions) {
 
 
 # # Combine the data into a single data frame
-# refTable <- do.call(bind_rows, lapply(regions, function(region) {
-#   df <- get(paste0("refTable_", region))
-  
-#   # df <- df %>% select(stock, order, col)
-#   if (region == "CS") {
-#     df$ecoregion <- paste0(region, "x")
-#   } else {
-#     df$ecoregion <- region
-#   }
-#   return(df)
-# }))
-
-
 refTable <- bind_rows(lapply(regions, function(region) {
   df <- get(paste0("refTable_", region))
   
