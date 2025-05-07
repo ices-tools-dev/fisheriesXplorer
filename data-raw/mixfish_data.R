@@ -28,7 +28,7 @@ download_github_data <- function(repo_owner, repo_name, file_path) {
 
 
 # Define the regions to download data for
-regions <- c("NrS","CS","IrS","IW", "BoB")#"BoB",
+regions <- c("NrS","CS","IrS","IW", "BoB")
 
 
 #### catchScenarioStk
@@ -101,18 +101,31 @@ for (region in regions) {
   }
 
 
-# Combine the data into a single data frame
-refTable <- do.call(rbind, lapply(regions, function(region) {
+# # Combine the data into a single data frame
+# refTable <- do.call(bind_rows, lapply(regions, function(region) {
+#   df <- get(paste0("refTable_", region))
+  
+#   # df <- df %>% select(stock, order, col)
+#   if (region == "CS") {
+#     df$ecoregion <- paste0(region, "x")
+#   } else {
+#     df$ecoregion <- region
+#   }
+#   return(df)
+# }))
+
+
+refTable <- bind_rows(lapply(regions, function(region) {
   df <- get(paste0("refTable_", region))
-  df <- df %>% select(stock, order, col)
-  if (region == "CS") {
-    df$ecoregion <- paste0(region, "x")
-  } else {
-    df$ecoregion <- region
-  }
+  
+  # Coerce known columns to consistent types
+  if ("ref" %in% colnames(df)) df$ref <- as.character(df$ref)
+  
+  # Add ecoregion
+  df$ecoregion <- ifelse(region == "CS", paste0(region, "x"), region)  
+  
   return(df)
 }))
-
 save(refTable, file = "data/refTable.rda")
 # # Download the data from GitHub
 # NrS_catchScenarioStk <- download_github_data("ices-taf", "2024_NrS_MixedFisheriesAdvice", "shiny/Figure1_HeadlinePlot_data.csv")
