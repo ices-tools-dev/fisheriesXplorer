@@ -6,7 +6,8 @@ mod_mixfish_plot_selection_ui <- function(id) {
     actionButton(ns("plot1"), "Headline"),
     actionButton(ns("plot2"), "Effort By Fleet/Stock"),
     actionButton(ns("plot3"), "Landings By Fleet/Stock"),
-    actionButton(ns("plot4"), "Catch Composition"),
+    actionButton(ns("plot4"), "Landings By Stock"),
+    actionButton(ns("plot5"), "Catch Composition"),
     
   )
 }
@@ -62,6 +63,10 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
 
     observeEvent(input$plot4, {
       selected_plot("plot4")
+    })
+
+    observeEvent(input$plot5, {
+      selected_plot("plot5")
     })
     
     observeEvent(selected_ecoregion(), {
