@@ -518,6 +518,46 @@ plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
   
   fig
 }
+
+#############################################################################
+plot_effortFltStk_plotly <- function(data, refTable,
+  xlab = "Stock", ylab = "Effort ['000 KW days]",
+  fillLegendTitle = "Stock", colLegendTitle = "Limiting stock",
+  linewidthDefault = 0.5, linewidthLimitation = 1)
+{
+  stkFill <- data.frame(stock = unique(data$stock))
+  stkFill <- merge(x = stkFill, y = refTable, all.x = TRUE)
+  stkFill <- stkFill[order(stkFill$order), ]
+  stkColors <- stkFill$col
+  names(stkColors) <- stkFill$stock
+  stkColorScale <- scale_colour_manual(name = fillLegendTitle,
+    values = stkColors, aesthetics = c("fill"))
+  data$stock <- factor(data$stock, levels = stkFill$stock)
+
+  p <- ggplot(data) +
+    aes(x = stock, y = quotaEffort, fill = stock,
+      color = Limitation, group = fleet) +
+    facet_wrap(fleet ~ ., scales = "free_y", ncol = 3) +
+    geom_bar(stat = "identity", linewidth = linewidthDefault, fill = NA,
+      color = "black") +
+    geom_bar(stat = "identity", linewidth = linewidthLimitation) +
+    geom_hline(data = data, aes(yintercept = sqEffort), lty = 2) +
+    scale_color_manual(values = c('green', 'red'), na.value = NA,
+      limits = c('least','most'), labels = c("least", "most (*)")) +
+    geom_text(data = subset(data, Limitation == "most"),
+      aes(label = "*"), vjust = 0.2, show.legend = FALSE) +
+    xlab(xlab) + ylab(ylab) + stkColorScale + theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 90, hjust = 1,
+      vjust = 0.5, size = 7), panel.grid = element_blank(),
+      text = element_text(size = 9), strip.text = element_text(size = 9)) +
+    guides(
+      colour = guide_legend(order = 2, override.aes = list(fill = NA)),
+      fill = guide_legend(order = 1,
+        override.aes = list(color = "black", linewidth = linewidthDefault))) +
+    labs(fill = fillLegendTitle, color = colLegendTitle)
+  return(plotly::ggplotly(p))
+}
 #############################################################################
 
 plot_catchComp_plotly <- function(dataComposition, refTable, filters=NULL,
