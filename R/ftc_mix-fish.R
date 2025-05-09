@@ -560,6 +560,66 @@ plot_effortFltStk_plotly <- function(data, refTable,
 }
 #############################################################################
 
+plot_landByMetStock_plotly <- function(data, refTable,
+                                       xlab = "", ylab = "Landings ['000 t]",
+                                       fillLegendTitle = "Stock") {
+  if (is.null(data)) {
+    stop("object, data, does not exist")
+  }
+
+  if (!all(c("metier", "stock", "value") %in% colnames(data))) {
+    stop("Column names not as expected")
+  }
+
+  # Merge color reference
+  data <- dplyr::left_join(data, refTable, by = "stock")
+  
+  # Order stocks by 'order' column in refTable and convert value to '000 t
+  data <- dplyr::mutate(
+    data,
+    stock = factor(stock, levels = refTable$stock[order(refTable$order)]),
+    value = value / 1000
+  )
+  data$metier <- as.factor(data$metier)
+  # Initialize plotly object
+  plot <- plotly::plot_ly()
+
+  # Add a trace per stock
+  for (stk in levels(data$stock)) {
+    stk_data <- dplyr::filter(data, stock == stk)
+    stk_col <- unique(stk_data$col)
+
+    plot <- plotly::add_trace(
+      plot,
+      data = stk_data,
+      x = ~metier,
+      y = ~value,
+      type = 'bar',
+      name = stk,
+      marker = list(color = stk_col),
+      hovertemplate = paste(
+        "<b>Metier:</b> %{x}<br>",
+        "<b>Stock:</b> ", stk, "<br>",
+        "<b>Landings:</b> %{y:.2f} thousand t<br><extra></extra>"
+      )
+    )
+  }
+
+  # Apply layout
+  plot <- plotly::layout(
+    plot,
+    barmode = 'stack',
+    xaxis = list(title = xlab, tickangle = -45),
+    yaxis = list(title = ylab),
+    legend = list(title = list(text = fillLegendTitle)),
+    margin = list(b = 80),
+    font = list(size = 10)
+  )
+
+  return(plot)
+}
+
+#######################################################################
 plot_catchComp_plotly <- function(dataComposition, refTable, filters=NULL,
   selectors = "metier", divider = NULL, yvar = "landings"){
 

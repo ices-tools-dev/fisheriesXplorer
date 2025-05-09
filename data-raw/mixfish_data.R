@@ -115,7 +115,33 @@ EffortByFleetStock <- bind_rows(lapply(regions, function(region) {
 
 save(EffortByFleetStock, file = "data/EffortByFleetStock.rda")
 
+#### Figure3_landByMetStock_data
+for (region in regions) {
+  # Construct the file path for the region
+  file_path <- paste0("shiny/Figure3_MetierLandings.csv")
+  
+  # Download the data from GitHub
+  assign(paste0("MetierStockLandings_", region), download_github_data("ices-taf", paste0("2024_", region,"_MixedFisheriesAdvice"), file_path))
+  
+}
 
+
+# Combine the data into a single data frame
+MetierStockLandings <- bind_rows(lapply(regions, function(region) {
+  df <- get(paste0("MetierStockLandings_", region))
+  
+  # Coerce known columns to consistent types
+  if ("X" %in% colnames(df)) df$X <- as.character(df$X)
+
+  if (region == "CS") {
+    df$ecoregion <- paste0(region, "x")
+  } else {
+    df$ecoregion <- region
+  }
+  return(df)
+}))
+
+save(MetierStockLandings, file = "data/MetierStockLandings.rda")
 
 #### reTable
 for (region in regions) {

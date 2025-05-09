@@ -132,12 +132,13 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
       validate(
         need(eco_acronym %in% catchScenarioStk$ecoregion, "Invalid ecoregion filter.")
       )
-
+      
       print(paste("Filtering using acronym:", eco_acronym))
       list(
         catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
-        EffortByFleetStock_filtered = EffortByFleetStock %>% filter(ecoregion == eco_acronym),
         catchRange_filtered       = catchRange %>% filter(ecoregion == eco_acronym),
+        EffortByFleetStock_filtered = EffortByFleetStock %>% filter(ecoregion == eco_acronym),
+        MetierStockLandings_filtered = MetierStockLandings %>% filter(ecoregion == eco_acronym),
         refTable_filtered         = refTable %>% filter(ecoregion == eco_acronym)
       )
     })
@@ -182,7 +183,17 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           )
         )
       } else if (plot_name() == "plot3") {
-        # For plot3, use a different set of filters
+        # For plot2, use a different set of filters
+        select_group_ui(
+          label = NULL,
+          id = ns("my-filters-mixfish"),
+          params = list(
+            stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock"),
+            fleet = list(inputId = "metier", label = "Metier", placeholder = "Select metier")
+          )
+        )
+      } else if (plot_name() == "plot4") {
+        # For plot4, use a different set of filters
         select_group_ui(
           label = NULL,
           id = ns("my-filters-mixfish"),
@@ -212,6 +223,8 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           } else if (plot_name() == "plot2") {
             data_reactive_all()$EffortByFleetStock_filtered
           } else if (plot_name() == "plot3") {
+            data_reactive_all()$MetierStockLandings_filtered
+          } else if (plot_name() == "plot4") {
             dataComp()$stfMtStkSum
           }
         }),
@@ -223,6 +236,8 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           } else if (plot_name() == "plot2") {
             c("stock", "fleet")
           } else if (plot_name() == "plot3") {
+            c("stock", "metier")
+          } else if (plot_name() == "plot4") {
             c("year", "fleet")
           }
         })
@@ -244,7 +259,11 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           data = data_filter_module()(),
           refTable = data_reactive_all()$refTable_filtered
         ),
-        "plot3" = plot_catchComp_plotly(
+        "plot3" = plot_landByMetStock_plotly(
+          data = data_filter_module()(),
+          refTable = data_reactive_all()$refTable_filtered
+        ),
+        "plot4" = plot_catchComp_plotly(
           dataComposition = data_filter_module()(),
           refTable = data_reactive_all()$refTable_filtered,
           filters = NULL,
