@@ -577,7 +577,7 @@ plot_landByMetStock_plotly <- function(data, refTable,
   # Order stocks by 'order' column in refTable and convert value to '000 t
   data <- dplyr::mutate(
     data,
-    stock = factor(stock, levels = refTable$stock[order(refTable$order)]),
+    stock = factor(stock, levels = refTable$stock[order(refTable$order, decreasing = TRUE)]),
     value = value / 1000
   )
   data$metier <- as.factor(data$metier)
