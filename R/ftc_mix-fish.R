@@ -620,6 +620,51 @@ plot_landByMetStock_plotly <- function(data, refTable,
 }
 
 #######################################################################
+plot_landByStock_plotly <- function(data, refTable,
+                                    ylab = "Landings [t]",
+                                    fillLegendTitle = "Stock") {
+  if (is.null(data)) {
+    stop("object, data, does not exist")
+  }
+
+  if (!all(c("stock", "value") %in% colnames(data))) {
+    stop("Column names not as expected")
+  }
+
+  # Merge color and ordering information
+  data <- dplyr::left_join(data, refTable, by = "stock")
+
+  # Ensure ordered factor levels
+  data$stock <- factor(data$stock, levels = refTable$stock[order(refTable$order)])
+  data <- droplevels(data)
+
+  # Sort data for consistent plotting order
+  data <- data[order(data$stock), ]
+
+  # Create the pie chart
+  plot <- plotly::plot_ly(
+    data = data,
+    labels = ~stock,
+    values = ~value,
+    type = "pie",
+    marker = list(colors = data$col, line = list(color = "black", width = 1)),
+    textinfo = "label+percent",
+    hoverinfo = "label+value+percent"
+  )
+
+  # Apply layout with legend title and no axis labels
+  plot <- plotly::layout(
+    plot,
+    title = list(text = ylab, x = 0.5),
+    showlegend = TRUE,
+    legend = list(title = list(text = fillLegendTitle)),
+    margin = list(t = 40, b = 0, l = 0, r = 0)
+  )
+
+  return(plot)
+}
+
+#######################################################################
 plot_catchComp_plotly <- function(dataComposition, refTable, filters=NULL,
   selectors = "metier", divider = NULL, yvar = "landings"){
 

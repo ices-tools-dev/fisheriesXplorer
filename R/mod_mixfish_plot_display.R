@@ -139,6 +139,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
         catchRange_filtered       = catchRange %>% filter(ecoregion == eco_acronym),
         EffortByFleetStock_filtered = EffortByFleetStock %>% filter(ecoregion == eco_acronym),
         MetierStockLandings_filtered = MetierStockLandings %>% filter(ecoregion == eco_acronym),
+        StockLandings_filtered = StockLandings %>% filter(ecoregion == eco_acronym),
         refTable_filtered         = refTable %>% filter(ecoregion == eco_acronym)
       )
     })
