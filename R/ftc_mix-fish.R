@@ -525,7 +525,7 @@ plot_catchComp_plotly <- function(dataComposition, refTable, filters=NULL,
 
     data <- subset(dataComposition, scenario == "min")
     # add country and area identifiers (if desired)
-      tmp <- strsplit(data$metier, ".", fixed = TRUE)
+      tmp <- strsplit(as.character(data$metier), ".", fixed = TRUE)
       data$area <- unlist(lapply(tmp, FUN = function(x) {
         ifelse(length(x) == 2, x[2], NA)
       }))

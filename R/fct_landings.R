@@ -19,6 +19,10 @@ get_ecoregion_acronym <- function(ecoregion) {
   )
 }
 
+get_active_region_acronym <- function(subregion, ecoregion) {
+  region <- if (!is.null(subregion)) subregion else ecoregion
+  get_ecoregion_acronym(region)
+}
 
 
 
