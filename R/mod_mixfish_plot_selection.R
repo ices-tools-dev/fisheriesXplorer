@@ -5,7 +5,8 @@ mod_mixfish_plot_selection_ui <- function(id) {
     uiOutput(ns("subregion_ui")),  # Placeholder for conditional UI
     actionButton(ns("plot1"), "Headline"),
     actionButton(ns("plot2"), "Effort By Fleet/Stock"),
-    actionButton(ns("plot3"), "Catch Composition")
+    actionButton(ns("plot3"), "Landings By Fleet/Stock"),
+    actionButton(ns("plot4"), "Catch Composition"),
     
   )
 }
@@ -57,6 +58,10 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
 
     observeEvent(input$plot3, {
       selected_plot("plot3")
+    })
+
+    observeEvent(input$plot4, {
+      selected_plot("plot4")
     })
     
     observeEvent(selected_ecoregion(), {
