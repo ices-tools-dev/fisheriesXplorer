@@ -136,6 +136,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
       print(paste("Filtering using acronym:", eco_acronym))
       list(
         catchScenarioStk_filtered = catchScenarioStk %>% filter(ecoregion == eco_acronym),
+        EffortByFleetStock_filtered = EffortByFleetStock %>% filter(ecoregion == eco_acronym),
         catchRange_filtered       = catchRange %>% filter(ecoregion == eco_acronym),
         refTable_filtered         = refTable %>% filter(ecoregion == eco_acronym)
       )
@@ -170,7 +171,18 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
             stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock")
           )
         )
-      } else {
+      } else if (plot_name() == "plot2") {
+        # For plot2, use a different set of filters
+        select_group_ui(
+          label = NULL,
+          id = ns("my-filters-mixfish"),
+          params = list(
+            stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock"),
+            fleet = list(inputId = "fleet", label = "Fleet", placeholder = "Select fleet")
+          )
+        )
+      } else if (plot_name() == "plot3") {
+        # For plot3, use a different set of filters
         select_group_ui(
           label = NULL,
           id = ns("my-filters-mixfish"),
@@ -197,7 +209,9 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           print("Providing filtered data")
           if (plot_name() == "plot1") {
             data_reactive_all()$catchScenarioStk_filtered
-          } else {
+          } else if (plot_name() == "plot2") {
+            data_reactive_all()$EffortByFleetStock_filtered
+          } else if (plot_name() == "plot3") {
             dataComp()$stfMtStkSum
           }
         }),
@@ -206,7 +220,9 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           print("Providing filter vars")
           if (plot_name() == "plot1") {
             c("scenario", "stock")
-          } else {
+          } else if (plot_name() == "plot2") {
+            c("stock", "fleet")
+          } else if (plot_name() == "plot3") {
             c("year", "fleet")
           }
         })
@@ -224,7 +240,11 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           adv = data_reactive_all()$catchRange_filtered,
           refTable = data_reactive_all()$refTable_filtered
         ),
-        "plot2" = plot_catchComp_plotly(
+        "plot2" = plot_effortFltStk_plotly(
+          data = data_filter_module()(),
+          refTable = data_reactive_all()$refTable_filtered
+        ),
+        "plot3" = plot_catchComp_plotly(
           dataComposition = data_filter_module()(),
           refTable = data_reactive_all()$refTable_filtered,
           filters = NULL,
