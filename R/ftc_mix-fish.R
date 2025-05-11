@@ -1,19 +1,4 @@
-# function to download data from github
-download_github_data <- function(repo_owner, repo_name, file_path) {
-    # Fetch file metadata from GitHub API
-    response <- gh::gh("GET /repos/{owner}/{repo}/contents/{path}", 
-                   owner = repo_owner, 
-                   repo = repo_name, 
-                   path = file_path)
-    
-    # Extract raw file URL
-    download_url <- response$download_url
-    
-    # Download and read the file
-    df <- read.csv(download_url)
-    
-    return(df)
-}
+
 
 
 # plot_catchScenStk_interactive <- function(data, adv, ofwhich = FALSE,
@@ -301,102 +286,511 @@ plot_catchScenStk_int <- function(data, adv, #ofwhich = FALSE,
 }
 
 
-plot_catchScenStk_plotly <- function(data, adv, ofwhich = FALSE,
+# plot_catchScenStk_plotly <- function(data, adv, ofwhich = FALSE,
+#                                      xlab = "Scenario", ylab = "Catch [t]") {
+#   data <- data %>% filter(stock %in% adv$stock)
+#   # Add dummy advice range values if missing
+#   if(!"upper" %in% names(adv)){
+#     adv$upper <- adv$advice
+#   }
+#   if(!"lower" %in% names(adv)){
+#     adv$lower <- adv$advice
+#   }
+  
+  
+#   # Create a list to store the subplots
+#   subplots <- list()
+  
+#   # Get unique stocks
+#   unique_stocks <- unique(data$stock)
+#   n_stocks <- length(unique_stocks)
+#   n_cols <- min(4, n_stocks)  # Max 4 columns
+#   n_rows <- ceiling(n_stocks / n_cols)  # Adjust row count based on column count
+  
+#   for (fishstock in unique_stocks) {
+#     stock_data <- dplyr::filter(data, stock == fishstock)
+#     stock_adv <- dplyr::filter(adv, stock == fishstock)
+#     width_plot <- length(unique(stock_data$scenario))
+#     p <- plotly::plot_ly(stock_data, 
+#                         x = ~scenario, 
+#                         y = ~catch, 
+#                         type = 'bar', 
+#                         name = fishstock, 
+#                         marker = list(color = I('grey35')),
+#                         hovertemplate = paste0(
+#                           "Stock: ", fishstock, "<br>",
+#                           "Scenario: %{x}<br>",
+#                           "Catches (tonnes): %{y:.0f}<extra></extra>"                          
+#                         )) %>% 
+#       plotly::layout(
+#         xaxis = list(title = xlab, tickangle = 45),
+#         yaxis = list(title = ylab, range = c(0, max(stock_data$catch) + 0.1*max(stock_data$catch))),
+#         # margin = list(l = 50, r = 50, t = 50, b = 50),
+        
+#         shapes = list(
+#           list(type = 'rect', x0 = -0.5, x1 = width_plot-.4, y0 = 0, y1 = stock_adv$advice[1], 
+#                fillcolor = 'green', opacity = 0.17, line = list(width = 0)),
+#           list(type = 'rect', x0 = -0.5, x1 = width_plot-.4, y0 = stock_adv$advice[1], y1 = stock_adv$upper[1], 
+#                fillcolor = 'yellow', opacity = 0.17, line = list(width = 0)),
+#           list(type = 'rect', x0 = -0.5, x1 = width_plot-.4, y0 = stock_adv$upper[1], y1 = max(stock_data$catch)+0.1*max(stock_data$catch), 
+#                fillcolor = 'red', opacity = 0.17, line = list(width = 0)),
+#           list(type = "line", x0 = -0.5, x1 = width_plot-.4, y0 = stock_adv$advice[1], y1 = stock_adv$advice[1], 
+#                line = list(color = "black", width = 2, dash = "solid")),
+#           list(type = "line", x0 = -0.5, x1 = width_plot-.4, y0 = stock_adv$upper[1], y1 = stock_adv$upper[1], 
+#                line = list(color = "black", width = 2, dash = "dash")),
+#           list(type = "line", x0 = -0.5, x1 = width_plot-.4, y0 = stock_adv$lower[1], y1 = stock_adv$lower[1], 
+#                line = list(color = "black", width = 2, dash = "dash"))
+#         ),
+#         annotations = list(
+#              x = 0.5,
+#              y = 1.05,
+#              text = paste0(fishstock),
+#              xref = "paper",
+#              yref = "paper",
+#              xanchor = "center",  # center of text
+#              yanchor = "bottom",  # bottom of text
+#              showarrow = FALSE
+#            )
+#       )
+    
+#     # if (ofwhich) {
+#     #   p <- p %>%
+#     #     plotly::add_trace(data = stock_adv, x = ~scenario, y = ~advice_ofwhich, type = 'scatter', mode = 'lines', 
+#     #                       line = list(color = '#85AD00', dash = 'dash'), name = 'Advice of which') %>%
+#     #     plotly::add_trace(data = stock_data, x = ~scenario, y = ~catch_ofwhich, type = 'bar', name = 'Catch of which', 
+#     #                       marker = list(color = '#85AD00', pattern = list(shape = 'crosshatch')))
+#     # }
+    
+#     subplots[[fishstock]] <- p
+#   }
+  
+#   # Combine subplots into one figure
+#   fig <- plotly::subplot(subplots, 
+#                         nrows = ceiling(length(unique_stocks) / 4),
+#                         shareX = TRUE,  
+#                         shareY = FALSE, 
+#                         titleY = FALSE, 
+#                         titleX = TRUE,
+#                         margin = 0.05) %>% #
+#                         plotly::layout(
+#                                         # height = 200 * n_rows,
+#                                         grid = list(rows = n_rows, 
+#                                                     columns = n_cols, 
+#                                                     pattern = "independent"),
+#                                                     showlegend = FALSE
+                                                    
+                                                    
+                                                    
+#                                                     # margin = list(l = 50, r = 50, t = 50, b = 50) 
+#   )
+# #   fig <- fig  %>% plotly::layout(height = 200 * ceiling(length(unique_stocks) / 4))
+#   fig
+# }
+
+
+plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
                                      xlab = "Scenario", ylab = "Catch [t]") {
+  data <- dplyr::filter(data, stock %in% adv$stock)
   
   # Add dummy advice range values if missing
-  if(!"upper" %in% names(adv)){
-    adv$upper <- adv$advice
-  }
-  if(!"lower" %in% names(adv)){
-    adv$lower <- adv$advice
-  }
+  if (!"upper" %in% names(adv)) adv$upper <- adv$advice
+  if (!"lower" %in% names(adv)) adv$lower <- adv$advice
   
-  
-  # Create a list to store the subplots
   subplots <- list()
-  
-  # Get unique stocks
   unique_stocks <- unique(data$stock)
   n_stocks <- length(unique_stocks)
-  n_cols <- min(4, n_stocks)  # Max 4 columns
-  n_rows <- ceiling(n_stocks / n_cols)  # Adjust row count based on column count
+  n_cols <- min(4, n_stocks)
+  n_rows <- ceiling(n_stocks / n_cols)
   
   for (fishstock in unique_stocks) {
     stock_data <- dplyr::filter(data, stock == fishstock)
     stock_adv <- dplyr::filter(adv, stock == fishstock)
+    width_plot <- length(unique(stock_data$scenario))
+    max_y <- max(stock_data$catch) * 1.1
+    bar_color <- dplyr::filter(refTable, stock == fishstock)$col
+    if (length(bar_color) == 0) bar_color <- "grey"  # fallback color
+  
+    # Define background shape zones
+    shape_list <- list(
+      list(type = 'rect', x0 = -0.5, x1 = width_plot - 0.4, y0 = 0, y1 = stock_adv$advice[1],
+           fillcolor = 'green', opacity = 0.15, line = list(width = 0), layer = 'below'),
+      list(type = 'rect', x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$advice[1], y1 = stock_adv$upper[1],
+           fillcolor = 'yellow', opacity = 0.15, line = list(width = 0), layer = 'below'),
+      list(type = 'rect', x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$upper[1], y1 = max_y,
+           fillcolor = 'red', opacity = 0.15, line = list(width = 0), layer = 'below'),
+      list(type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$advice[1], y1 = stock_adv$advice[1],
+           line = list(color = "black", width = 2, dash = "solid")),
+      list(type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$upper[1], y1 = stock_adv$upper[1],
+           line = list(color = "black", width = 2, dash = "dash")),
+      list(type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$lower[1], y1 = stock_adv$lower[1],
+           line = list(color = "black", width = 2, dash = "dash"))
+    )
     
-    p <- plotly::plot_ly(stock_data, 
-                        x = ~scenario, 
-                        y = ~catch, 
-                        type = 'bar', 
-                        name = fishstock, 
-                        marker = list(color = I('grey35')),
-                        hovertemplate = paste0(
-                          "Stock: ", fishstock, "<br>",
-                          "Scenario: %{x}<br>",
-                          "Catches (tonnes): %{y:.0f}<extra></extra>"                          
-                        )) %>% 
-      plotly::layout(
-        xaxis = list(title = xlab, tickangle = 45),
-        yaxis = list(title = ylab, range = c(0, max(stock_data$catch)+0.1*max(stock_data$catch))),
-        # margin = list(l = 50, r = 50, t = 50, b = 50),
-        shapes = list(
-          list(type = 'rect', x0 = -0.5, x1 = 5, y0 = 0, y1 = stock_adv$advice[1], 
-               fillcolor = 'green', opacity = 0.17, line = list(width = 0)),
-          list(type = 'rect', x0 = -0.5, x1 = 5, y0 = stock_adv$advice[1], y1 = stock_adv$upper[1], 
-               fillcolor = 'yellow', opacity = 0.17, line = list(width = 0)),
-          list(type = 'rect', x0 = -0.5, x1 = 5, y0 = stock_adv$upper[1], y1 = max(stock_data$catch)+0.1*max(stock_data$catch), 
-               fillcolor = 'red', opacity = 0.17, line = list(width = 0)),
-          list(type = "line", x0 = -0.5, x1 = 5, y0 = stock_adv$advice[1], y1 = stock_adv$advice[1], 
-               line = list(color = "black", width = 2, dash = "solid")),
-          list(type = "line", x0 = -0.5, x1 = 5, y0 = stock_adv$upper[1], y1 = stock_adv$upper[1], 
-               line = list(color = "black", width = 2, dash = "dash")),
-          list(type = "line", x0 = -0.5, x1 = 5, y0 = stock_adv$lower[1], y1 = stock_adv$lower[1], 
-               line = list(color = "black", width = 2, dash = "dash"))
-        ),
-        annotations = list(
-             x = 0.5,
-             y = 1.05,
-             text = paste0(fishstock),
-             xref = "paper",
-             yref = "paper",
-             xanchor = "center",  # center of text
-             yanchor = "bottom",  # bottom of text
-             showarrow = FALSE
-           )
+    # Base bar chart
+    p <- plotly::plot_ly(
+      data = stock_data,
+      x = ~scenario,
+      y = ~catch,
+      type = 'bar',
+      name = fishstock,
+      marker = list(color = bar_color),
+      hovertemplate = paste0(
+        "Stock: ", fishstock, "<br>",
+        "Scenario: %{x}<br>",
+        "Catches (tonnes): %{y:.0f}<extra></extra>"
+      )
+    )
+    
+    # Add invisible hover lines for background info
+    p <- p %>%
+      plotly::add_trace(
+        data = stock_data,
+        x = ~scenario, y = rep(stock_adv$advice[1], nrow(stock_data)),
+        type = 'scatter', 
+        mode = 'lines',
+        line = list(color = 'rgba(0,0,0,0)'),
+        marker = list(color = 'rgba(0,0,0,0,0)'),
+        hovertemplate = "Advice (tonnes): %{y:.0f}<extra></extra>",
+        # hoverinfo = 'text',
+        # text = paste("Advice:", stock_adv$advice[1]),
+        showlegend = FALSE
+      ) %>%
+      plotly::add_trace(
+        data = stock_data,
+        x = ~scenario, y = rep(stock_adv$upper[1], nrow(stock_data)),
+        type = 'scatter', 
+        mode = 'lines',
+        line = list(color = 'rgba(0,0,0,0)'),
+        marker = list(color = 'rgba(0,0,0,0,0)'),
+        # hoverinfo = 'text',
+        # text = paste("Upper limit:", stock_adv$upper[1]),
+        hovertemplate = "Upper limit (tonnes): %{y:.0f}<extra></extra>",
+        showlegend = FALSE
+      ) %>%
+      plotly::add_trace(
+        data = stock_data,
+        x = ~scenario, y = rep(stock_adv$lower[1], nrow(stock_data)),
+        type = 'scatter', 
+        mode = 'lines',
+        line = list(color = 'rgba(0,0,0,0)'),
+        marker = list(color = 'rgba(0,0,0,0,0)'),
+        hovertemplate = "Lower limit (tonnes): %{y:.0f}<extra></extra>",
+        # hoverinfo = 'text',
+        # text = paste("Lower limit:", stock_adv$lower[1]),
+        showlegend = FALSE
       )
     
-    # if (ofwhich) {
-    #   p <- p %>%
-    #     plotly::add_trace(data = stock_adv, x = ~scenario, y = ~advice_ofwhich, type = 'scatter', mode = 'lines', 
-    #                       line = list(color = '#85AD00', dash = 'dash'), name = 'Advice of which') %>%
-    #     plotly::add_trace(data = stock_data, x = ~scenario, y = ~catch_ofwhich, type = 'bar', name = 'Catch of which', 
-    #                       marker = list(color = '#85AD00', pattern = list(shape = 'crosshatch')))
-    # }
+    # Apply layout and background shapes
+    p <- p %>%
+      plotly::layout(
+        xaxis = list(title = xlab, tickangle = 45),
+        yaxis = list(title = ylab, range = c(0, max_y)),
+        shapes = shape_list,
+        annotations = list(
+          x = 0.5,
+          y = 1.05,
+          text = paste0(fishstock),
+          xref = "paper",
+          yref = "paper",
+          xanchor = "center",
+          yanchor = "bottom",
+          showarrow = FALSE
+        )
+      )
     
     subplots[[fishstock]] <- p
   }
   
-  # Combine subplots into one figure
-  fig <- plotly::subplot(subplots, 
-                        nrows = ceiling(length(unique_stocks) / 4),
-                        shareX = TRUE,  
-                        shareY = FALSE, 
-                        titleY = FALSE, 
-                        titleX = TRUE,
-                        margin = 0.05) %>% #
-                        plotly::layout(
-                                        # height = 200 * n_rows,
-                                        grid = list(rows = n_rows, 
-                                                    columns = n_cols, 
-                                                    pattern = "independent"),
-                                                    showlegend = FALSE
-                                                    
-                                                    
-                                                    
-                                                    # margin = list(l = 50, r = 50, t = 50, b = 50) 
-  )
-#   fig <- fig  %>% plotly::layout(height = 200 * ceiling(length(unique_stocks) / 4))
+  # Combine all into one plot
+  fig <- plotly::subplot(
+    subplots,
+    nrows = n_rows,
+    shareX = TRUE,
+    shareY = FALSE,
+    titleY = FALSE,
+    titleX = TRUE,
+    margin = 0.05
+  ) %>%
+    plotly::layout(
+      grid = list(rows = n_rows, columns = n_cols, pattern = "independent"),
+      showlegend = FALSE
+    )
+  
   fig
 }
+
+#############################################################################
+plot_effortFltStk_plotly <- function(data, refTable,
+  xlab = "Stock", ylab = "Effort ['000 KW days]",
+  fillLegendTitle = "Stock", colLegendTitle = "Limiting stock",
+  linewidthDefault = 0.5, linewidthLimitation = 1)
+{
+  stkFill <- data.frame(stock = unique(data$stock))
+  stkFill <- merge(x = stkFill, y = refTable, all.x = TRUE)
+  stkFill <- stkFill[order(stkFill$order), ]
+  stkColors <- stkFill$col
+  names(stkColors) <- stkFill$stock
+  stkColorScale <- scale_colour_manual(name = fillLegendTitle,
+    values = stkColors, aesthetics = c("fill"))
+  data$stock <- factor(data$stock, levels = stkFill$stock)
+
+  p <- ggplot(data) +
+    aes(x = stock, y = quotaEffort, fill = stock,
+      color = Limitation, group = fleet) +
+    facet_wrap(fleet ~ ., scales = "free_y", ncol = 3) +
+    geom_bar(stat = "identity", linewidth = linewidthDefault, fill = NA,
+      color = "black") +
+    geom_bar(stat = "identity", linewidth = linewidthLimitation) +
+    geom_hline(data = data, aes(yintercept = sqEffort), lty = 2) +
+    scale_color_manual(values = c('green', 'red'), na.value = NA,
+      limits = c('least','most'), labels = c("least", "most (*)")) +
+    geom_text(data = subset(data, Limitation == "most"),
+      aes(label = "*"), vjust = 0.2, show.legend = FALSE) +
+    xlab(xlab) + ylab(ylab) + stkColorScale + theme_bw() +
+    theme(
+      axis.text.x = element_text(angle = 90, hjust = 1,
+      vjust = 0.5, size = 7), panel.grid = element_blank(),
+      text = element_text(size = 9), strip.text = element_text(size = 9)) +
+    guides(
+      colour = guide_legend(order = 2, override.aes = list(fill = NA)),
+      fill = guide_legend(order = 1,
+        override.aes = list(color = "black", linewidth = linewidthDefault))) +
+    labs(fill = fillLegendTitle, color = colLegendTitle)
+  return(plotly::ggplotly(p))
+}
+#############################################################################
+
+plot_landByMetStock_plotly <- function(data, refTable,
+                                       xlab = "", ylab = "Landings ['000 t]",
+                                       fillLegendTitle = "Stock") {
+  if (is.null(data)) {
+    stop("object, data, does not exist")
+  }
+
+  if (!all(c("metier", "stock", "value") %in% colnames(data))) {
+    stop("Column names not as expected")
+  }
+
+  # Merge color reference
+  data <- dplyr::left_join(data, refTable, by = "stock")
+  
+  # Order stocks by 'order' column in refTable and convert value to '000 t
+  data <- dplyr::mutate(
+    data,
+    stock = factor(stock, levels = refTable$stock[order(refTable$order, decreasing = TRUE)]),
+    value = value / 1000
+  )
+  data$metier <- as.factor(data$metier)
+  # Initialize plotly object
+  plot <- plotly::plot_ly()
+
+  # Add a trace per stock
+  for (stk in levels(data$stock)) {
+    stk_data <- dplyr::filter(data, stock == stk)
+    stk_col <- unique(stk_data$col)
+
+    plot <- plotly::add_trace(
+      plot,
+      data = stk_data,
+      x = ~metier,
+      y = ~value,
+      type = 'bar',
+      name = stk,
+      marker = list(color = stk_col),
+      hovertemplate = paste(
+        "<b>Metier:</b> %{x}<br>",
+        "<b>Stock:</b> ", stk, "<br>",
+        "<b>Landings:</b> %{y:.2f} thousand t<br><extra></extra>"
+      )
+    )
+  }
+
+  # Apply layout
+  plot <- plotly::layout(
+    plot,
+    barmode = 'stack',
+    xaxis = list(title = xlab, tickangle = -45),
+    yaxis = list(title = ylab),
+    legend = list(title = list(text = fillLegendTitle)),
+    margin = list(b = 80),
+    font = list(size = 10)
+  )
+
+  return(plot)
+}
+
+#######################################################################
+plot_landByStock_plotly <- function(data, refTable,
+                                    ylab = "Landings [t]",
+                                    fillLegendTitle = "Stock") {
+  if (is.null(data)) {
+    stop("object, data, does not exist")
+  }
+
+  if (!all(c("stock", "value") %in% colnames(data))) {
+    stop("Column names not as expected")
+  }
+
+  # Merge color and ordering information
+  data <- dplyr::left_join(data, refTable, by = "stock")
+
+  # Ensure ordered factor levels
+  data$stock <- factor(data$stock, levels = refTable$stock[order(refTable$order)])
+  data <- droplevels(data)
+
+  # Sort data for consistent plotting order
+  data <- data[order(data$stock), ]
+
+  # Create the pie chart
+  plot <- plotly::plot_ly(
+    data = data,
+    labels = ~stock,
+    values = ~value,
+    type = "pie",
+    marker = list(colors = data$col, line = list(color = "black", width = 1)),
+    textinfo = "label+percent",
+    hoverinfo = "label+value+percent"
+  )
+
+  # Apply layout with legend title and no axis labels
+  plot <- plotly::layout(
+    plot,
+    title = list(text = ylab, x = 0.5),
+    showlegend = TRUE,
+    legend = list(title = list(text = fillLegendTitle)),
+    margin = list(t = 40, b = 0, l = 0, r = 0)
+  )
+
+  return(plot)
+}
+
+#######################################################################
+plot_catchComp_plotly <- function(dataComposition, refTable, filters=NULL,
+  selectors = "metier", divider = NULL, yvar = "landings"){
+
+    data <- subset(dataComposition, scenario == "min")
+    # add country and area identifiers (if desired)
+      tmp <- strsplit(as.character(data$metier), ".", fixed = TRUE)
+      data$area <- unlist(lapply(tmp, FUN = function(x) {
+        ifelse(length(x) == 2, x[2], NA)
+      }))
+      tmp <- strsplit(data$fleet, "_", fixed = TRUE)
+      data$country <- unlist(lapply(tmp, FUN = function(x) {
+        ifelse(length(x) == 2, x[1], NA)
+      }))
+      # replace stock with ICES stock code
+      data$stock <- refTable$stock[match(data$stock, refTable$stock_short)]
+
+
+  # filters filter the data
+  # selectors select the level of data aggregation. They get pasted together
+  # into a label which is used to aggregate. i.e. the x axis labels
+  # divider provides a variable over which to disaggregate the data for
+  # comparison. i.e. facets in the plot
+  if(!is.null(filters)){
+    # filter
+    for (var in names(filters)){
+      data <- data %>% filter(.data[[var]] %in% filters[[var]]) # this works but might be a deprecated method
+    }
+  }
+
+  if(length(divider)>1){
+    stop("only 1 variable can be provided as a divider")
+  }
+
+  # check area codes. NA = notSpecified
+  if(any(is.na(data$area))){
+    data$area[is.na(data$area)] <- "notSpecified"
+  }
+
+  # aggregate by selectors by concatenating selectors into 1 label
+  # label and stock are always selectors
+  data$label <- apply(select(ungroup(data),all_of(selectors)),1,paste,collapse="_")
+  data <- data %>% group_by(across(all_of(c("label","stock",divider)))) %>%
+    summarise(VAR=sum(get(yvar),na.rm=T))
+
+  # get colour scale by merging with refTable
+  data <- left_join(data,refTable,by="stock")
+  tmp <- unique(data[,c("stock","col", "order")])
+  tmp <- tmp[order(tmp$order),]
+  stkColors <- tmp$col
+  names(stkColors) <- tmp$stock
+  stkColorScale <- scale_colour_manual(name = "stock", values = stkColors,
+    aesthetics = c("colour", "fill"))
+
+  # ensure plotting order
+  data$stock <- factor(data$stock, levels = tmp$stock)
+  
+  # plot
+  p <- ggplot(data,aes(x=label,y=VAR,colour=stock,fill=stock))+
+    geom_col(position="fill")+
+    coord_flip()+ labs(x="",y="",fill="",colour="")+
+    theme_bw()+stkColorScale +guides(fill=guide_legend(ncol=1))+guides(colour=guide_legend(ncol=1))
+
+  if(!is.null(divider)){
+    p <- p + facet_wrap(divider, scales = "free")
+  }
+  p <- plotly::ggplotly(p, tooltip = c("label", "VAR", "stock")) %>%
+    plotly::layout(xaxis = list(title = ""), yaxis = list(title = ""),
+                   legend = list(title = list(text = 'stock')))
+  return(p)
+
+}
+
+
+
+# plot_catchComp_plotly <- function(data, refTable, filters=NULL,
+#   selectors = "metier", divider = NULL, yvar = "landings"){
+
+#   # Check if the necessary columns exist in the data
+#   required_columns <- c(selectors, "stock", yvar, divider)
+#   missing_columns <- setdiff(required_columns, names(data))
+#   if(length(missing_columns) > 0){
+#     stop(paste("The following required columns are missing from the data:", paste(missing_columns, collapse = ", ")))
+#   }
+
+#   # filters filter the data
+#   if(!is.null(filters)){
+#     for (var in names(filters)){
+#       if(!var %in% names(data)){
+#         stop(paste("Filter column", var, "not found in data"))
+#       }
+#       data <- dplyr::filter(data, .data[[var]] %in% filters[[var]])
+#     }
+#   }
+
+#   if(length(divider) > 1){
+#     stop("only 1 variable can be provided as a divider")
+#   }
+
+#   # check area codes. NA = notSpecified
+#   if(any(is.na(data$area))){
+#     data$area[is.na(data$area)] <- "notSpecified"
+#   }
+
+#   # aggregate by selectors by concatenating selectors into 1 label
+#   data$label <- apply(dplyr::select(dplyr::ungroup(data), dplyr::all_of(selectors)), 1, paste, collapse = "_")
+#   data <- data %>% dplyr::group_by(dplyr::across(dplyr::all_of(c("label", "stock", divider)))) %>%
+#     dplyr::summarise(VAR = sum(.data[[yvar]], na.rm = TRUE), .groups = 'drop')
+
+#   # get colour scale by merging with refTable
+#   data <- dplyr::left_join(data, refTable, by = "stock")
+#   tmp <- unique(data[, c("stock", "col", "order")])
+#   tmp <- tmp[order(tmp$order), ]
+#   stkColors <- tmp$col
+#   names(stkColors) <- tmp$stock
+
+#   # ensure plotting order
+#   data$stock <- factor(data$stock, levels = tmp$stock)
+
+#   # plot
+#   p <- plotly::plot_ly(data, x = ~label, y = ~VAR, color = ~stock, colors = stkColors, type = 'bar') %>%
+#     plotly::layout(barmode = 'stack', xaxis = list(title = ''), yaxis = list(title = ''), 
+#            legend = list(title = list(text = 'stock')))
+
+#   if(!is.null(divider)){
+#     p <- p %>% plotly::layout(facets = as.formula(paste('~', divider)), scales = 'free')
+#   }
+
+#   return(p)
+# }

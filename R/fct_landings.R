@@ -2,7 +2,11 @@ get_ecoregion_acronym <- function(ecoregion) {
   switch(ecoregion,
          "Baltic Sea" = "BtS",
          "Bay of Biscay and the Iberian Coast" = "BI",
+         "Bay of Biscay" = "BoB",
+         "Iberian Waters" = "IW",
          "Celtic Seas" = "CS",
+         "Celtic Sea" = "CSx",
+         "Irish Sea" = "IrS",
          "Greater North Sea" = "NrS",
          "Norwegian Sea" = "NwS",
          "Icelandic Waters" = "IS",
@@ -15,6 +19,10 @@ get_ecoregion_acronym <- function(ecoregion) {
   )
 }
 
+get_active_region_acronym <- function(subregion, ecoregion) {
+  region <- if (!is.null(subregion)) subregion else ecoregion
+  get_ecoregion_acronym(region)
+}
 
 
 

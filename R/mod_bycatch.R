@@ -37,6 +37,11 @@ mod_bycatch_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
+    output$ecoregion_label <- renderText({
+      req(selected_ecoregion())
+      paste("Ecoregion:", selected_ecoregion())
+    })
+    
     output$bycatch_text <- renderUI({
       HTML(select_text(texts,"bycatch","sidebar"))
     })
