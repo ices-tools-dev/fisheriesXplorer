@@ -184,7 +184,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           )
         )
       } else if (plot_name() == "plot3") {
-        # For plot2, use a different set of filters
+        # For plot3, use a different set of filters
         select_group_ui(
           label = NULL,
           id = ns("my-filters-mixfish"),
@@ -193,8 +193,8 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
             fleet = list(inputId = "metier", label = "Metier", placeholder = "Select metier")
           )
         )
-      } else if (plot_name() == "plot4") {
-        # For plot4, use a different set of filters
+      } else if (plot_name() == "plot5") {
+        # For plot5, use a different set of filters
         select_group_ui(
           label = NULL,
           id = ns("my-filters-mixfish"),
@@ -225,7 +225,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
             data_reactive_all()$EffortByFleetStock_filtered
           } else if (plot_name() == "plot3") {
             data_reactive_all()$MetierStockLandings_filtered
-          } else if (plot_name() == "plot4") {
+          } else if (plot_name() == "plot5") {
             dataComp()$stfMtStkSum
           }
         }),
@@ -238,7 +238,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
             c("stock", "fleet")
           } else if (plot_name() == "plot3") {
             c("stock", "metier")
-          } else if (plot_name() == "plot4") {
+          } else if (plot_name() == "plot5") {
             c("year", "fleet")
           }
         })
@@ -264,7 +264,11 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           data = data_filter_module()(),
           refTable = data_reactive_all()$refTable_filtered
         ),
-        "plot4" = plot_catchComp_plotly(
+        "plot4" = plot_landByStock_plotly(
+          data = data_reactive_all()$StockLandings_filtered,
+          refTable = data_reactive_all()$refTable_filtered
+        ),
+        "plot5" = plot_catchComp_plotly(
           dataComposition = data_filter_module()(),
           refTable = data_reactive_all()$refTable_filtered,
           filters = NULL,
