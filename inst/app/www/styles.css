@@ -43,6 +43,11 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
 
 #tbl {outline:#dddddd solid 1px;}
 
+.tab-content>.active {
+  display: block;
+  margin-top: 20px;
+}
+
 .navbar-default {
   background-color: #002B5F; /*#2fa4e7;*/
   border-color: #002B5F; /* #1995dc*/
@@ -54,7 +59,7 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
   padding: 0;
   margin: 0;
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus {
@@ -105,7 +110,7 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
 .form-group > .shiny-input-container {
   margin-top: 0;
 }
-    }
+    
 
 .disabled {
   /*
