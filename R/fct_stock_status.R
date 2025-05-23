@@ -440,8 +440,7 @@ getStatus <- function(stock_list_long) {
 
 
 format_sag_status_new <- function(x) {
-        df <- x
-        
+        df <- x        
         # df <- dplyr::filter(df,(grepl(pattern = ecoregion, Ecoregion)))
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
                                                   status == 1 ~ "GREEN",
@@ -588,38 +587,7 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                 ggplot2::coord_polar(theta = "y", direction = 1) +
                 ggplot2::facet_grid(FisheriesGuild ~ header)
                 
-        # ggplotly(p1)     
-        # browser()
-        # Create a list of separate plots for each header when interactive mode is enabled
         
-        # browser()
-        # plot_list <- df2 %>%
-        # split(list(.$FisheriesGuild, .$header)) %>%
-        # lapply(function(data) {
-        #     if (nrow(data) > 0) {
-        #         plot_ly(data, labels = ~colour, values = ~fraction, type = 'pie',
-        #                 textinfo = 'label+percent', marker = list(colors = colList)) %>%
-        #             layout(title = paste(data$FisheriesGuild[1], "-", data$header[1]))
-        #     } else {
-        #         NULL
-        #     }
-        # }) %>%
-        # purrr::compact() 
-
-        # # Ensure no NA values are passed to layout
-        # plot_list <- lapply(plot_list, function(p) {
-        #     if (!is.null(p)) {
-        #         p$x$layout <- Filter(Negate(is.na), p$x$layout)
-        #     }
-        #     p
-        # })
-
-        # # Determine the number of rows and columns for the subplot
-        # n_plots <- length(plot_list)
-        # n_cols <- 5
-        # n_rows <- 6#ceiling(n_plots / n_cols)
-        
-        # return(subplot(plot_list, nrows = n_rows, ncols = n_cols, shareX = TRUE, shareY = TRUE))
         if(return_data == T){
                 df2
         }else{
