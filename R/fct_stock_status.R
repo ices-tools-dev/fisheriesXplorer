@@ -357,6 +357,98 @@ plot_CLD_bar <- function(x, guild, caption = TRUE, cap_year, cap_month, return_d
         }
 }
 
+# getSID <- function(year, EcoR) {
+    
+#     message("Downloading SID data for year: ", year)
+#         stock_list_long <- jsonlite::fromJSON(
+#                 URLencode(
+#                         sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel,
+#                         EcoRegion, 
+#                         YearOfLastAssessment, 
+#                         AssessmentKey,
+#                         StockKeyDescription,
+#                         SpeciesScientificName,
+#                         SpeciesCommonName, 
+#                         AdviceCategory,
+#                         DataCategory,
+#                         YearOfLastAssessment,
+#                         FisheriesGuild", year)
+#                 )
+#         )$value
+
+#         stock_list_long <- stock_list_long %>%
+#                 mutate(EcoRegion = as.character(EcoRegion)) %>%
+#                 tidyr::separate_rows(EcoRegion, sep = ", ")
+
+#         stock_list_long <- stock_list_long %>%
+#                 filter(EcoRegion == EcoR)
+    
+#     # Add icons using stock illustrations
+#     data.table::setDT(stock_list_long)
+# #     stock_list_long[, icon := paste0('<img src="', match_stockcode_to_illustration(StockKeyLabel, stock_list_long), '" height=40>')]
+
+    
+#     # Get unique valid years (excluding NA and 0)
+#     valid_years <- unique(stock_list_long$YearOfLastAssessment)
+#     valid_years <- valid_years[!is.na(valid_years) & valid_years != 0]
+
+    
+#     # Parallelized API calls for ASD records
+#     ASDList <- data.table::rbindlist(future.apply::future_lapply(valid_years, function(y) {
+#         message("Fetching ASD advice records for year: ", y)
+#         data.table::as.data.table(icesASD::getAdviceViewRecord(year = y))
+#     }), fill = TRUE)
+    
+#     ASDList <- ASDList %>% group_by(stockCode) %>% filter(assessmentYear == max(assessmentYear, na.rm = TRUE, finite = TRUE)) %>% ungroup()
+    
+    
+#     # Ensure ASDList is a valid data frame
+#     if (is.null(ASDList) || identical(ASDList, list()) || nrow(ASDList) == 0) {
+#         ASDList <- data.frame(
+#             StockKeyLabel = character(),
+#             AssessmentKey = character(),
+#             AssessmentComponent = character(),
+#             stringsAsFactors = FALSE
+#         )
+#     } else {
+#         ASDList <- ASDList %>%
+#             mutate(adviceComponent = dplyr::na_if(adviceComponent, "N.A.")) %>%
+#             dplyr::rename(
+#                 StockKeyLabel = stockCode,
+#                 AssessmentKey = assessmentKey,
+#                 AssessmentComponent = adviceComponent
+#             ) %>%
+#             filter(adviceStatus == "Advice")
+#     }
+#     data.table::setDT(ASDList)
+#     names(ASDList)
+#     names(stock_list_long)
+#         browser()
+#     # Efficient merge using data.table
+# #     stock_list_long <- ASDList[stock_list_long, on = "StockKeyLabel"]
+#     #alternative way of merging
+# stock_list_long <- merge(stock_list_long, ASDList, by = "StockKeyLabel", all.x = TRUE)
+#     # Merge stock list with ASDList
+#     message("Merging SID and ASD records...")
+    
+    
+#     # Filter out rows where AssessmentKey is NA and YearOfLastAssessment is NA or 0
+#     missing_keys <- which(!is.na(stock_list_long$AssessmentKey) &
+#         !is.na(stock_list_long$YearOfLastAssessment) &
+#         stock_list_long$YearOfLastAssessment != 0)
+
+#     stock_list_long <- stock_list_long[missing_keys,]
+
+    
+    
+
+#     # Extract stock location
+# #     stock_list_long[, stock_location := parse_location_from_stock_description(StockKeyDescription)]
+
+
+#     message("Data processing complete.")
+#     return(stock_list_long)
+# }
 
 getSID <- function(year, EcoR) {
         message("Downloading SID data for year: ", year)
@@ -383,27 +475,7 @@ getSID <- function(year, EcoR) {
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
         
-        # missing_keys <- which(is.na(stock_list_long$AssessmentKey) &
-        #         !is.na(stock_list_long$YearOfLastAssessment) &
-        #         stock_list_long$YearOfLastAssessment != 0)
-
-        # if (length(missing_keys) > 0) {
-        #         message("Finding missing assessment keys...")
-
-        #         # Retrieve assessment keys (returns list)
-        #         assessment_keys <- lapply(missing_keys, function(i) {
-        #                 keys <- icesSAG::findAssessmentKey(stock_list_long$StockKeyLabel[i],
-        #                         year = stock_list_long$YearOfLastAssessment[i]
-        #                 )
-        #                 if (length(keys) > 0) keys[1] else NA # Take only the first key or return NA
-        #         })
-
-        #         # Convert list to vector and assign
-        #         stock_list_long$AssessmentKey[missing_keys] <- unlist(assessment_keys)
-        # }
-
-        # Drop rows where AssessmentKey is still NA
-        # stock_list_long <- stock_list_long[!is.na(AssessmentKey)]
+        
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
         message("SID Data processing complete.")
         
