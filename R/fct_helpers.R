@@ -18,7 +18,6 @@ select_text <- function(list_object, tab, section){
 
 icon_mapping <- function(value) {
   
-  print(value)
   if (value[1] == "GREEN") {
     '<i class="fas fa-check-circle" style="color:green; font-size:38px;"></i>'
   } else if (value[1] == "RED") {
