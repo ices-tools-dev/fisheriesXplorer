@@ -17,13 +17,15 @@ select_text <- function(list_object, tab, section){
 
 
 icon_mapping <- function(value) {
-  if (value == "GREEN") {
+  
+  print(value)
+  if (value[1] == "GREEN") {
     '<i class="fas fa-check-circle" style="color:green; font-size:38px;"></i>'
-  } else if (value == "RED") {
+  } else if (value[1] == "RED") {
     '<i class="fas fa-times-circle" style="color:red; font-size:38px;"></i>'
-  } else if (value == "ORANGE") {
+  } else if (value[1] == "ORANGE") {
     '<i class="fas fa-exclamation-circle" style="color:orange; font-size:38px;"></i>'
-  } else if (value == "GREY") {
+  } else if (value[1] == "GREY") {
     '<i class="fas fa-question-circle" style="color:grey; font-size:38px;"></i>'
   } else {
     value  # If no match, return the original value

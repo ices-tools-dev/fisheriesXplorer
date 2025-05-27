@@ -556,13 +556,15 @@ getStatus <- function(stock_list_long) {
         # Merge stock status values with SID data
         df_status <- merge(stock_list_long, status, by = "AssessmentKey", all.x = TRUE)
         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
-        
+        # browser()
+        #  test2 <- df_status %>% filter(StockKeyLabel == "cod.27.46a7d20")
+        #  head(test2, 20)
         return(df_status)
 }
 
 
 format_sag_status_new <- function(df) {
-        browser()
+#        browser()
         # df <- dplyr::filter(df,(grepl(pattern = ecoregion, Ecoregion)))
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
                                                   status == 1 ~ "GREEN",
@@ -600,11 +602,15 @@ format_sag_status_new <- function(df) {
                                     grepl("FMSY", variable) ~ "FMSY",
                                     TRUE ~ variable
                             )) 
+        #    test2 <- df %>% filter(StockKeyLabel == "cod.27.46a7d20")
+
+
         df <- dplyr::filter(df,variable != "-")
         
         df <- dplyr::filter(df, lineDescription != "Management plan")
         df <- dplyr::filter(df, lineDescription != "Qualitative evaluation")
-        df <- dplyr::mutate(df,key = paste(StockKeyLabel, lineDescription, type))
+        # df <- dplyr::mutate(df,key = paste(StockKeyLabel, lineDescription, type))
+        df <- dplyr::mutate(df,key = paste(stockComponent, lineDescription, type))
         df<- df[order(-df$year),]
         df <- df[!duplicated(df$key), ]
         df<- subset(df, select = -key)
@@ -613,28 +619,30 @@ format_sag_status_new <- function(df) {
         
         df2<- dplyr::filter(df,lineDescription != "Maximum Sustainable Yield")
         df2<- dplyr::filter(df2,lineDescription != "Maximum sustainable yield")
-        
-        colnames(df2) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize", "stockComponent","adviceValue" )
+        # browser()
+        # head(df2, 20)
+        # colnames(df2) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize", "stockComponent","adviceValue" )
         #### arrived here
+#        df2 <- df2 %>% dplyr::rename(FishingPressure = `Fishing pressure`,
+#                             StockSize = `Stock Size`)
+        
+        df <- df %>% dplyr::rename(FishingPressure = `Fishing pressure`,
+                            StockSize = `Stock Size`)
         
         
         
         
         
         
-        
-        
-        
-        
-        df2 <-dplyr::mutate(df2, SBL = dplyr::case_when(FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
-                                                 FishingPressure == "RED" | StockSize == "RED" ~ "RED",
-                                                 FishingPressure == "ORANGE"  |  StockSize == "ORANGE" ~ "RED",
-                                                 TRUE ~ "GREY"))
-        df2<- subset(df2, select = c(StockKeyLabel, SBL))
-        df <- dplyr::left_join(df, df2)
+        # df2 <-dplyr::mutate(df2, SBL = dplyr::case_when(FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
+        #                                          FishingPressure == "RED" | StockSize == "RED" ~ "RED",
+        #                                          FishingPressure == "ORANGE"  |  StockSize == "ORANGE" ~ "RED",
+        #                                          TRUE ~ "GREY"))
+        # df2<- subset(df2, select = c(StockKeyLabel, SBL))
+        # df <- dplyr::left_join(df, df2)
         df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
         df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
-        colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
+        # colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
         return(df)
 }
 
@@ -644,7 +652,7 @@ plot_status_prop_pies <- function(df, cap_month = "November",
                          return_data = FALSE) {
         
         
-        colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
+        # colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
         cap_lab <- ggplot2::labs(title = "", x = "", y = "",
                         caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen",
                                           cap_month,
@@ -661,8 +669,8 @@ plot_status_prop_pies <- function(df, cap_month = "November",
                        FisheriesGuild,
                        lineDescription,
                        FishingPressure,
-                       StockSize,
-                       SBL)
+                       StockSize)#,
+                #        SBL)
         df_stock <- tidyr::gather(df_stock,Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
         df2 <- dplyr::group_by(df_stock, FisheriesGuild, lineDescription, Variable, Colour)
         df2 <- dplyr::summarize(df2, COUNT = dplyr::n())
@@ -730,12 +738,23 @@ plot_status_prop_pies <- function(df, cap_month = "November",
 
 
 format_annex_table <- function(status, year, sid) {
-        #        browser()
-        sid <- sid %>% filter(StockKeyLabel %in% status$StockKeyLabel)
-        # test <- sid %>% filter(StockKeyLabel == "cod.27.46a7d20")
-        # test2 <- status %>% filter(StockKeyLabel == "cod.27.46a7d20")
+               
+        # sid_test <- sid %>% filter(StockKeyLabel %in% status$StockKeyLabel)
 
-        df <- dplyr::left_join(status, sid, by = "StockKeyLabel")
+        sid <- sid %>% filter(StockKeyLabel %in% status$StockKeyLabel)
+        # test <- sid_test %>% filter(StockKeyLabel == "cod.27.46a7d20")
+        #  test2 <- df %>% filter(StockKeyLabel.x == "cod.27.46a7d20")
+        #  diff(sid$AssessmentKey, status$AssessmentKey)
+        ######restart here
+        df <- dplyr::left_join(status, sid, by = "stockComponent")
+
+        
+        df <- dplyr::rename(df,
+                StockKeyLabel = StockKeyLabel.x,
+                AssessmentKey = AssessmentKey.x,
+                FisheriesGuild = FisheriesGuild.x,
+                adviceValue = adviceValue.x)  %>% 
+                dplyr::select(-c(StockKeyLabel.y, AssessmentKey.y, FisheriesGuild.y, adviceValue.y))
         # status <- test
         df <- dplyr::mutate(df,
                 D3C1 = FishingPressure,
@@ -751,7 +770,7 @@ format_annex_table <- function(status, year, sid) {
 
         df$StockKeyDescription <- gsub("\\s*\\([^\\)]+\\)", "", df$StockKeyDescription, perl = TRUE)
 
-        df
+        return(df)
 }
 
 

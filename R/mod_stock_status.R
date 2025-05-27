@@ -130,7 +130,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
 
     SID <- reactive({
       # dat <- prepare_ices_stock_status(clean_status)
-      getSID(year = 2024, EcoR = selected_ecoregion())
+      getSID(year = as.integer(format(Sys.Date(), "%Y")), EcoR = selected_ecoregion())
       # format_sag_status_new(status)
     })
 
@@ -239,24 +239,21 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
 
 
     processed_data_reactable <- reactive({
-      annex_data <- format_annex_table(clean_status(), 2024, SID())
-
+      annex_data <- format_annex_table(clean_status(), as.integer(format(Sys.Date(), "%Y")), SID())
+     
       annex_data_cleaned <- annex_data %>%
-        # dplyr::rename(
-        #   FisheriesGuild.y = FisheriesGuild,
-        #   AssessmentKey.y = AssessmentKey
-        # ) %>%
         mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),
-          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey.y, "&assessmentcomponent=NA' target='_blank'>", StockKeyLabel, "</a>")
+          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent,"' target='_blank'>", stockComponent, "</a>")
         ) %>%
         select(
-          "Stock code" = StockKeyLabel,
+          "Stock code (component)" = StockKeyLabel,
+          # "Stock component" = stockComponent,
           "Stock Description" = StockKeyDescription,
           " " = icon,
           "Scientific Name" = SpeciesScientificName,
           "Common Name" = SpeciesCommonName,
-          "Fisheries Guild" = FisheriesGuild.y,
+          "Fisheries Guild" = FisheriesGuild,
           "Data Category" = DataCategory,
           #  "Assessment Year" = AssessmentYear,
           "Assessment Year" = YearOfLastAssessment,
@@ -294,7 +291,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
         wrap = TRUE,
         bordered = TRUE,
         columns = list(
-          "Stock code" = colDef(html = T, filterable = T),
+          "Stock code (component)" = colDef(html = T, filterable = T),
           " " = colDef(html = T, filterable = F, style = list(textAlign = "center")),
           "MSY Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
           "MSY Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
