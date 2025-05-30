@@ -358,17 +358,18 @@ plot_CLD_bar <- function(x, guild, caption = TRUE, cap_year, cap_month, return_d
 }
 
 
+
 getSID <- function(year, EcoR) {
         message("Downloading SID data for year: ", year)
         stock_list_long <- jsonlite::fromJSON(
                 URLencode(
                         sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel,
-                        EcoRegion, 
-                        YearOfLastAssessment, 
+                        EcoRegion,
+                        YearOfLastAssessment,
                         AssessmentKey,
                         StockKeyDescription,
                         SpeciesScientificName,
-                        SpeciesCommonName, 
+                        SpeciesCommonName,
                         AdviceCategory,
                         DataCategory,
                         YearOfLastAssessment,
@@ -382,31 +383,60 @@ getSID <- function(year, EcoR) {
 
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
-        
-        # missing_keys <- which(is.na(stock_list_long$AssessmentKey) &
-        #         !is.na(stock_list_long$YearOfLastAssessment) &
-        #         stock_list_long$YearOfLastAssessment != 0)
 
-        # if (length(missing_keys) > 0) {
-        #         message("Finding missing assessment keys...")
 
-        #         # Retrieve assessment keys (returns list)
-        #         assessment_keys <- lapply(missing_keys, function(i) {
-        #                 keys <- icesSAG::findAssessmentKey(stock_list_long$StockKeyLabel[i],
-        #                         year = stock_list_long$YearOfLastAssessment[i]
-        #                 )
-        #                 if (length(keys) > 0) keys[1] else NA # Take only the first key or return NA
-        #         })
-
-        #         # Convert list to vector and assign
-        #         stock_list_long$AssessmentKey[missing_keys] <- unlist(assessment_keys)
-        # }
-
-        # Drop rows where AssessmentKey is still NA
-        # stock_list_long <- stock_list_long[!is.na(AssessmentKey)]
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
         message("SID Data processing complete.")
-        
+
+        valid_years <- unique(stock_list_long$YearOfLastAssessment)
+        valid_years <- valid_years[!is.na(valid_years) & valid_years != 0]
+
+        # Sequential API calls for ASD records
+        ASDList <- lapply(valid_years, function(y) {
+                message("Fetching ASD advice records for year: ", y)
+                icesASD::getAdviceViewRecord(year = y)
+        })
+
+        # Combine into one data frame, handle empty lists safely
+        ASDList <- ASDList[lengths(ASDList) > 0] # remove empty entries if any
+        ASDList <- do.call(rbind, ASDList)
+        # Proceed only if ASDList has rows
+        # library(dplyr)
+        # if (is.null(ASDList) || nrow(ASDList) == 0) {
+        #         ASDList <- tibble(
+        #                 StockKeyLabel = character(),
+        #                 AssessmentKey = character(),
+        #                 AssessmentComponent = character()
+        #         )
+        # } else {
+        ASDList <- ASDList %>%
+                dplyr::rename(
+                        StockKeyLabel = stockCode,
+                        AssessmentKey = assessmentKey,
+                        AssessmentComponent = adviceComponent
+                ) %>%
+                group_by(StockKeyLabel) %>%
+                filter(assessmentYear == max(assessmentYear, na.rm = TRUE)) %>%
+                ungroup() %>%
+                # mutate(adviceComponent = dplyr::na_if(adviceComponent, "N.A.")) %>%
+                # dplyr::rename(
+                #         StockKeyLabel = stockCode,
+                #         AssessmentKey = assessmentKey,
+                #         AssessmentComponent = adviceComponent
+                # ) #%>%
+                filter(adviceStatus == "Advice")
+        # }
+
+        # Merge with stock_list_long by StockKeyLabel
+        stock_list_long <- stock_list_long %>%
+                dplyr::left_join(ASDList, by = "StockKeyLabel")
+
+        ## filter out "AssessmentKey.x" and rename "AssessmentKey.y"
+        stock_list_long <- stock_list_long %>%
+                dplyr::select(-AssessmentKey.x) %>%
+                dplyr::rename(AssessmentKey = AssessmentKey.y)
+        # test <-stock_list_long %>% filter(StockKeyLabel == "cod.27.46a7d20")
+
         return(stock_list_long)
 }
 
@@ -426,23 +456,22 @@ getStatus <- function(stock_list_long) {
                         }
                 )
         })
-        # status <- icesSAG::getStockStatusValues(unique_keys)
-        # browser()
+        
         # status <- do.call(rbind, status)
         # Combine results into a single dataframe
         status <- plyr::rbind.fill(lapply(status_list, as.data.frame))
         # status <- do.call(rbind.data.frame, status_list)
+
         # Merge stock status values with SID data
         df_status <- merge(stock_list_long, status, by = "AssessmentKey", all.x = TRUE)
         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
+        
         return(df_status)
 }
 
 
-format_sag_status_new <- function(x) {
-        df <- x
-        
-        # df <- dplyr::filter(df,(grepl(pattern = ecoregion, Ecoregion)))
+format_sag_status_new <- function(df) {
+#       
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
                                                   status == 1 ~ "GREEN",
                                                   status == 2 ~ "GREEN", #qualitative green
@@ -479,40 +508,35 @@ format_sag_status_new <- function(x) {
                                     grepl("FMSY", variable) ~ "FMSY",
                                     TRUE ~ variable
                             )) 
+        
         df <- dplyr::filter(df,variable != "-")
         
         df <- dplyr::filter(df, lineDescription != "Management plan")
         df <- dplyr::filter(df, lineDescription != "Qualitative evaluation")
-        df <- dplyr::mutate(df,key = paste(StockKeyLabel, lineDescription, type))
+        # df <- dplyr::mutate(df,key = paste(StockKeyLabel, lineDescription, type))
+        df <- dplyr::mutate(df,key = paste(stockComponent, lineDescription, type))
         df<- df[order(-df$year),]
         df <- df[!duplicated(df$key), ]
         df<- subset(df, select = -key)
-        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild))
+        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild, stockComponent,adviceValue))
         df<- tidyr::spread(df,type, status)
         
         df2<- dplyr::filter(df,lineDescription != "Maximum Sustainable Yield")
         df2<- dplyr::filter(df2,lineDescription != "Maximum sustainable yield")
         
-        colnames(df2) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" )
-        df2 <-dplyr::mutate(df2, SBL = dplyr::case_when(FishingPressure == "GREEN" & StockSize == "GREEN" ~ "GREEN",
-                                                 FishingPressure == "RED" | StockSize == "RED" ~ "RED",
-                                                 FishingPressure == "ORANGE"  |  StockSize == "ORANGE" ~ "RED",
-                                                 TRUE ~ "GREY"))
-        df2<- subset(df2, select = c(StockKeyLabel, SBL))
-        df <- dplyr::left_join(df, df2)
+        df <- df %>% dplyr::rename(FishingPressure = `Fishing pressure`,
+                            StockSize = `Stock Size`)
+      
         df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
         df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
-        colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
         return(df)
 }
 
 
-plot_status_prop_pies <- function(x, cap_month = "November",
+plot_status_prop_pies <- function(df, cap_month = "November",
                          cap_year = "2018",
                          return_data = FALSE) {
-        df <- x
         
-        colnames(df) <- c("StockKeyLabel","AssessmentKey","lineDescription","FisheriesGuild","FishingPressure","StockSize" , "SBL")
         cap_lab <- ggplot2::labs(title = "", x = "", y = "",
                         caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen",
                                           cap_month,
@@ -529,8 +553,8 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                        FisheriesGuild,
                        lineDescription,
                        FishingPressure,
-                       StockSize,
-                       SBL)
+                       StockSize)#,
+                #        SBL)
         df_stock <- tidyr::gather(df_stock,Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
         df2 <- dplyr::group_by(df_stock, FisheriesGuild, lineDescription, Variable, Colour)
         df2 <- dplyr::summarize(df2, COUNT = dplyr::n())
@@ -588,38 +612,7 @@ plot_status_prop_pies <- function(x, cap_month = "November",
                 ggplot2::coord_polar(theta = "y", direction = 1) +
                 ggplot2::facet_grid(FisheriesGuild ~ header)
                 
-        # ggplotly(p1)     
-        # browser()
-        # Create a list of separate plots for each header when interactive mode is enabled
         
-        # browser()
-        # plot_list <- df2 %>%
-        # split(list(.$FisheriesGuild, .$header)) %>%
-        # lapply(function(data) {
-        #     if (nrow(data) > 0) {
-        #         plot_ly(data, labels = ~colour, values = ~fraction, type = 'pie',
-        #                 textinfo = 'label+percent', marker = list(colors = colList)) %>%
-        #             layout(title = paste(data$FisheriesGuild[1], "-", data$header[1]))
-        #     } else {
-        #         NULL
-        #     }
-        # }) %>%
-        # purrr::compact() 
-
-        # # Ensure no NA values are passed to layout
-        # plot_list <- lapply(plot_list, function(p) {
-        #     if (!is.null(p)) {
-        #         p$x$layout <- Filter(Negate(is.na), p$x$layout)
-        #     }
-        #     p
-        # })
-
-        # # Determine the number of rows and columns for the subplot
-        # n_plots <- length(plot_list)
-        # n_cols <- 5
-        # n_rows <- 6#ceiling(n_plots / n_cols)
-        
-        # return(subplot(plot_list, nrows = n_rows, ncols = n_cols, shareX = TRUE, shareY = TRUE))
         if(return_data == T){
                 df2
         }else{
@@ -629,10 +622,18 @@ plot_status_prop_pies <- function(x, cap_month = "November",
 
 
 format_annex_table <- function(status, year, sid) {
-               
+        
         sid <- sid %>% filter(StockKeyLabel %in% status$StockKeyLabel)
-        df <- dplyr::left_join(status, sid, by = "StockKeyLabel")
-        # status <- test
+        df <- dplyr::left_join(status, sid, by = "stockComponent")
+        
+        df <- dplyr::rename(df,
+                StockKeyLabel = StockKeyLabel.x,
+                AssessmentKey = AssessmentKey.x,
+                FisheriesGuild = FisheriesGuild.x,
+                adviceValue = adviceValue.x)  %>% 
+                dplyr::select(-c(StockKeyLabel.y, AssessmentKey.y, FisheriesGuild.y, adviceValue.y))
+        
+
         df <- dplyr::mutate(df,
                 D3C1 = FishingPressure,
                 D3C2 = StockSize,
@@ -644,10 +645,9 @@ format_annex_table <- function(status, year, sid) {
                 )
         )
 
-
         df$StockKeyDescription <- gsub("\\s*\\([^\\)]+\\)", "", df$StockKeyDescription, perl = TRUE)
 
-        df
+        return(df)
 }
 
 
