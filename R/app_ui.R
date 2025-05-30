@@ -83,11 +83,11 @@ golem_add_external_resources <- function() {
   
   tags$head(
     tags$link(rel = "shortcut icon", href = "www/fishriesXplorer_PNG.png"),
+    includeHTML(("R/google-analytics.html")),
     bundle_resources(
       path = app_sys("app/www"),
       app_title = "fisheriesXplorer"
     ),
-    # tags$head(includeHTML(("google-analytics.html"))),
     tags$style(HTML("
     #custom_slider .shiny-input-container {
       margin-top: 0px !important;  /* Remove top margin */

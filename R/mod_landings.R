@@ -14,8 +14,13 @@
 mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    div(style = "padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-        textOutput(ns("ecoregion_label"))),
+  #  div(
+  #     style = "display: flex; justify-content: space-between; align-items: center;
+  #          padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+  #     span(textOutput(ns("ecoregion_label"))),
+  #     span(textOutput(ns("current_date")))
+  #   ),
+  mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     tabsetPanel(
       tabPanel("Landings",
         layout_sidebar(bg = "white", fg = "black", 
@@ -71,6 +76,10 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
     output$ecoregion_label <- renderText({
       req(selected_ecoregion())
       paste("Ecoregion:", selected_ecoregion())
+    })
+
+    output$current_date <- renderText({
+      "Last update: December 05, 2024" # e.g., "May 26, 2025"
     })
 
     SID <- reactive({      
