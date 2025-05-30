@@ -44,3 +44,12 @@ merge_cells <- function(values) {
     }
   }, c(1, spans[-length(spans)] + 1), spans, unique_values)
 }
+
+mod_flex_header_ui <- function(ns, left_id, right_id) {  
+  div(  
+    style = "display: flex; justify-content: space-between; align-items: center;  
+         padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",  
+    span(textOutput(ns(left_id))),  
+    span(textOutput(ns(right_id)))  
+  )  
+}  

@@ -10,12 +10,13 @@
 mod_overview_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    div(
-      style = "display: flex; justify-content: space-between; align-items: center;
-           padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-      span(textOutput(ns("ecoregion_label"))),
-      span(textOutput(ns("current_date")))
-    ),
+    # div(
+    #   style = "display: flex; justify-content: space-between; align-items: center;
+    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+    #   span(textOutput(ns("ecoregion_label"))),
+    #   span(textOutput(ns("current_date")))
+    # ),
+    mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     # Fullscreen script added here once
     tags$script(HTML("
       function toggleFullScreen(elem) {

@@ -10,12 +10,13 @@
 mod_bycatch_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    div(
-      style = "display: flex; justify-content: space-between; align-items: center;
-           padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-      span(textOutput(ns("ecoregion_label"))),
-      span(textOutput(ns("current_date")))
-    ),
+    # div(
+    #   style = "display: flex; justify-content: space-between; align-items: center;
+    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+    #   span(textOutput(ns("ecoregion_label"))),
+    #   span(textOutput(ns("current_date")))
+    # ),
+    mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     layout_sidebar(bg = "white", fg = "black", 
       sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
                         open = F,
