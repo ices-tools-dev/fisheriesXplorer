@@ -10,6 +10,12 @@
 mod_overview_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    div(
+      style = "display: flex; justify-content: space-between; align-items: center;
+           padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+      span(textOutput(ns("ecoregion_label"))),
+      span(textOutput(ns("current_date")))
+    ),
     # Fullscreen script added here once
     tags$script(HTML("
       function toggleFullScreen(elem) {
@@ -57,7 +63,16 @@ mod_overview_ui <- function(id) {
 mod_overview_server <- function(id, selected_ecoregion){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    
+
+  output$ecoregion_label <- renderText({
+      req(selected_ecoregion())
+      paste("Ecoregion:", selected_ecoregion())
+    })
+
+    output$current_date <- renderText({
+      "Last update: December 05, 2024" # e.g., "May 26, 2025"
+    })
+
   output$staticMap1 <- renderUI({
   ecoregion <- get_ecoregion_acronym(selected_ecoregion())
   path <- file.path("inst/app/www", paste0(ecoregion, ".jpg"))

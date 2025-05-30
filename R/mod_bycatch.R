@@ -10,6 +10,12 @@
 mod_bycatch_ui <- function(id) {
   ns <- NS(id)
   tagList(
+    div(
+      style = "display: flex; justify-content: space-between; align-items: center;
+           padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+      span(textOutput(ns("ecoregion_label"))),
+      span(textOutput(ns("current_date")))
+    ),
     layout_sidebar(bg = "white", fg = "black", 
       sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
                         open = F,
@@ -40,6 +46,10 @@ mod_bycatch_server <- function(id, selected_ecoregion){
     output$ecoregion_label <- renderText({
       req(selected_ecoregion())
       paste("Ecoregion:", selected_ecoregion())
+    })
+
+    output$current_date <- renderText({
+      "Last update: December 05, 2024" # e.g., "May 26, 2025"
     })
     
     output$bycatch_text <- renderUI({

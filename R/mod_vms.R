@@ -14,42 +14,58 @@
 mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    div(style = "padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-        textOutput(ns("ecoregion_label"))),
+    div(
+      style = "display: flex; justify-content: space-between; align-items: center;
+           padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+      span(textOutput(ns("ecoregion_label"))),
+      span(textOutput(ns("current_date")))
+    ),
     br(),
     fluidRow(
-      column(6,
-       layout_sidebar(bg = "white", fg = "black",
-                      sidebar = sidebar(width = "100%", bg = "white", fg = "black",
-                                        open = F,
-                                        uiOutput(ns("sar_text"), height = "65vh")),
-          card(height = "85vh", full_screen = T,
+      column(
+        6,
+        layout_sidebar(
+          bg = "white", fg = "black",
+          sidebar = sidebar(
+            width = "100%", bg = "white", fg = "black",
+            open = F,
+            uiOutput(ns("sar_text"), height = "65vh")
+          ),
+          card(
+            height = "85vh", full_screen = T,
             card_header("Fishing Effort"),
             card_body(
-              selectInput(ns("fishing_cat_selector"), "Select fishing category", 
-                choices = c("All"= "all", "Beam trawls", "Bottom otter trawls", "Bottom seines", "Dredges", "Pelagic trawls and seines", "Static gears"),
-                selected = "All"),
-              withSpinner(suppressWarnings(plotOutput(ns("effort_layer"), height = "65vh", width = "100%", fill =T)))
+              selectInput(ns("fishing_cat_selector"), "Select fishing category",
+                choices = c("All" = "all", "Beam trawls", "Bottom otter trawls", "Bottom seines", "Dredges", "Pelagic trawls and seines", "Static gears"),
+                selected = "All"
+              ),
+              withSpinner(suppressWarnings(plotOutput(ns("effort_layer"), height = "65vh", width = "100%", fill = T)))
             )
           )
-          )
+        )
+      ),
+      column(
+        6,
+        layout_sidebar(
+          bg = "white", fg = "black",
+          sidebar = sidebar(
+            width = "100%", bg = "white", fg = "black",
+            open = F,
+            uiOutput(ns("benthic_impact_text"))
           ),
-      column(6,
-       layout_sidebar(bg = "white", fg = "black", 
-                      sidebar = sidebar(width = "100%", bg = "white", fg = "black", 
-                                        open = F,
-                                        uiOutput(ns("benthic_impact_text"))),
-            card(height = "85vh", full_screen = T,
-              card_header("SAR"),
-              card_body(
-                # div(style = "margin-top: 20px; margin-bottom: 14.432px", 
-                selectInput(ns("sar_layer_selector"), "Select fishing benthic impact level", 
-                  choices = c("Surface" = "surface", "Subsurface" = "subsurface"),
-                  selected = "Surface"),
-                suppressWarnings(withSpinner( suppressWarnings(plotOutput(ns("sar_layer"), height = "65vh", width = "100%", fill =T))))
-              )
+          card(
+            height = "85vh", full_screen = T,
+            card_header("SAR"),
+            card_body(
+              # div(style = "margin-top: 20px; margin-bottom: 14.432px",
+              selectInput(ns("sar_layer_selector"), "Select fishing benthic impact level",
+                choices = c("Surface" = "surface", "Subsurface" = "subsurface"),
+                selected = "Surface"
+              ),
+              suppressWarnings(withSpinner(suppressWarnings(plotOutput(ns("sar_layer"), height = "65vh", width = "100%", fill = T))))
             )
           )
+        )
       )
     )
   )
@@ -64,6 +80,10 @@ mod_vms_server <- function(id, selected_ecoregion){
     output$ecoregion_label <- renderText({
       req(selected_ecoregion())
       paste("Ecoregion:", selected_ecoregion())
+    })
+
+    output$current_date <- renderText({
+      "Last update: December 05, 2024" # e.g., "May 26, 2025"
     })
 
     output$effort_layer <- renderPlot({ 

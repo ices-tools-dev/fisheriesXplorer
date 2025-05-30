@@ -15,8 +15,12 @@
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    div(style = "padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-        textOutput(ns("ecoregion_label"))),
+    div(
+      style = "display: flex; justify-content: space-between; align-items: center;
+           padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+      span(textOutput(ns("ecoregion_label"))),
+      span(textOutput(ns("current_date")))
+    ),
     navset_tab(
        nav_panel("Status Summary",
           layout_sidebar(
@@ -122,6 +126,10 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
     output$ecoregion_label <- renderText({
       req(selected_ecoregion())
       paste("Ecoregion:", selected_ecoregion())
+    })
+
+    output$current_date <- renderText({
+      paste0("Last update: ", format(Sys.Date(), "%B %d, %Y")) # e.g., "May 26, 2025"
     })
 
     output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
