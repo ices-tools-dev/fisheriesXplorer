@@ -14,51 +14,73 @@
 mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(
-  #  div(
-  #     style = "display: flex; justify-content: space-between; align-items: center;
-  #          padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-  #     span(textOutput(ns("ecoregion_label"))),
-  #     span(textOutput(ns("current_date")))
-  #   ),
-  mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
+    #  div(
+    #     style = "display: flex; justify-content: space-between; align-items: center;
+    #          padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+    #     span(textOutput(ns("ecoregion_label"))),
+    #     span(textOutput(ns("current_date")))
+    #   ),
+    mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     tabsetPanel(
-      tabPanel("Landings",
-        layout_sidebar(bg = "white", fg = "black", 
-          sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                            open = FALSE,
-                            uiOutput(ns("landings_text"))),
-          card(height = "85vh",
+      tabPanel(
+        "Landings",
+        layout_sidebar(
+          bg = "white", fg = "black",
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("landings_text"))
+          ),
+          card(
+            height = "85vh",
             card_header(
-              div(style = "margin-left: 12px;",
-                radioButtons(ns("landings_layer_selector"), NULL, inline = T,
-                  choices = c("Main landed species" = "COMMON_NAME", "Guild" = "GUILD", "Country" = "COUNTRY")))),
-            card_body(withSpinner(
-              plotlyOutput(ns("landings_layer"), height = "65vh")))
-          ))),
-      tabPanel("Discards",
-        layout_sidebar(bg = "white", fg = "black", 
-          sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                            open = FALSE,
-                            uiOutput(ns("discards_text"))),
-          card(height = "85vh",
-            card_header(
-              div(style = "margin-left: 12px;",
-                radioButtons(ns("discards_layer_selector"), NULL, inline = TRUE,
-                             choices = c("Discard rates by guild   " = "rates", "Landings and discards (Stocks with recorded discards only)    " = "recorded", "Landings and discards (All_stocks) " = "all")))),
-            card_body(
-              conditionalPanel(ns = NS("landings_1"),
-                condition = "input.discards_layer_selector == 'rates'",
-                withSpinner(plotlyOutput(ns("discard_trends")))
-                ),
-              conditionalPanel(ns = NS("landings_1"),
-                condition = "input.discards_layer_selector == 'recorded'",
-                withSpinner(plotlyOutput(ns("recorded_discards")))
-                ),
-              conditionalPanel(ns = NS("landings_1"),
-                condition = "input.discards_layer_selector == 'all'",
-                withSpinner(plotlyOutput(ns("all_discards")))
+              div(
+                style = "margin-left: 12px;",
+                radioButtons(ns("landings_layer_selector"), NULL,
+                  inline = T,
+                  choices = c("Main landed species" = "COMMON_NAME", "Guild" = "GUILD", "Country" = "COUNTRY")
+                )
               )
+            ),
+            card_body(withSpinner(
+              plotlyOutput(ns("landings_layer"), height = "65vh")
+            ))
+          )
+        )
+      ),
+      tabPanel(
+        "Discards",
+        layout_sidebar(
+          bg = "white", fg = "black",
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("discards_text"))
+          ),
+          card(
+            height = "95vh",
+            width = "70vw",
+            card_body(
+              withSpinner(plotlyOutput(ns("combined_discards_plot")))
             )
+            # card_header(
+            #   div(style = "margin-left: 12px;",
+            #     radioButtons(ns("discards_layer_selector"), NULL, inline = TRUE,
+            #                  choices = c("Discard rates by guild   " = "rates", "Landings and discards (Stocks with recorded discards only)    " = "recorded", "Landings and discards (All_stocks) " = "all")))),
+            # card_body(
+            #   conditionalPanel(ns = NS("landings_1"),
+            #     condition = "input.discards_layer_selector == 'rates'",
+            #     withSpinner(plotlyOutput(ns("discard_trends")))
+            #     ),
+            #   conditionalPanel(ns = NS("landings_1"),
+            #     condition = "input.discards_layer_selector == 'recorded'",
+            #     withSpinner(plotlyOutput(ns("recorded_discards")))
+            #     ),
+            #   conditionalPanel(ns = NS("landings_1"),
+            #     condition = "input.discards_layer_selector == 'all'",
+            #     withSpinner(plotlyOutput(ns("all_discards")))
+            #   )
+            # )
           )
         )
       )
@@ -69,10 +91,10 @@ mod_landings_ui <- function(id) {
 #' landings Server Functions
 #'
 #' @noRd 
-mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
-  moduleServer( id, function(input, output, session){
+mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    
+
     output$ecoregion_label <- renderText({
       req(selected_ecoregion())
       paste("Ecoregion:", selected_ecoregion())
@@ -82,23 +104,23 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
       "Last update: December 05, 2024" # e.g., "May 26, 2025"
     })
 
-    SID <- reactive({      
+    SID <- reactive({
       # dat <- prepare_ices_stock_status(clean_status)
       getSID(year = 2024, EcoR = selected_ecoregion())
       # format_sag_status_new(status)
     })
 
     SAG <- reactive({
-      # getSAG_ecoregion(2024, selected_ecoregion(), SID())      
+      # getSAG_ecoregion(2024, selected_ecoregion(), SID())
       getSAG_ecoregion_new(SID()$AssessmentKey)
       # getSAG_ecoregion_new(SID()$StockKeyLabel, SID()$YearOfLastAssessment)
     })
     output$landings_text <- renderUI({
-      HTML(select_text(texts,"landings_discards","landings"))
+      HTML(select_text(texts, "landings_discards", "landings"))
     })
-    
+
     output$discards_text <- renderUI({
-      HTML(select_text(texts,"landings_discards","discards"))
+      HTML(select_text(texts, "landings_discards", "discards"))
     })
 
     output$landings_layer <- renderPlotly({
@@ -110,18 +132,18 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
         "GUILD" = list("n" = 6, type = "line"),
         "COUNTRY" = list("n" = 9, type = "area")
       )
-      
+
       params <- plotting_params$landings[[input$landings_layer_selector]]
-      
+
       ecoregion <- selected_ecoregion()
       acronym <- get_ecoregion_acronym(ecoregion)
-  
-  # Load the corresponding .rda file
+
+      # Load the corresponding .rda file
       rda_path <- paste0("./data/", acronym, ".rda")
       load(rda_path)
       fig <- ggplotly(plot_catch_trends_app_new(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))) %>%
         plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
-      
+
       for (i in 1:length(fig$x$data)) {
         if (!is.null(fig$x$data[[i]]$name)) {
           fig$x$data[[i]]$name <- gsub("\\(", "", str_split(fig$x$data[[i]]$name, ",")[[1]][1])
@@ -129,30 +151,122 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
       }
       fig
     })
-    
+
     year <- 2024
-    
-    output$discard_trends <- renderPlotly({
-      fig2 <- ggplotly(plot_discard_trends_app_plotly(CLD_trends(format_sag(SAG(), SID())), year, cap_year , cap_month, caption = F)) 
-      for (i in 1:length(fig2$x$data)) {
-        if (!is.null(fig2$x$data[[i]]$name)) {
-          fig2$x$data[[i]]$name <- gsub("\\(", "", str_split(fig2$x$data[[i]]$name, ",")[[1]][1])
+
+    # output$discard_trends <- renderPlotly({
+    #   fig2 <- ggplotly(plot_discard_trends_app_plotly(CLD_trends(format_sag(SAG(), SID())), year, cap_year , cap_month, caption = F))
+    #   for (i in 1:length(fig2$x$data)) {
+    #     if (!is.null(fig2$x$data[[i]]$name)) {
+    #       fig2$x$data[[i]]$name <- gsub("\\(", "", str_split(fig2$x$data[[i]]$name, ",")[[1]][1])
+    #     }
+    #   }
+    #   fig2
+    # })
+    # output$recorded_discards <- renderPlotly({
+    #   catch_trends2 <- CLD_trends(format_sag(SAG(), SID())) %>% filter(Discards > 0)
+    #   # ggplotly(plot_discard_current(CLD_trends(format_sag(SAG(), SID())), year, cap_year , cap_month, position_letter = ""))
+    #   plot_discard_current_plotly(catch_trends2, year = year, cap_year = cap_year, cap_month = cap_month)
+    # })
+
+    # output$all_discards <- renderPlotly({
+    #   # dat <- plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year, cap_year = cap_year , cap_month = cap_month, return_data = TRUE)
+    #   # ggplotly(plot_discard_current_order(CLD_trends(format_sag(SAG(), SID())), year-1, dat, cap_year , cap_month, position_letter = ""))
+    #   plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year = year, cap_year = cap_year, cap_month = cap_month)
+    # })
+    output$combined_discards_plot <- renderPlotly({
+      # Prepare top plot
+      top_plot <- ggplotly(
+        plot_discard_trends_app_plotly(
+          CLD_trends(format_sag(SAG(), SID())),
+          year, cap_year, cap_month,
+          caption = FALSE
+        )
+      )
+      # top_plot <- top_plot %>% plotly::layout(
+      #   showlegend = TRUE,
+      #   legend = list(
+      #     orientation = "v",
+      #     x = 0,
+      #     y = 1.15,
+      #     xanchor = "left",
+      #     yanchor = "top",
+      #     font = list(size = 12)
+      #   )
+      # )
+
+      # Clean top plot trace names
+      for (i in seq_along(top_plot$x$data)) {
+        if (!is.null(top_plot$x$data[[i]]$name)) {
+          top_plot$x$data[[i]]$name <- gsub("\\(", "", str_split(top_plot$x$data[[i]]$name, ",")[[1]][1])
         }
       }
-      fig2
-    })
-    output$recorded_discards <- renderPlotly({
-      catch_trends2 <- CLD_trends(format_sag(SAG(), SID())) %>% filter(Discards > 0)
-      # ggplotly(plot_discard_current(CLD_trends(format_sag(SAG(), SID())), year, cap_year , cap_month, position_letter = ""))
-      plot_discard_current_plotly(catch_trends2, year = year, cap_year = cap_year, cap_month = cap_month)
-    })
 
-    output$all_discards <- renderPlotly({
-      # dat <- plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year, cap_year = cap_year , cap_month = cap_month, return_data = TRUE)
-      # ggplotly(plot_discard_current_order(CLD_trends(format_sag(SAG(), SID())), year-1, dat, cap_year , cap_month, position_letter = ""))
-      plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year = year, cap_year = cap_year, cap_month = cap_month)
+      # Bottom left and right plots
+      bottom_left <- plot_discard_current_plotly(
+        CLD_trends(format_sag(SAG(), SID())) %>% filter(Discards > 0),
+        year = year, cap_year = cap_year, cap_month = cap_month
+      )
+
+      bottom_right <- plot_discard_current_plotly(
+        CLD_trends(format_sag(SAG(), SID())),
+        year = year, cap_year = cap_year, cap_month = cap_month
+      )
+
+      # Combine all in subplot
+      combined <- plotly::subplot(
+        top_plot,
+        plotly::subplot(bottom_left, bottom_right, nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE),
+        nrows = 2,
+        heights = c(0.5, 0.5),
+        shareX = FALSE,
+        shareY = FALSE,
+        margin = 0.1
+      )
+
+      # Add subplot titles via layout annotations
+      combined <- combined %>% plotly::layout(
+        # title = list(text = "Discard Overview", x = 0, xanchor = "left"),
+        annotations = list(
+          list(
+            text = "Discard Rate Trends",
+            x = 0.5,
+            y = 1.05,
+            xref = "paper",
+            yref = "paper",
+            showarrow = FALSE,
+            font = list(size = 14, color = "black")
+          ),
+          list(
+            text = "Recorded Discards",
+            x = 0.22,
+            y = 0.45,
+            xref = "paper",
+            yref = "paper",
+            showarrow = FALSE,
+            font = list(size = 14, color = "black")
+          ),
+          list(
+            text = "All Discards",
+            x = 0.78,
+            y = 0.45,
+            xref = "paper",
+            yref = "paper",
+            showarrow = FALSE,
+            font = list(size = 14, color = "black")
+          )
+        ),
+        showlegend = TRUE
+        # legend = list(
+        #   orientation = "h",
+        #   x = 0,
+        #   y = 1.15,
+        #   xanchor = "center",
+        #   yanchor = "bottom",
+        #   font = list(size = 12)
+        # )
+      )
     })
-    
   })
 }
     
