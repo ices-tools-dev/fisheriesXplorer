@@ -22,6 +22,7 @@ mod_landings_ui <- function(id) {
     #   ),
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     tabsetPanel(
+      id = ns("main_tabset"),
       tabPanel(
         "Landings",
         layout_sidebar(
@@ -92,7 +93,14 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
     })
 
     output$current_date <- renderText({
-      "Last update: December 05, 2024" # e.g., "May 26, 2025"
+      tab <- input$main_tabset
+      date_string <- switch(tab,
+        "Landings" = "Last update: December 05, 2024",
+        "Discards" = paste0("Last update: ", format(Sys.Date(), "%B %d, %Y"))
+        # "Last update: December 05, 2024" # default
+      )
+
+      date_string
     })
 
     SID <- reactive({      
