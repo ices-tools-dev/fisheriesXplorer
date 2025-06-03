@@ -58,28 +58,13 @@ mod_landings_ui <- function(id) {
             uiOutput(ns("discards_text"))
           ),
           card(
-            height = "50vh",
-            # card_header(
-            #   div(style = "margin-left: 12px;",
-            #     radioButtons(ns("discards_layer_selector"), NULL, inline = TRUE,
-            #                  choices = c("Discard rates by guild   " = "rates", "Landings and discards (Stocks with recorded discards only)    " = "recorded", "Landings and discards (All_stocks) " = "all")))),
+            height = "45vh",
             card_body(
-              #   conditionalPanel(ns = NS("landings_1"),
-              #     condition = "input.discards_layer_selector == 'rates'",
               withSpinner(plotlyOutput(ns("discard_trends")))
             )
-            #   conditionalPanel(ns = NS("landings_1"),
-            #     condition = "input.discards_layer_selector == 'recorded'",
-            #     withSpinner(plotlyOutput(ns("recorded_discards")))
-            #     ),
-            #   conditionalPanel(ns = NS("landings_1"),
-            #     condition = "input.discards_layer_selector == 'all'",
-            #     withSpinner(plotlyOutput(ns("all_discards")))
-            #   )
-            # )
           ),
           card(
-            height = "40vh",
+            height = "45vh",
             card_body(
               layout_column_wrap(
                 width = 1 / 2,
