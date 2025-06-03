@@ -4,9 +4,9 @@
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
-#' @noRd 
+#' @noRd
 #'
-#' @importFrom shiny NS tagList 
+#' @importFrom shiny NS tagList
 #' @importFrom icesFO plot_discard_trends plot_discard_current plot_catch_trends
 #' @importFrom plotly ggplotly plotlyOutput renderPlotly
 #' @importFrom shinycssloaders withSpinner
@@ -14,48 +14,76 @@
 mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(
-  #  div(
-  #     style = "display: flex; justify-content: space-between; align-items: center;
-  #          padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-  #     span(textOutput(ns("ecoregion_label"))),
-  #     span(textOutput(ns("current_date")))
-  #   ),
-  mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
+    #  div(
+    #     style = "display: flex; justify-content: space-between; align-items: center;
+    #          padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
+    #     span(textOutput(ns("ecoregion_label"))),
+    #     span(textOutput(ns("current_date")))
+    #   ),
+    mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     tabsetPanel(
-      tabPanel("Landings",
-        layout_sidebar(bg = "white", fg = "black", 
-          sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                            open = FALSE,
-                            uiOutput(ns("landings_text"))),
-          card(height = "85vh",
+      tabPanel(
+        "Landings",
+        layout_sidebar(
+          bg = "white", fg = "black",
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("landings_text"))
+          ),
+          card(
+            height = "85vh",
             card_header(
-              div(style = "margin-left: 12px;",
-                radioButtons(ns("landings_layer_selector"), NULL, inline = T,
-                  choices = c("Main landed species" = "COMMON_NAME", "Guild" = "GUILD", "Country" = "COUNTRY")))),
+              div(
+                style = "margin-left: 12px;",
+                radioButtons(ns("landings_layer_selector"), NULL,
+                  inline = T,
+                  choices = c("Main landed species" = "COMMON_NAME", "Guild" = "GUILD", "Country" = "COUNTRY")
+                )
+              )
+            ),
             card_body(withSpinner(
-              plotlyOutput(ns("landings_layer"), height = "65vh")))
-          ))),
-      tabPanel("Discards",
-        layout_sidebar(bg = "white", fg = "black", 
-          sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                            open = FALSE,
-                            uiOutput(ns("discards_text"))),
-          card(height = "85vh",
-            card_header(
-              div(style = "margin-left: 12px;",
-                radioButtons(ns("discards_layer_selector"), NULL, inline = TRUE,
-                             choices = c("Discard rates by guild   " = "rates", "Landings and discards (Stocks with recorded discards only)    " = "recorded", "Landings and discards (All_stocks) " = "all")))),
+              plotlyOutput(ns("landings_layer"), height = "65vh")
+            ))
+          )
+        )
+      ),
+      tabPanel(
+        "Discards",
+        layout_sidebar(
+          bg = "white", fg = "black",
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("discards_text"))
+          ),
+          card(
+            height = "50vh",
+            # card_header(
+            #   div(style = "margin-left: 12px;",
+            #     radioButtons(ns("discards_layer_selector"), NULL, inline = TRUE,
+            #                  choices = c("Discard rates by guild   " = "rates", "Landings and discards (Stocks with recorded discards only)    " = "recorded", "Landings and discards (All_stocks) " = "all")))),
             card_body(
-              conditionalPanel(ns = NS("landings_1"),
-                condition = "input.discards_layer_selector == 'rates'",
-                withSpinner(plotlyOutput(ns("discard_trends")))
-                ),
-              conditionalPanel(ns = NS("landings_1"),
-                condition = "input.discards_layer_selector == 'recorded'",
-                withSpinner(plotlyOutput(ns("recorded_discards")))
-                ),
-              conditionalPanel(ns = NS("landings_1"),
-                condition = "input.discards_layer_selector == 'all'",
+              #   conditionalPanel(ns = NS("landings_1"),
+              #     condition = "input.discards_layer_selector == 'rates'",
+              withSpinner(plotlyOutput(ns("discard_trends")))
+            )
+            #   conditionalPanel(ns = NS("landings_1"),
+            #     condition = "input.discards_layer_selector == 'recorded'",
+            #     withSpinner(plotlyOutput(ns("recorded_discards")))
+            #     ),
+            #   conditionalPanel(ns = NS("landings_1"),
+            #     condition = "input.discards_layer_selector == 'all'",
+            #     withSpinner(plotlyOutput(ns("all_discards")))
+            #   )
+            # )
+          ),
+          card(
+            height = "40vh",
+            card_body(
+              layout_column_wrap(
+                width = 1 / 2,
+                withSpinner(plotlyOutput(ns("recorded_discards"))),
                 withSpinner(plotlyOutput(ns("all_discards")))
               )
             )
