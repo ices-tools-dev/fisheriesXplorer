@@ -22,6 +22,7 @@ mod_landings_ui <- function(id) {
     #   ),
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     tabsetPanel(
+      id = ns("main_tabset"), 
       tabPanel(
         "Landings",
         layout_sidebar(
@@ -59,28 +60,9 @@ mod_landings_ui <- function(id) {
           ),
           card(
             height = "95vh",
-            width = "70vw",
             card_body(
-              withSpinner(plotlyOutput(ns("combined_discards_plot")))
-            )
-            # card_header(
-            #   div(style = "margin-left: 12px;",
-            #     radioButtons(ns("discards_layer_selector"), NULL, inline = TRUE,
-            #                  choices = c("Discard rates by guild   " = "rates", "Landings and discards (Stocks with recorded discards only)    " = "recorded", "Landings and discards (All_stocks) " = "all")))),
-            # card_body(
-            #   conditionalPanel(ns = NS("landings_1"),
-            #     condition = "input.discards_layer_selector == 'rates'",
-            #     withSpinner(plotlyOutput(ns("discard_trends")))
-            #     ),
-            #   conditionalPanel(ns = NS("landings_1"),
-            #     condition = "input.discards_layer_selector == 'recorded'",
-            #     withSpinner(plotlyOutput(ns("recorded_discards")))
-            #     ),
-            #   conditionalPanel(ns = NS("landings_1"),
-            #     condition = "input.discards_layer_selector == 'all'",
-            #     withSpinner(plotlyOutput(ns("all_discards")))
-            #   )
-            # )
+              withSpinner(plotlyOutput(ns("combined_discards_plot"), width = "100%", height = "80vh"))
+            )            
           )
         )
       )
@@ -100,9 +82,20 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion) {
       paste("Ecoregion:", selected_ecoregion())
     })
 
+    # output$current_date <- renderText({
+    #   "Last update: December 05, 2024" # e.g., "May 26, 2025"
+    # })
     output$current_date <- renderText({
-      "Last update: December 05, 2024" # e.g., "May 26, 2025"
-    })
+  tab <- input$main_tabset
+
+  date_string <- switch(tab,
+    "Landings" = "Last update: December 05, 2024",
+    "Discards" = paste0("Last update: ", format(Sys.Date(), "%B %d, %Y"))
+    # "Last update: December 05, 2024" # default
+  )
+
+  date_string
+})
 
     SID <- reactive({
       # dat <- prepare_ices_stock_status(clean_status)
@@ -183,24 +176,14 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion) {
           caption = FALSE
         )
       )
-      # top_plot <- top_plot %>% plotly::layout(
-      #   showlegend = TRUE,
-      #   legend = list(
-      #     orientation = "v",
-      #     x = 0,
-      #     y = 1.15,
-      #     xanchor = "left",
-      #     yanchor = "top",
-      #     font = list(size = 12)
-      #   )
-      # )
+      
 
-      # Clean top plot trace names
-      for (i in seq_along(top_plot$x$data)) {
-        if (!is.null(top_plot$x$data[[i]]$name)) {
-          top_plot$x$data[[i]]$name <- gsub("\\(", "", str_split(top_plot$x$data[[i]]$name, ",")[[1]][1])
-        }
-      }
+      # # Clean top plot trace names
+      # for (i in seq_along(top_plot$x$data)) {
+      #   if (!is.null(top_plot$x$data[[i]]$name)) {
+      #     top_plot$x$data[[i]]$name <- gsub("\\(", "", str_split(top_plot$x$data[[i]]$name, ",")[[1]][1])
+      #   }
+      # }
 
       # Bottom left and right plots
       bottom_left <- plot_discard_current_plotly(
@@ -210,7 +193,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion) {
 
       bottom_right <- plot_discard_current_plotly(
         CLD_trends(format_sag(SAG(), SID())),
-        year = year, cap_year = cap_year, cap_month = cap_month
+        year = year, caption = FALSE
       )
 
       # Combine all in subplot
@@ -229,7 +212,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion) {
         # title = list(text = "Discard Overview", x = 0, xanchor = "left"),
         annotations = list(
           list(
-            text = "Discard Rate Trends",
+            text = "Discard Trends",
             x = 0.5,
             y = 1.05,
             xref = "paper",
@@ -254,17 +237,27 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion) {
             yref = "paper",
             showarrow = FALSE,
             font = list(size = 14, color = "black")
+          ),
+          list(
+            text = "Discards and Landings (thousand tonnes)",
+            x = 0.5,
+            y = -0.08,
+            xref = "paper",
+            yref = "paper",
+            showarrow = FALSE,  
+            font = list(size = 12, color = "black")
+          ),
+          list(
+            text = "Years",
+            x = 0.5,
+            y = 0.52,
+            xref = "paper",
+            yref = "paper",
+            showarrow = FALSE,  
+            font = list(size = 12, color = "black")
           )
         ),
-        showlegend = TRUE
-        # legend = list(
-        #   orientation = "h",
-        #   x = 0,
-        #   y = 1.15,
-        #   xanchor = "center",
-        #   yanchor = "bottom",
-        #   font = list(size = 12)
-        # )
+        showlegend = TRUE        
       )
     })
   })

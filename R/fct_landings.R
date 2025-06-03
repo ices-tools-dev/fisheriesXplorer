@@ -670,9 +670,11 @@ plot_discard_current_plotly <- function(x, year, position_letter = NULL,
     return(df5)
   }
   
+  ## rename the rows of variable guildLandings and guildDiscards to Landings and Discards
+  df5 <- dplyr::mutate(df5, variable = dplyr::recode(variable, guildLandings = "Landings", guildDiscards = "Discards"))
     # Create color scale
-  color_scale <- c("guildLandings" = "#1d9e76", "guildDiscards" = "#d86003")
-  
+  color_scale <- c("Landings" = "#1d9e76", "Discards" = "#d86003")
+
   plot <- plotly::plot_ly(
     data = df5,
     x = ~value,
