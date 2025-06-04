@@ -59,13 +59,14 @@ mod_landings_ui <- function(id) {
             uiOutput(ns("discards_text"))
           ),
           card(
-            height = "45vh",
+            
+            # height = "45vh",
             card_body(
+              style = "overflow-y: hidden;",
               withSpinner(plotlyOutput(ns("discard_trends")))
             )
           ),
           card(
-            height = "45vh",
             card_body(
               layout_column_wrap(
                 width = 1 / 2,
@@ -165,13 +166,13 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
     output$recorded_discards <- renderPlotly({
       catch_trends2 <- CLD_trends(format_sag(SAG(), SID())) %>% filter(Discards > 0)
       # ggplotly(plot_discard_current(CLD_trends(format_sag(SAG(), SID())), year, cap_year , cap_month, position_letter = ""))
-      plot_discard_current_plotly(catch_trends2, year = year, cap_year = cap_year, cap_month = cap_month)
+      plot_discard_current_plotly(catch_trends2, year = year, position_letter = "Stocks with recorded discards (2024)", cap_year = cap_year, cap_month = cap_month)
     })
 
     output$all_discards <- renderPlotly({
       # dat <- plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year, cap_year = cap_year , cap_month = cap_month, return_data = TRUE)
       # ggplotly(plot_discard_current_order(CLD_trends(format_sag(SAG(), SID())), year-1, dat, cap_year , cap_month, position_letter = ""))
-      plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year = year, cap_year = cap_year, cap_month = cap_month)
+      plot_discard_current_plotly(CLD_trends(format_sag(SAG(), SID())), year = year, position_letter = "All Stocks (2024)", cap_year = cap_year, cap_month = cap_month)
     })
     
   })
