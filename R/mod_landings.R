@@ -39,7 +39,7 @@ mod_landings_ui <- function(id) {
                 style = "margin-left: 12px;",
                 radioButtons(ns("landings_layer_selector"), NULL,
                   inline = T,
-                  choices = c("Main landed species" = "COMMON_NAME", "Fisheries Guild" = "GUILD", "Country" = "COUNTRY")
+                  choices = c("Main landed species" = "Common name", "Fisheries Guild" = "Fisheries guild", "Country" = "Country")
                 )
               )
             ),
@@ -128,9 +128,9 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
 
       plotting_params <- list()
       plotting_params$landings <- list(
-        "COMMON_NAME" = list("n" = 8, type = "line"),
-        "GUILD" = list("n" = 6, type = "line"),
-        "COUNTRY" = list("n" = 8, type = "line")
+        "Common name" = list("n" = 8, type = "line"),
+        "Fisheries guild" = list("n" = 6, type = "line"),
+        "Country" = list("n" = 8, type = "line")
       )
       
       params <- plotting_params$landings[[input$landings_layer_selector]]
