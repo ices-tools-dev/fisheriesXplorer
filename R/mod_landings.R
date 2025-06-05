@@ -39,7 +39,7 @@ mod_landings_ui <- function(id) {
                 style = "margin-left: 12px;",
                 radioButtons(ns("landings_layer_selector"), NULL,
                   inline = T,
-                  choices = c("Main landed species" = "COMMON_NAME", "Guild" = "GUILD", "Country" = "COUNTRY")
+                  choices = c("Main landed species" = "COMMON_NAME", "Fisheries Guild" = "GUILD", "Country" = "COUNTRY")
                 )
               )
             ),
@@ -128,9 +128,9 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
 
       plotting_params <- list()
       plotting_params$landings <- list(
-        "COMMON_NAME" = list("n" = 10, type = "line"),
+        "COMMON_NAME" = list("n" = 8, type = "line"),
         "GUILD" = list("n" = 6, type = "line"),
-        "COUNTRY" = list("n" = 9, type = "area")
+        "COUNTRY" = list("n" = 8, type = "line")
       )
       
       params <- plotting_params$landings[[input$landings_layer_selector]]
@@ -141,7 +141,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion){
   # Load the corresponding .rda file
       rda_path <- paste0("./data/", acronym, ".rda")
       load(rda_path)
-      fig <- ggplotly(plot_catch_trends_app_new(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))) %>%
+      fig <- ggplotly(plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))) %>%
         plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
       
       for (i in 1:length(fig$x$data)) {
