@@ -375,10 +375,10 @@ caption {
   visibility: visible;
 }
 
-.btn-group, .btn-group-vertical {
-  width: 18vw;
-  position: center;
-  margin: 0 auto;
-  display: inline-block;
+.btn-group, .btn-group-vertical {  
+  width: 18vw;  
+  margin: 0 auto;  
+  display: inline-block;  
+  text-align: center;
   vertical-align: middle;
 }
