@@ -17,13 +17,14 @@ select_text <- function(list_object, tab, section){
 
 
 icon_mapping <- function(value) {
-  if (value == "GREEN") {
+  
+  if (value[1] == "GREEN") {
     '<i class="fas fa-check-circle" style="color:green; font-size:38px;"></i>'
-  } else if (value == "RED") {
+  } else if (value[1] == "RED") {
     '<i class="fas fa-times-circle" style="color:red; font-size:38px;"></i>'
-  } else if (value == "ORANGE") {
+  } else if (value[1] == "ORANGE") {
     '<i class="fas fa-exclamation-circle" style="color:orange; font-size:38px;"></i>'
-  } else if (value == "GREY") {
+  } else if (value[1] == "GREY") {
     '<i class="fas fa-question-circle" style="color:grey; font-size:38px;"></i>'
   } else {
     value  # If no match, return the original value
@@ -43,3 +44,22 @@ merge_cells <- function(values) {
     }
   }, c(1, spans[-length(spans)] + 1), spans, unique_values)
 }
+
+mod_flex_header_ui <- function(ns, left_id, right_id) {  
+  div(  
+    style = "display: flex; justify-content: space-between; align-items: center;  
+         padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",  
+    span(textOutput(ns(left_id))),  
+    span(textOutput(ns(right_id)))  
+  )  
+}  
+
+
+
+make_tooltip_choice <- function(label_text, tooltip_html) {
+    tags$div(
+      class = "tooltip-wrapper",
+      HTML(label_text),
+      tags$span(class = "custom-tooltip", HTML(tooltip_html))
+    )
+  }
