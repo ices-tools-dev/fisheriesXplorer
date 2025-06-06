@@ -53,3 +53,13 @@ mod_flex_header_ui <- function(ns, left_id, right_id) {
     span(textOutput(ns(right_id)))  
   )  
 }  
+
+
+
+make_tooltip_choice <- function(label_text, tooltip_html) {
+    tags$div(
+      class = "tooltip-wrapper",
+      HTML(label_text),
+      tags$span(class = "custom-tooltip", HTML(tooltip_html))
+    )
+  }
