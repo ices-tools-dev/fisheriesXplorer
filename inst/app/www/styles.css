@@ -349,3 +349,36 @@ caption {
 .sidebar {
   overflow: hidden;
 }
+
+.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+  }
+.custom-tooltip {
+  visibility: hidden;
+  background-color: #333;
+  color: #fff;
+  text-align: left;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  font-size: 0.85em;
+  width: 200px;
+}
+.tooltip-wrapper:hover .custom-tooltip {
+  visibility: visible;
+}
+
+.btn-group, .btn-group-vertical {
+  width: 18vw;
+  position: center;
+  margin: 0 auto;
+  display: inline-block;
+  vertical-align: middle;
+}

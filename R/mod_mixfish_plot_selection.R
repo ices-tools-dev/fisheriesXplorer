@@ -1,14 +1,23 @@
-
 mod_mixfish_plot_selection_ui <- function(id) {
-  ns <- NS(id)
+  ns <- NS(id)  
+
   tagList(
-    uiOutput(ns("subregion_ui")),  # Placeholder for conditional UI
-    actionButton(ns("plot1"), "Headline"),
-    actionButton(ns("plot2"), "Effort By Fleet/Stock"),
-    actionButton(ns("plot3"), "Landings By Fleet/Stock"),
-    actionButton(ns("plot4"), "Landings By Stock"),
-    actionButton(ns("plot5"), "Catch Composition"),
-    
+    uiOutput(ns("subregion_ui")), # Placeholder for conditional UI
+
+    shinyWidgets::radioGroupButtons(
+      inputId = ns("tab_selected"),
+      label = "Select a plot:",
+      selected = "plot1",
+      direction = "vertical",
+      choiceNames = list(
+        make_tooltip_choice("Headline", "<strong>Headline</strong><br>Main highlights and signals"),
+        make_tooltip_choice("Effort By Fleet/Stock", "<strong>Effort</strong><br>Effort by fleet and stock"),
+        make_tooltip_choice("Landings By Fleet/Stock", "<strong>Landings</strong><br>by fleet and stock"),
+        make_tooltip_choice("Landings By Stock", "<strong>Landings</strong><br>Aggregated by stock"),
+        make_tooltip_choice("Catch Composition", "<strong>Composition</strong><br>Species-level breakdown")
+      ),
+      choiceValues = c("plot1", "plot2", "plot3", "plot4", "plot5")
+    )
   )
 }
 
@@ -18,7 +27,7 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
     ns <- session$ns
 
     selected_subRegion <- reactiveVal(NULL)
-    selected_plot <- reactiveVal(NULL)
+    selected_plot <- reactiveVal("plot1")
 
     # Conditionally render subregion selectInput based on ecoregion
     output$subregion_ui <- renderUI({
@@ -40,8 +49,8 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
           selected = new_choices[1]
         )
       } else {
-        selected_subRegion(NULL)  # Reset if no subregion relevant
-        NULL  # No UI shown
+        selected_subRegion(NULL) # Reset if no subregion relevant
+        NULL # No UI shown
       }
     })
 
@@ -49,29 +58,15 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
       selected_subRegion(input$subRegion)
     })
 
-    observeEvent(input$plot1, {
-      selected_plot("plot1")
+
+    observeEvent(input$tab_selected, {
+      selected_plot(input$tab_selected)
     })
 
-    observeEvent(input$plot2, {
-      selected_plot("plot2")
-    })
-
-    observeEvent(input$plot3, {
-      selected_plot("plot3")
-    })
-
-    observeEvent(input$plot4, {
-      selected_plot("plot4")
-    })
-
-    observeEvent(input$plot5, {
-      selected_plot("plot5")
-    })
-    
+    # Reset selected_plot when ecoregion changes
     observeEvent(selected_ecoregion(), {
       # reset plot
-      selected_plot(NULL)
+      selected_plot("plot1")
     })
 
     list(
