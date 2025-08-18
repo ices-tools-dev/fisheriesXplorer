@@ -24,32 +24,33 @@ plot_effort_map_app <- function (effort, ecoregion, europe_shape, fishing_catego
     ggplot2::theme_bw(base_size = 11) 
   
   if(fishing_category == "all") {
-    p <- p + ggplot2::facet_wrap(~fishing_category_FO)
+    p <- p + ggplot2::facet_wrap(~fishing_category_FO)+
+      ggplot2::theme(strip.text = element_text(size = 12))
   }
   p
 }
 
 
-plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer, crs) 
-{
-  what <- match.arg(layer, c("surface", "subsurface"))
-  what <- paste0(what, "_sar")
-  if (what == "surface_sar") {
-    legend_name = "Surface Swept \nArea Ratio"
-  }
-  else {
-    legend_name = "Subsurface Swept\nArea Ratio"
-  }
+
+plot_sar_map_app <- function (sar_data, ecoregion, europe_shape, layer, crs) {
  
-  sar$val <- as.numeric(sar[[what]])
-  sar <- dplyr::filter(sar, val > 0)
+  if(layer != "all") {
+    legend_name  <-  paste0(stringr::str_to_title(layer), " Swept\nArea Ratio")
+    
+    sar_data$sar <- as.numeric(sar_data$sar)
+    sar_data <- dplyr::filter(sar_data, layer == layer & sar > 0)
+  } else {
+    
+    legend_name  <-  "Swept\nArea Ratio"
+  }
+  
   ecoregion <- sf::st_transform(ecoregion, crs = CRS_LAEA_EUROPE)
   box <- sf::st_bbox(ecoregion)
   xlims <- c(box[1], box[3])
   ylims <- c(box[2], box[4])
   p <- ggplot2::ggplot() + ggplot2::geom_sf(data = ecoregion, color = "grey90", fill = "transparent") + 
     ggplot2::geom_sf(data = europe_shape,fill = "grey80", color = "grey90") + 
-    ggplot2::geom_sf(data = sar, ggplot2::aes(fill = icesFO:::get_map_breaks(val)), col = "transparent") + 
+    ggplot2::geom_sf(data = sar_data, ggplot2::aes(fill = icesFO:::get_map_breaks(sar)), col = "transparent") + 
     ggplot2::scale_fill_viridis_d(name = legend_name, direction = -1, 
                                   option = "A", guide = ggplot2::guide_legend(reverse = TRUE)) + 
     ggplot2::theme(plot.caption = ggplot2::element_text(size = 6), 
@@ -59,5 +60,10 @@ plot_sar_map_app <- function (sar, ecoregion, europe_shape, layer, crs)
     ggplot2::labs(caption = "Made with Natural Earth and ICES Marine Data") + 
     ggplot2::theme_bw(base_size = 11)
 
+  if(layer == "all") {
+
+    p <- p + ggplot2::facet_wrap(~layer)+
+      ggplot2::theme(strip.text = element_text(size = 12))
+  }
   p
 }
