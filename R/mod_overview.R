@@ -10,25 +10,7 @@
 mod_overview_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # div(
-    #   style = "display: flex; justify-content: space-between; align-items: center;
-    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-    #   span(textOutput(ns("ecoregion_label"))),
-    #   span(textOutput(ns("current_date")))
-    # ),
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
-    # Fullscreen script added here once
-    tags$script(HTML("
-      function toggleFullScreen(elem) {
-        if (!document.fullscreenElement) {
-          elem.requestFullscreen().catch(err => {
-            alert('Error attempting to enable fullscreen: ' + err.message);
-          });
-        } else {
-          document.exitFullscreen();
-        }
-      }
-    ")),
     tabsetPanel(
       type = "hidden",
       id = ns("overview"),
@@ -76,14 +58,12 @@ mod_overview_server <- function(id, selected_ecoregion){
 
   output$staticMap1 <- renderUI({
   ecoregion <- get_ecoregion_acronym(selected_ecoregion())
-  path <- file.path("inst/app/www", paste0(ecoregion, ".jpg"))
-
-  # You can serve local files using a temporary copy if needed
-  tmp <- normalizePath(path)
+  file_name <- paste0(ecoregion, ".jpg")
+  src_url <- file.path("www",  file_name)
 
   tags$img(
     id = ns("staticMap1"),  # ID is now really on the <img>
-    src = base64enc::dataURI(file = tmp, mime = "image/jpeg"),
+    src = src_url,
     style = "width: 100%; cursor: pointer;",
     onclick = "toggleFullScreen(this)"
   )

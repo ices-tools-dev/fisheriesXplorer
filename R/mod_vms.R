@@ -14,23 +14,6 @@
 mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # div(
-    #   style = "display: flex; justify-content: space-between; align-items: center;
-    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-    #   span(textOutput(ns("ecoregion_label"))),
-    #   span(textOutput(ns("current_date")))
-    # ),
-    tags$script(HTML("
-      function toggleFullScreen(elem) {
-        if (!document.fullscreenElement) {
-          elem.requestFullscreen().catch(err => {
-            alert('Error attempting to enable fullscreen: ' + err.message);
-          });
-        } else {
-          document.exitFullscreen();
-        }
-      }
-    ")),
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     br(),
     fluidRow(
@@ -103,16 +86,13 @@ mod_vms_server <- function(id, selected_ecoregion){
     
     output$vms_effort_layer <- renderUI({
       ecoregion <- get_ecoregion_acronym(selected_ecoregion())
-      
       gear_name <- str_replace_all(tolower(input$fishing_cat_selector), " ", "_")
-      path <- file.path("inst/app/www/vms", paste0(ecoregion, "_effort_", gear_name ,".jpg"))
-      
-      # You can serve local files using a temporary copy if needed
-      tmp <- normalizePath(path)
+      file_name <- paste0(ecoregion, "_effort_", gear_name, ".jpg")
+      src_url <- file.path("www", "vms", file_name)
       
       tags$img(
         id = ns("vms_effort_layer"),  # ID is now really on the <img>
-        src = base64enc::dataURI(file = tmp, mime = "image/jpeg"),
+        src = src_url,
         style = "width: 100%; cursor: pointer;",
         onclick = "toggleFullScreen(this)"
       )
@@ -123,15 +103,12 @@ mod_vms_server <- function(id, selected_ecoregion){
       
       ecoregion <- get_ecoregion_acronym(selected_ecoregion())
       
-      
-      path <- file.path("inst/app/www/vms", paste0(ecoregion, "_sar_", input$sar_layer_selector ,".jpg"))
-      
-      # You can serve local files using a temporary copy if needed
-      tmp <- normalizePath(path)
+      file_name <- paste0(ecoregion, "_sar_", input$sar_layer_selector ,".jpg")
+      src_url <- file.path("www", "vms", file_name)
       
       tags$img(
         id = ns("vms_sar_layer"),  # ID is now really on the <img>
-        src = base64enc::dataURI(file = tmp, mime = "image/jpeg"),
+        src = src_url,
         style = "width: 100%; cursor: pointer;",
         onclick = "toggleFullScreen(this)"
       )

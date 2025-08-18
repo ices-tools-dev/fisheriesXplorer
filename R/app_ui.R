@@ -21,6 +21,19 @@ app_ui <- function(request) {
         spinner.color = "#00B6F1",
         spinner.size = 0.7),
     
+    # Add js to support fullscreen display of images
+    tags$script(HTML("
+      function toggleFullScreen(elem) {
+        if (!document.fullscreenElement) {
+          elem.requestFullscreen().catch(err => {
+            alert('Error attempting to enable fullscreen: ' + err.message);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      }
+    ")),
+    
     navbarPage(
       title = title_html,
       position = "static-top",
