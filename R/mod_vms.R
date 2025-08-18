@@ -14,12 +14,6 @@
 mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # div(
-    #   style = "display: flex; justify-content: space-between; align-items: center;
-    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-    #   span(textOutput(ns("ecoregion_label"))),
-    #   span(textOutput(ns("current_date")))
-    # ),
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     br(),
     fluidRow(
@@ -33,14 +27,15 @@ mod_vms_ui <- function(id) {
             uiOutput(ns("sar_text"), height = "65vh")
           ),
           card(
-            height = "85vh", full_screen = T,
+            height = "85vh",
             card_header("Fishing Effort"),
             card_body(
               selectInput(ns("fishing_cat_selector"), "Select fishing category",
                 choices = c("All" = "all", "Beam trawls", "Bottom otter trawls", "Bottom seines", "Dredges", "Pelagic trawls and seines", "Static gears"),
                 selected = "All"
               ),
-              withSpinner(suppressWarnings(plotOutput(ns("effort_layer"), height = "65vh", width = "100%", fill = T)))
+              tags$style(type = "text/css", "#vms_effort_layer {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
+              withSpinner(suppressWarnings(uiOutput(ns("vms_effort_layer"), height = "65vh", width = "100%", fill = T)))
             )
           )
         )
@@ -55,15 +50,16 @@ mod_vms_ui <- function(id) {
             uiOutput(ns("benthic_impact_text"))
           ),
           card(
-            height = "85vh", full_screen = T,
+            height = "85vh",
             card_header("SAR"),
             card_body(
-              # div(style = "margin-top: 20px; margin-bottom: 14.432px",
+              
               selectInput(ns("sar_layer_selector"), "Select fishing benthic impact level",
-                choices = c("Surface" = "surface", "Subsurface" = "subsurface"),
+                choices = c("All" = "all", "Surface" = "surface", "Subsurface" = "subsurface"),
                 selected = "Surface"
               ),
-              suppressWarnings(withSpinner(suppressWarnings(plotOutput(ns("sar_layer"), height = "65vh", width = "100%", fill = T))))
+              tags$style(type = "text/css", "#vms_sar_layer {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
+              suppressWarnings(withSpinner(suppressWarnings(uiOutput(ns("vms_sar_layer"), height = "65vh", width = "100%", fill = T))))
             )
           )
         )
@@ -87,29 +83,37 @@ mod_vms_server <- function(id, selected_ecoregion){
       "Last update: December 05, 2024" # e.g., "May 26, 2025"
     })
 
-    output$effort_layer <- renderPlot({ 
-      
-      ecoR <- selected_ecoregion()     
-       plot_effort_map_app(effort_maps[[ecoR]], 
-                          ecoregion[[ecoR]], 
-                          europe_shape = europe_land_shp, 
-                          fishing_category = input$fishing_cat_selector,
-                          crs = CRS_LAEA_EUROPE) +
-        ggtitle(paste0("Average MW Fishing hours ", paste(2019, 2022, sep = "-")))
-        # ggtitle(paste0("Average MW Fishing hours ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
-      })
     
-    output$sar_layer <- renderPlot({
-      req(!is.null(input$sar_layer_selector))
-      ecoR <- selected_ecoregion()
-      plot_sar_map_app(sar_maps[[ecoR]], 
-                       ecoregion[[ecoR]], 
-                       europe_shape = europe_land_shp, 
-                       layer = input$sar_layer_selector,
-                       crs = CRS_LAEA_EUROPE) +
-          ggtitle(paste0("Average MW Fishing hours ", paste(2019, 2022, sep = "-")))
-        # ggtitle(glue("Average {input$sar_layer_selector} swept area ratio ", paste(year(Sys.Date())-4, year(Sys.Date()), sep = "-")))
+    output$vms_effort_layer <- renderUI({
+      ecoregion <- get_ecoregion_acronym(selected_ecoregion())
+      gear_name <- str_replace_all(tolower(input$fishing_cat_selector), " ", "_")
+      file_name <- paste0(ecoregion, "_effort_", gear_name, ".jpg")
+      src_url <- file.path("www", "vms", file_name)
+      
+      tags$img(
+        id = ns("vms_effort_layer"),  # ID is now really on the <img>
+        src = src_url,
+        style = "width: 100%; cursor: pointer;",
+        onclick = "toggleFullScreen(this)"
+      )
     })
+    
+    
+    output$vms_sar_layer <- renderUI({
+      
+      ecoregion <- get_ecoregion_acronym(selected_ecoregion())
+      
+      file_name <- paste0(ecoregion, "_sar_", input$sar_layer_selector ,".jpg")
+      src_url <- file.path("www", "vms", file_name)
+      
+      tags$img(
+        id = ns("vms_sar_layer"),  # ID is now really on the <img>
+        src = src_url,
+        style = "width: 100%; cursor: pointer;",
+        onclick = "toggleFullScreen(this)"
+      )
+    })
+    
   })
 }
     
