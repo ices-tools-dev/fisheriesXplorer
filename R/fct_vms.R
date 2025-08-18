@@ -32,13 +32,13 @@ plot_effort_map_app <- function (effort, ecoregion, europe_shape, fishing_catego
 
 
 
-plot_sar_map_app <- function (sar_data, ecoregion, europe_shape, layer, crs) {
+plot_sar_map_app <- function (sar_data, ecoregion, europe_shape, sar_layer, crs) {
  
-  if(layer != "all") {
-    legend_name  <-  paste0(stringr::str_to_title(layer), " Swept\nArea Ratio")
+  if(sar_layer != "all") {
+    legend_name  <-  paste0(stringr::str_to_title(sar_layer), " Swept\nArea Ratio")
     
     sar_data$sar <- as.numeric(sar_data$sar)
-    sar_data <- dplyr::filter(sar_data, layer == layer & sar > 0)
+    sar_data <- dplyr::filter(sar_data, layer == sar_layer & sar > 0)
   } else {
     
     legend_name  <-  "Swept\nArea Ratio"
@@ -60,9 +60,9 @@ plot_sar_map_app <- function (sar_data, ecoregion, europe_shape, layer, crs) {
     ggplot2::labs(caption = "Made with Natural Earth and ICES Marine Data") + 
     ggplot2::theme_bw(base_size = 11)
 
-  if(layer == "all") {
+  if(sar_layer == "all") {
 
-    p <- p + ggplot2::facet_wrap(~layer)+
+    p <- p + ggplot2::facet_wrap(~sar_layer)+
       ggplot2::theme(strip.text = element_text(size = 12))
   }
   p
