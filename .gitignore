@@ -13,3 +13,5 @@ data-raw/*
 
 data/*
 !data/annex_data.rda
+
+worksheet.R
