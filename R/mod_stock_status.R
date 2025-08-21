@@ -252,12 +252,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
 
 
     processed_data_reactable <- reactive({
-      annex_data <- format_annex_table(clean_status(), as.integer(format(Sys.Date(), "%Y")), SID())
+      annex_data <- format_annex_table(clean_status(), as.integer(format(Sys.Date(), "%Y")), SID(), SAG())
      
       annex_data_cleaned <- annex_data %>%
         mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),
-          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent,"' target='_blank'>", stockComponent, "</a>")
+          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent,"' target='_blank'>", StockKeyLabel, ifelse(is.na(AssessmentComponent), "", paste0(" (", AssessmentComponent, ")")), "</a>")
         ) %>%
         select(
           "Stock code (component)" = StockKeyLabel,
