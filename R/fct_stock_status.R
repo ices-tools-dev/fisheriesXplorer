@@ -556,8 +556,8 @@ plot_status_prop_pies <- function(df, cap_month = "November",
         df2$lineDescription <- gsub("Precautionary approach", "PA", df2$lineDescription)
         df2$header <- paste0(df2$Variable, "\n" , df2$lineDescription)
         # browser()
-        df2 <- tidyr::gather(df2,colour, value,GREEN:UNDEFINED, factor_key = TRUE)
-        # df2 <- tidyr::gather(df2,colour, value,GREEN:RED, factor_key = TRUE)
+        # df2 <- tidyr::gather(df2,colour, value,GREEN:UNDEFINED, factor_key = TRUE)
+        df2 <- tidyr::gather(df2,colour, value,GREEN:RED, factor_key = TRUE)
         df2 <- dplyr::filter(df2,value > 0)
         
 
