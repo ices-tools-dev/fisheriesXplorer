@@ -390,115 +390,35 @@ getSID <- function(year, EcoR) {
 }
 
 
-# getSID <- function(year, EcoR) {
-#         message("Downloading SID data for year: ", year)
-#         stock_list_long <- jsonlite::fromJSON(
-#                 URLencode(
-#                         sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel,
-#                         EcoRegion,
-#                         YearOfLastAssessment,
-#                         AssessmentKey,
-#                         StockKeyDescription,
-#                         SpeciesScientificName,
-#                         SpeciesCommonName,
-#                         AdviceCategory,
-#                         DataCategory,
-#                         YearOfLastAssessment,
-#                         FisheriesGuild", year)
+
+
+# getStatus <- function(stock_list_long) {
+        
+        
+#         unique_keys <- unique(stock_list_long$AssessmentKey)
+
+#         #Fetch stock status values in parallel
+#         status_list <- future.apply::future_lapply(unique_keys, function(key) {
+#                 tryCatch(
+#                         icesSAG::getStockStatusValues(key),
+#                         error = function(e) {
+#                                 message(sprintf("Error fetching data for AssessmentKey: %s", key))
+#                                 return(NULL)
+#                         }
 #                 )
-#         )$value
-
-#         stock_list_long <- stock_list_long %>%
-#                 mutate(EcoRegion = as.character(EcoRegion)) %>%
-#                 tidyr::separate_rows(EcoRegion, sep = ", ")
-
-#         stock_list_long <- stock_list_long %>%
-#                 filter(EcoRegion == EcoR)
-
-
-#         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
-#         message("SID Data processing complete.")
-
-#         valid_years <- unique(stock_list_long$YearOfLastAssessment)
-#         valid_years <- valid_years[!is.na(valid_years) & valid_years != 0]
-
-#         # Sequential API calls for ASD records
-#         ASDList <- lapply(valid_years, function(y) {
-#                 message("Fetching ASD advice records for year: ", y)
-#                 icesASD::getAdviceViewRecord(year = y)
 #         })
-
-#         # Combine into one data frame, handle empty lists safely
-#         ASDList <- ASDList[lengths(ASDList) > 0] # remove empty entries if any
-#         ASDList <- do.call(rbind, ASDList)
-#         # Proceed only if ASDList has rows
-#         # library(dplyr)
-#         # if (is.null(ASDList) || nrow(ASDList) == 0) {
-#         #         ASDList <- tibble(
-#         #                 StockKeyLabel = character(),
-#         #                 AssessmentKey = character(),
-#         #                 AssessmentComponent = character()
-#         #         )
-#         # } else {
-#         ASDList <- ASDList %>%
-#                 dplyr::rename(
-#                         StockKeyLabel = stockCode,
-#                         AssessmentKey = assessmentKey,
-#                         AssessmentComponent = adviceComponent
-#                 ) %>%
-#                 group_by(StockKeyLabel) %>%
-#                 filter(assessmentYear == max(assessmentYear, na.rm = TRUE)) %>%
-#                 ungroup() %>%
-#                 # mutate(adviceComponent = dplyr::na_if(adviceComponent, "N.A.")) %>%
-#                 # dplyr::rename(
-#                 #         StockKeyLabel = stockCode,
-#                 #         AssessmentKey = assessmentKey,
-#                 #         AssessmentComponent = adviceComponent
-#                 # ) #%>%
-#                 filter(adviceStatus == "Advice")
-#         # }
-
-#         # Merge with stock_list_long by StockKeyLabel
-#         stock_list_long <- stock_list_long %>%
-#                 dplyr::left_join(ASDList, by = "StockKeyLabel")
-
-#         ## filter out "AssessmentKey.x" and rename "AssessmentKey.y"
-#         stock_list_long <- stock_list_long %>%
-#                 dplyr::select(-AssessmentKey.x) %>%
-#                 dplyr::rename(AssessmentKey = AssessmentKey.y)
         
+#         # status <- do.call(rbind, status)
+#         # Combine results into a single dataframe
+#         status <- plyr::rbind.fill(lapply(status_list, as.data.frame))
+#         # status <- do.call(rbind.data.frame, status_list)
 
-#         return(stock_list_long)
+#         # Merge stock status values with SID data
+#         df_status <- merge(stock_list_long, status, by = "AssessmentKey", all.x = TRUE)
+#         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
+        
+#         return(df_status)
 # }
-
-getStatus <- function(stock_list_long) {
-        
-        # future::plan(future::multisession, workers = parallel::detectCores() - 1)
-        # Ensure AssessmentKey is unique to avoid redundant API calls
-        unique_keys <- unique(stock_list_long$AssessmentKey)
-
-        #Fetch stock status values in parallel
-        status_list <- future.apply::future_lapply(unique_keys, function(key) {
-                tryCatch(
-                        icesSAG::getStockStatusValues(key),
-                        error = function(e) {
-                                message(sprintf("Error fetching data for AssessmentKey: %s", key))
-                                return(NULL)
-                        }
-                )
-        })
-        
-        # status <- do.call(rbind, status)
-        # Combine results into a single dataframe
-        status <- plyr::rbind.fill(lapply(status_list, as.data.frame))
-        # status <- do.call(rbind.data.frame, status_list)
-
-        # Merge stock status values with SID data
-        df_status <- merge(stock_list_long, status, by = "AssessmentKey", all.x = TRUE)
-        df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
-        
-        return(df_status)
-}
 
 getStatusWebService <- function(Ecoregion, sid) {
         EcoregionCode <- get_ecoregion_acronym(Ecoregion)
@@ -519,7 +439,7 @@ getStatusWebService <- function(Ecoregion, sid) {
 
 
 format_sag_status_new <- function(df) {
-#       
+     
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
                                                   status == 1 ~ "GREEN",
                                                   status == 2 ~ "GREEN", #qualitative green
@@ -648,8 +568,8 @@ plot_status_prop_pies <- function(df, cap_month = "November",
         df2 <- dplyr::group_by(df2, FisheriesGuild, header)
         df2 <- dplyr::mutate(df2,sum = sum(value))
          
-        testMax <- max(max) ############################## modified here because I would get 3 values
-        df2$fraction <- df2$value*testMax/df2$sum
+        # testMax <- max(max) ############################## modified here because I would get 3 values
+        df2$fraction <- df2$value*max/df2$sum
         df2$header <- factor(df2$header, levels = c("FishingPressure\nMSY", "StockSize\nMSY",
                                                     "FishingPressure\nPA" ,"StockSize\nPA",
                                                     "SBL\n" ))
