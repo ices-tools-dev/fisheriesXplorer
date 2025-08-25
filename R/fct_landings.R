@@ -171,7 +171,11 @@ plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fish
 }
 
 plot_discard_trends_app_plotly <- function(x, year, caption = FALSE, cap_year, cap_month, return_data = FALSE) {
-  df <- dplyr::filter(x, Year %in% seq(2011, year - 1))
+  
+  df <- x %>%
+    dplyr::mutate(Year = as.numeric(Year)) %>%
+    dplyr::filter(Year %in% seq(2011, year - 1))
+
   df2 <- tidyr::expand(df, Year, tidyr::nesting(StockKeyLabel, FisheriesGuild))
   df <- dplyr::left_join(df, df2, by = c("Year", "StockKeyLabel", "FisheriesGuild"))
 
@@ -270,7 +274,10 @@ plot_discard_trends_app_plotly <- function(x, year, caption = FALSE, cap_year, c
 plot_discard_current_plotly <- function(x, year, position_letter = NULL,
                                         caption = FALSE, cap_year, cap_month,
                                         return_data = FALSE, order_df = NULL) {
-  df <- dplyr::filter(x, Year %in% seq(year - 5, year - 1))
+  df <- x %>% dplyr::mutate(Year = as.numeric(Year),
+                            FMSY = as.numeric(FMSY),
+                            MSYBtrigger = as.numeric(MSYBtrigger)) %>% dplyr::filter(Year %in% seq(year - 5, year - 1))
+  
   df2 <- tidyr::expand(df, Year, tidyr::nesting(StockKeyLabel, FisheriesGuild))
   df <- dplyr::left_join(df, df2, by = c("Year", "StockKeyLabel", "FisheriesGuild"))
   
