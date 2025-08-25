@@ -28,21 +28,36 @@ app_server <- function(input, output, session) {
   # wrapper reactive: runs all webservice calls at once
   fetchData <- reactive({
     withProgress(message = "Fetching data...", value = 0, {
-      
+
       incProgress(0.2, detail = "Getting SID...")
-      sid <- getSID(
-        year = as.integer(format(Sys.Date(), "%Y")),
-        EcoR = selected_ecoregion()
+      sid <- tryCatch(
+        getSID(
+          year = as.integer(format(Sys.Date(), "%Y")),
+          EcoR = selected_ecoregion()
+        ),
+        error = function(e) {
+          paste("Error fetching SID:", e$message)
+        }
       )
-      
+
       incProgress(0.5, detail = "Getting SAG...")
-      sag <- getSAG_ecoregion_new(selected_ecoregion())
-      
-      incProgress(0.9, detail = "Getting SAG status...")
-      status <- format_sag_status_new(
-        getStatusWebService(selected_ecoregion(), sid)
+      sag <- tryCatch(
+        getSAG_ecoregion_new(selected_ecoregion()),
+        error = function(e) {
+          paste("Error fetching SAG:", e$message)
+        }
       )
-      
+
+      incProgress(0.9, detail = "Getting SAG status...")
+      status <- tryCatch(
+        format_sag_status_new(
+          getStatusWebService(selected_ecoregion(), sid)
+        ),
+        error = function(e) {
+          paste("Error fetching SAG status:", e$message)
+        }
+      )
+
       list(SID = sid, SAG = sag, clean_status = status)
     })
   }) %>% bindCache(selected_ecoregion())   # cache by ecoregion

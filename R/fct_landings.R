@@ -172,8 +172,14 @@ plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fish
 
 plot_discard_trends_app_plotly <- function(x, year, caption = FALSE, cap_year, cap_month, return_data = FALSE) {
   
+  # Check for non-numeric Year values and warn if any NAs are introduced
+  year_numeric <- suppressWarnings(as.numeric(x$Year))
+  if (any(is.na(year_numeric) & !is.na(x$Year))) {
+    warning("Non-numeric values detected in 'Year' column. These rows will be removed.")
+  }
   df <- x %>%
-    dplyr::mutate(Year = as.numeric(Year)) %>%
+    dplyr::mutate(Year = year_numeric) %>%
+    dplyr::filter(!is.na(Year)) %>%
     dplyr::filter(Year %in% seq(2011, year - 1))
 
   df2 <- tidyr::expand(df, Year, tidyr::nesting(StockKeyLabel, FisheriesGuild))
