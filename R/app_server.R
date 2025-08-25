@@ -27,7 +27,7 @@ app_server <- function(input, output, session) {
   )
   # wrapper reactive: runs all webservice calls at once
   fetchData <- reactive({
-    withProgress(message = "Fetching data...", value = 0, {
+    withProgress(message = paste0("Fetching data for ", selected_ecoregion(), "..."), value = 0, {
 
       incProgress(0.2, detail = "Getting SID...")
       sid <- tryCatch(
