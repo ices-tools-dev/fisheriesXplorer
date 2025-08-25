@@ -359,7 +359,7 @@ plot_CLD_bar <- function(x, guild, caption = TRUE, cap_year, cap_month, return_d
 
 
 getSID <- function(year, EcoR) {
-        message("Downloading SID data for year: ", year)
+        
         stock_list_long <- jsonlite::fromJSON(
                 URLencode(
                         sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel,
@@ -392,33 +392,7 @@ getSID <- function(year, EcoR) {
 
 
 
-# getStatus <- function(stock_list_long) {
-        
-        
-#         unique_keys <- unique(stock_list_long$AssessmentKey)
 
-#         #Fetch stock status values in parallel
-#         status_list <- future.apply::future_lapply(unique_keys, function(key) {
-#                 tryCatch(
-#                         icesSAG::getStockStatusValues(key),
-#                         error = function(e) {
-#                                 message(sprintf("Error fetching data for AssessmentKey: %s", key))
-#                                 return(NULL)
-#                         }
-#                 )
-#         })
-        
-#         # status <- do.call(rbind, status)
-#         # Combine results into a single dataframe
-#         status <- plyr::rbind.fill(lapply(status_list, as.data.frame))
-#         # status <- do.call(rbind.data.frame, status_list)
-
-#         # Merge stock status values with SID data
-#         df_status <- merge(stock_list_long, status, by = "AssessmentKey", all.x = TRUE)
-#         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
-        
-#         return(df_status)
-# }
 
 getStatusWebService <- function(Ecoregion, sid) {
         EcoregionCode <- get_ecoregion_acronym(Ecoregion)
@@ -643,82 +617,10 @@ format_annex_table <- function(status, year, sid, sag) {
 }
 
 
-# getSAG_ecoregion <- function(year, ecoregion, sid){
-#         years <- ((year-4):year)
-#         ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
-#         # sid <- icesSD::getSD(NULL,year)
-#         out <- data.frame()
-#         res <- data.frame()
-#         for(n in 1:5){
-#                 x <- years[n]
-#                 url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
-#                 tmpSAG <- tempfile(fileext = ".zip")
-#                 download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
-#                 names <-unzip(tmpSAG, list = TRUE)
-#                 res <- read.csv(unz(tmpSAG, names$Name[1]),
-#                                 stringsAsFactors = FALSE,
-#                                 header = TRUE,
-#                                 fill = TRUE)
-#                 res<- unique(res)
-#                 out <- rbind(out, res)
-#         }
-#         out <- dplyr::filter(out, Purpose == "Advice")
-#         # out <- data.table::as.data.table(out) 
-#         # out <- out[out[, .I[AssessmentKey == max(AssessmentKey)], by=FishStock]$V1]
-        
-#         # out <- out[out[, data.table::.I[AssessmentYear == max(AssessmentYear)], by=FishStock]$V1]
-#         out <- as.data.frame(out)
-#         out <- dplyr::filter(out,out$FishStock %in% sid$StockKeyLabel)
-# }
-# getSAG_ecoregion <- function(year, ecoregion, sid) {
-# #   years <- ((year - 4):year)
-#   years <- unique(sid$YearOfLastAssessment)
-#   ecoreg <- gsub(" ", "%20", ecoregion, fixed = TRUE)
-  
-# #   future::plan(future::multisession)  # Enable parallel execution
-  
-#   results <- lapply(years, function(x) {
-#     url <- paste0("https://sag.ices.dk/SAG_API/api/SAGDownload?year=", x, "&EcoRegion=", ecoreg)
-#     tmpSAG <- tempfile(fileext = ".zip")
-#     download.file(url, destfile = tmpSAG, mode = "wb", quiet = FALSE)
-#     names <- unzip(tmpSAG, list = TRUE)
-#     res <- read.csv(unz(tmpSAG, names$Name[1]),
-#                     stringsAsFactors = FALSE,
-#                     header = TRUE,
-#                     fill = TRUE)
-#     unique(res)
-#   })
-  
-#   out <- do.call(rbind, results)
-#   out <- dplyr::filter(out, Purpose == "Advice")
-#   out <- dplyr::filter(out, FishStock %in% sid$StockKeyLabel)
-  
-#   return(out)
-# }
+
 
 getSAG_ecoregion_new <- function(Ecoregion) {
-        # sag <- icesSAG::getStockDownloadData(assessment_keys)
-        # # sag <- icesSAG::getSAG(stock_code, year,combine = TRUE, purpose = "Advice")
-        # # sag <- dplyr::filter(sag, Purpose == "Advice")
-        # # browser()
-        # sag <- plyr::rbind.fill(lapply(sag, as.data.frame))
-        # # sag <- do.call(rbind, sag)
-        # return(sag)
-
-
-
-        # sag_list <- future.apply::future_lapply(assessment_keys, function(key) {
-        #         tryCatch(
-        #                 {
-        #                         icesSAG::getStockDownloadData(key)
-        #                 },
-        #                 error = function(e) NULL
-        #         ) # Handle errors without stopping
-        # })
-
-        # sag <- plyr::rbind.fill(lapply(sag_list, as.data.frame))
-
-
+       
         EcoregionCode <- get_ecoregion_acronym(Ecoregion)
         
         sag <- jsonlite::fromJSON(
