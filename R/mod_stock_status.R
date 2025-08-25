@@ -120,7 +120,7 @@ mod_stock_status_ui <- function(id) {
 #' stock_status Server Functions
 #'
 #' @noRd 
-mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion) {
+mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion, shared) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -137,32 +137,9 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       HTML(select_text(texts, "status", "sidebar"))
     })
 
-    SID <- reactive({
-      # dat <- prepare_ices_stock_status(clean_status)
-      getSID(year = as.integer(format(Sys.Date(), "%Y")), EcoR = selected_ecoregion())
-      # format_sag_status_new(status)
-    })
-
-    SAG <- reactive({
-      # getSAG_ecoregion(2024, selected_ecoregion(), SID())
-      # getSAG_ecoregion_new(SID()$AssessmentKey)
-      getSAG_ecoregion_new(selected_ecoregion())
-      # getSAG_ecoregion_new(SID()$StockKeyLabel, SID()$YearOfLastAssessment)
-    })
-
-    clean_status <- reactive({
-      # dat <- prepare_ices_stock_status(clean_status)
-      # status <- getStatus(year = 2024, EcoR = "Greater North Sea")
-
-      # format_sag_status_new(getStatus(SID()))
-
-      format_sag_status_new(getStatusWebService(selected_ecoregion(), SID()))
-    })
-
+    
     catch_current <- reactive({
-      # dat <- prepare_ges_stock_status(status_df = clean_status, catch_df = current_catches)
-      # sag <- getSAG_ecoregion(2024, selected_ecoregion(), SID())
-      stockstatus_CLD_current(format_sag(SAG(), SID()))
+      stockstatus_CLD_current(format_sag(shared$SAG, shared$SID))
     })
 
     output$status_summary <- renderPlot({
@@ -175,13 +152,12 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       }
     })
     output$status_summary_ices <- renderPlot({
-      # plot_status_prop_pies_app(ices_prop_pies_data(), cap_month, cap_year)
-      
-      plot_status_prop_pies(clean_status(), cap_month, cap_year)
+            
+      plot_status_prop_pies(shared$clean_status, cap_month, cap_year)
     })
     output$status_summary_ges <- renderPlot({
-      # plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
-      plot_GES_pies(clean_status(), catch_current(), cap_month, cap_year)
+      
+      plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year)
     })
 
 
@@ -194,7 +170,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       #   guild <- input$status_trend_selector
       # }
 
-      stock_trends(format_sag(SAG(), SID())) # %>% filter(FisheriesGuild %in% guild)
+      stock_trends(format_sag(shared$SAG, shared$SID)) # %>% filter(FisheriesGuild %in% guild)
       # prepare_stock_trends()
     })
 
@@ -205,7 +181,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
       } else {
         guild <- input$status_trend_selector
       }
-      # ggplotly(plot_stock_trends_app(trends_data(), guild = input$status_trend_selector, caption_year = cap_year, caption_month = cap_month))
+      
       plot_stock_trends(trends_data(), guild, cap_year, cap_month)
     })
 
@@ -252,8 +228,8 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion)
 
 
     processed_data_reactable <- reactive({
-      annex_data <- format_annex_table(clean_status(), as.integer(format(Sys.Date(), "%Y")), SID(), SAG())
-     
+      annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
+
       annex_data_cleaned <- annex_data %>%
         mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),
