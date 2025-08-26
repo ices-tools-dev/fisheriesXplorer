@@ -382,3 +382,16 @@ caption {
   text-align: center;
   vertical-align: middle;
 }
+
+.shiny-notification {
+  position: fixed;
+  top: 40% !important;  /* vertical center-ish */
+  left: 50% !important;  /* start from center */
+  transform: translate(-50%, -50%) !important;  /* true centering */
+
+  width: 50% !important;  /* take half the screen width */
+  max-width: 600px;  /* optional cap on very wide screens */
+
+  font-size: 16px;  /* larger text */
+  padding: 20px;  /* more spacing */
+}
