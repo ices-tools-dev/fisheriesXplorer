@@ -43,9 +43,19 @@ mod_landings_ui <- function(id) {
                 )
               )
             ),
-            card_body(withSpinner(
-              plotlyOutput(ns("landings_layer"), height = "65vh")
-            ))
+            card_body(
+              withSpinner(
+                plotlyOutput(ns("landings_layer"), height = "65vh"),
+              ),
+              downloadLink(ns("download_data"), HTML(paste0("<font size= 4>Download landings data <i class='fa-solid fa-cloud-arrow-down'></i></font>")))
+              # HTML(paste0(
+              #   "<span class='hovertext' data-hover='Standard graphs data download'>",
+              #   downloadLink("download_data", HTML("<font size= 3>Download assessment data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+              # ))
+            )
+            # bslib::card_footer(
+
+            # )
           )
         )
       ),
@@ -59,7 +69,7 @@ mod_landings_ui <- function(id) {
             uiOutput(ns("discards_text"))
           ),
           card(
-            
+
             # height = "45vh",
             card_body(
               style = "overflow-y: hidden;",
@@ -80,7 +90,6 @@ mod_landings_ui <- function(id) {
     )
   )
 }
-    
 #' landings Server Functions
 #'
 #' @noRd 
@@ -141,7 +150,22 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
       }
       fig
     })
-    
+    # Download handler
+    output$download_data <- downloadHandler(
+      filename = function() {
+        paste0("plot_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        rda_path <- paste0("./data/", acronym, ".rda")
+        load(rda_path)
+        # test <- get(get_ecoregion_acronym(ecoregion))
+        # dataDownload <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), return_data = TRUE)
+        write.csv(get(get_ecoregion_acronym(ecoregion)), file, row.names = FALSE)
+      }
+    )
     year <- 2024
     
     output$discard_trends <- renderPlotly({
