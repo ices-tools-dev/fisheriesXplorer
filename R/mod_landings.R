@@ -47,15 +47,8 @@ mod_landings_ui <- function(id) {
               withSpinner(
                 plotlyOutput(ns("landings_layer"), height = "65vh"),
               ),
-              downloadLink(ns("download_data"), HTML(paste0("<font size= 4>Download landings data <i class='fa-solid fa-cloud-arrow-down'></i></font>")))
-              # HTML(paste0(
-              #   "<span class='hovertext' data-hover='Standard graphs data download'>",
-              #   downloadLink("download_data", HTML("<font size= 3>Download assessment data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
-              # ))
+              downloadLink(ns("download_landings_data"), HTML(paste0("<span class='hovertext' data-hover='Download landings (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font>")))
             )
-            # bslib::card_footer(
-
-            # )
           )
         )
       ),
@@ -82,7 +75,8 @@ mod_landings_ui <- function(id) {
                 width = 1 / 2,
                 withSpinner(plotlyOutput(ns("recorded_discards"))),
                 withSpinner(plotlyOutput(ns("all_discards")))
-              )
+              ),
+              downloadLink(ns("download_discard_data"), HTML(paste0("<span class='hovertext' data-hover='Download discards (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
             )
           )
         )
@@ -151,18 +145,15 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
       fig
     })
     # Download handler
-    output$download_data <- downloadHandler(
+    output$download_landings_data <- downloadHandler(
       filename = function() {
         paste0("plot_data_", Sys.Date(), ".csv")
       },
-      content = function(file) {
-        
+      content = function(file) {        
         ecoregion <- selected_ecoregion()
         acronym <- get_ecoregion_acronym(ecoregion)
         rda_path <- paste0("./data/", acronym, ".rda")
         load(rda_path)
-        # test <- get(get_ecoregion_acronym(ecoregion))
-        # dataDownload <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), return_data = TRUE)
         write.csv(get(get_ecoregion_acronym(ecoregion)), file, row.names = FALSE)
       }
     )
@@ -178,15 +169,23 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
       fig2
     })
     output$recorded_discards <- renderPlotly({
-      catch_trends2 <- CLD_trends(format_sag(shared$SAG, shared$SID)) %>% filter(Discards > 0)
-      
+      catch_trends2 <- CLD_trends(format_sag(shared$SAG, shared$SID)) %>% filter(Discards > 0)      
       plot_discard_current_plotly(catch_trends2, year = year, position_letter = "Stocks with recorded discards (2024)", cap_year = cap_year, cap_month = cap_month)
     })
 
-    output$all_discards <- renderPlotly({
-      
+    output$all_discards <- renderPlotly({      
       plot_discard_current_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)), year = year, position_letter = "All Stocks (2024)", cap_year = cap_year, cap_month = cap_month)
     })
+
+    # Download handler
+    output$download_discard_data <- downloadHandler(
+      filename = function() {
+        paste0("plot_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(CLD_trends(format_sag(shared$SAG, shared$SID)), file, row.names = FALSE)
+      }
+    )
     
   })
 }
