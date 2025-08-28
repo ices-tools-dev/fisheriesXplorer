@@ -15,12 +15,7 @@
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # div(
-    #   style = "display: flex; justify-content: space-between; align-items: center;
-    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-    #   span(textOutput(ns("ecoregion_label"))),
-    #   span(textOutput(ns("current_date")))
-    # ),
+   
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     navset_tab(
       nav_panel(
@@ -36,22 +31,16 @@ mod_stock_status_ui <- function(id) {
               6,
               card(
                 height = "85vh", full_screen = T,
-                card_header(div(
-                  style = "display: flex;
-                          justify-content: space-between;
-                          align-items: center;
-                          width: 100%;
-                          padding: 0 16px;   /* left/right padding inside header */",
+                card_header(
                   "MSY & Precautionary Approach",
                   downloadLink(ns("download_clean_status_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
-                )),
+                ),
                 card_body(
                   fillable = T,
                   withSpinner(
-                    plotOutput(ns("status_summary_ices"), height = "72vh"),
+                    plotOutput(ns("status_summary_ices"), height = "75vh"),
                     caption = "Getting status data..."
-                  ) # ,
-                  # downloadLink(ns("download_clean_status_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                  )
                 )
               )
             ),
@@ -59,22 +48,18 @@ mod_stock_status_ui <- function(id) {
               6,
               card(
                 height = "85vh", full_screen = T,
-                card_header(div(
-                  style = "display: flex;
-                          justify-content: space-between;
-                          align-items: center;
-                          width: 100%;
-                          padding: 0 16px;   /* left/right padding inside header */",
+                card_header(
+                  
                   "Good Environmental Status",
                   downloadLink(ns("download_status_catch_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
-                )),
+                
+                ),
                 card_body(
                   fillable = T,
                   withSpinner(
-                    plotOutput(ns("status_summary_ges"), height = "72vh"),
+                    plotOutput(ns("status_summary_ges"), height = "75vh"),
                     caption = "Getting assessment data..."
-                  ) # ,
-                  # downloadLink(ns("download_status_catch_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                  ) 
                 )
               )
             )
@@ -94,12 +79,7 @@ mod_stock_status_ui <- function(id) {
             card(
               height = "85vh", full_screen = T,
               card_header(
-                div(
-                  style = "display: flex;
-                          justify-content: space-between;
-                          align-items: center;
-                          width: 100%;
-                          padding: 0 16px;   /* left/right padding inside header */",
+                
                   radioButtons(ns("status_trend_selector"), "Select group",
                     inline = T,
                     choices = c(
@@ -111,13 +91,12 @@ mod_stock_status_ui <- function(id) {
                     )
                   ),
                   downloadLink(ns("download_trends_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
-                )
+                
               ),
               card_body(
                 withSpinner(
                   plotlyOutput(ns("status_trends"), height = "68vh")
-                ) # ,
-                # downloadLink(ns("download_trends_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                )
               )
             )
           )
@@ -129,66 +108,17 @@ mod_stock_status_ui <- function(id) {
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black", open = FALSE,
             uiOutput(ns("status_text3"))
-          ),
-      #     # Kobe-CLD section
-      #     fluidRow(
-      #       column(
-      #         6,
-      #         card(
-      #           height = "70vh", full_screen = TRUE,
-      #           card_header(
-      #             div(
-      #               style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
-      #               radioButtons(
-      #                 ns("status_kobe_cld_selector"), "Select group",
-      #                 inline = TRUE,
-      #                 choices = c(
-      #                   "Benthic"     = "benthic",
-      #                   "Demersal"    = "demersal",
-      #                   "Crustacean"  = "crustacean",
-      #                   "Pelagic"     = "pelagic",
-      #                   "All Stocks"  = "All"
-      #                 )
-      #               ),
-      #               downloadLink(
-      #                 ns("download_CLD_data"),
-      #                 HTML(
-      #                   "<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'>
-      #            <font size=4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font>
-      #          </span>"
-      #                 )
-      #               )
-      #             )
-      #           ),
-      #           card_body(
-      #             fillable = TRUE,
-      #             withSpinner(plotOutput(ns("status_cld"), height = "64vh"))
-      #           )
-      #         )
-      #       ),
-      #       column(
-      #         6,
-      #         card(
-      #           height = "70vh", full_screen = TRUE,
-      #           card_header(
-      #             div(
-      #               style = "display: flex; justify-content: flex-end; align-items: center; width: 100%; padding: 0 16px;",
-      #               uiOutput(ns("kobe_cld_slider"))
-      #             )
-      #           ),
-      #           card_body(
-      #             fillable = TRUE,
-      #             withSpinner(plotOutput(ns("status_kobe"), height = "64vh"))
-      #           )
-      #         )
-      #       )
-      #     )
-      #   )
-      # ),
+          ),          
           card(
             card_header(
               column(
                 6,
+                div(
+                  style = "display: flex;
+                          justify-content: space-between;
+                          align-items: center;
+                          width: 100%;
+                          padding: 0 16px;   /* left/right padding inside header */",
                 radioButtons(ns("status_kobe_cld_selector"), "Select group",
                   inline = T,
                   choices = c(
@@ -197,19 +127,22 @@ mod_stock_status_ui <- function(id) {
                     "Crustacean" = "crustacean",
                     "Pelagic" = "pelagic",
                     "All Stocks" = "All"
-                  )
+                  ),
+                  selected = "All",
+                )
                 )
               ),
               column(
                 6,
-                 div(
+                div(
                   style = "display: flex;
                           justify-content: space-between;
                           align-items: center;
                           width: 100%;
-                          padding: 0 16px;   /* left/right padding inside header */", 
-                          uiOutput(ns("kobe_cld_slider")),
-                          downloadLink(ns("download_CLD_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))))
+                          padding: 0 16px;   /* left/right padding inside header */",
+                  uiOutput(ns("kobe_cld_slider")),
+                  downloadLink(ns("download_CLD_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                )
               )
             )
           ),
@@ -218,8 +151,7 @@ mod_stock_status_ui <- function(id) {
               6,
               card(
                 fillable = T, height = "70vh", full_screen = T,
-                withSpinner(plotOutput(ns("status_cld"), height = "67vh"))#,
-                # downloadLink(ns("download_CLD_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                withSpinner(plotOutput(ns("status_cld"), height = "67vh")) # ,
               )
             ),
             column(
@@ -240,8 +172,15 @@ mod_stock_status_ui <- function(id) {
             open = FALSE,
             uiOutput(ns("status_text4"))
           ),
-          downloadLink(ns("download_status_table"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))),
-          withSpinner(reactableOutput(ns("stock_status_table_reactable")))
+          card(
+            card_header(
+              "Stock status table",
+              downloadLink(ns("download_status_table"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+           ),
+              card_body(
+                withSpinner(reactableOutput(ns("stock_status_table_reactable")))
+              )
+          )
         )
       )
     )
@@ -333,7 +272,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
       slider_max <- nrow(kobe_cld_data())
       div(
         id = "custom_slider",
-        sliderInput(ns("n_selector"), HTML("Top <em>n</em> stocks"),
+        sliderInput(ns("n_selector"), HTML("Choose <em>n</em> of stocks"),
           min = 1, max = slider_max, value = min(10, slider_max), step = 1
         )
       )

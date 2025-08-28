@@ -35,19 +35,18 @@ mod_landings_ui <- function(id) {
           card(
             height = "85vh",
             card_header(
-              div(
-                style = "margin-left: 12px;",
+              # div(
+                # style = "margin-left: 12px;",
                 radioButtons(ns("landings_layer_selector"), NULL,
                   inline = T,
                   choices = c("Main landed species" = "Common name", "Fisheries Guild" = "Fisheries guild", "Country" = "Country")
-                )
-              )
+                ),
+                downloadLink(ns("download_landings_data"), HTML(paste0("<span class='hovertext' data-hover='Download landings (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
             ),
             card_body(
               withSpinner(
-                plotlyOutput(ns("landings_layer"), height = "65vh"),
-              ),
-              downloadLink(ns("download_landings_data"), HTML(paste0("<span class='hovertext' data-hover='Download landings (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font>")))
+                plotlyOutput(ns("landings_layer"), height = "65vh")
+              )
             )
           )
         )
@@ -62,8 +61,10 @@ mod_landings_ui <- function(id) {
             uiOutput(ns("discards_text"))
           ),
           card(
-
-            # height = "45vh",
+            card_header(
+              "Discard trends",
+              downloadLink(ns("download_discard_data"), HTML(paste0("<span class='hovertext' data-hover='Download discards (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+           ),
             card_body(
               style = "overflow-y: hidden;",
               withSpinner(plotlyOutput(ns("discard_trends")))
@@ -75,8 +76,7 @@ mod_landings_ui <- function(id) {
                 width = 1 / 2,
                 withSpinner(plotlyOutput(ns("recorded_discards"))),
                 withSpinner(plotlyOutput(ns("all_discards")))
-              ),
-              downloadLink(ns("download_discard_data"), HTML(paste0("<span class='hovertext' data-hover='Download discards (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+              )
             )
           )
         )
