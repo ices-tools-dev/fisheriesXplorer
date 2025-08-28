@@ -15,102 +15,173 @@
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # div(
-    #   style = "display: flex; justify-content: space-between; align-items: center;
-    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-    #   span(textOutput(ns("ecoregion_label"))),
-    #   span(textOutput(ns("current_date")))
-    # ),
+   
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     navset_tab(
-       nav_panel("Status Summary",
-          layout_sidebar(
-            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                                       open = FALSE,
-                                       uiOutput(ns("status_text1"))),
-          fluidRow(column(6,
-           card(height = "85vh", full_screen = T,
-            card_header("MSY & Precautionary Approach"),
-            card_body(fillable = T, 
-              withSpinner(
-                plotOutput(ns("status_summary_ices"), height = "72vh"),
-                caption = "Getting status data...")))
+      nav_panel(
+        "Status Summary",
+        layout_sidebar(
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("status_text1"))
           ),
-          column(6,          
-           card(height = "85vh", full_screen = T,
-            card_header("Good Environmental Status"),
-            card_body(fillable = T,
-              withSpinner(
-                plotOutput(ns("status_summary_ges"), height = "72vh"),
-                caption = "Getting assessment data..."))
+          fluidRow(
+            column(
+              6,
+              card(
+                height = "85vh", full_screen = T,
+                card_header(
+                  "MSY & Precautionary Approach",
+                  downloadLink(ns("download_clean_status_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                ),
+                card_body(
+                  fillable = T,
+                  withSpinner(
+                    plotOutput(ns("status_summary_ices"), height = "75vh"),
+                    caption = "Getting status data..."
+                  )
+                )
+              )
+            ),
+            column(
+              6,
+              card(
+                height = "85vh", full_screen = T,
+                card_header(
+                  
+                  "Good Environmental Status",
+                  downloadLink(ns("download_status_catch_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
                 
+                ),
+                card_body(
+                  fillable = T,
+                  withSpinner(
+                    plotOutput(ns("status_summary_ges"), height = "75vh"),
+                    caption = "Getting assessment data..."
+                  ) 
+                )
+              )
             )
-          ))
-      )),
-      
-      nav_panel("Trends by group",
-          layout_sidebar(
-            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                                       open = FALSE,
-                                       uiOutput(ns("status_text2"))),
-          column(12,
-           card(height = "85vh", full_screen = T,
-             card_header(
-              div(style = "margin-left: 12px;",
-               radioButtons(ns("status_trend_selector"), "Select group", inline = T,
-              choices = c(
-                "Elasmobranchs" = "elasmobranch",
-                "Benthic" = "benthic",
-                "Crustacean" = "crustacean",
-                "Demersal" = "demersal",
-                "Pelagic" = "pelagic")))),
-          card_body(
-            withSpinner(
-              plotlyOutput(ns("status_trends"), height = "68vh")))
-            )
-          )
-      )),
-      
-      nav_panel("Kobe-CLD",
-          layout_sidebar(
-            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", open = FALSE,
-                              uiOutput(ns("status_text3"))),
-        card(card_header(
-          column(6,
-            radioButtons(ns("status_kobe_cld_selector"), "Select group", inline = T,
-              choices = c(
-                "Benthic" = "benthic",
-                "Demersal" = "demersal",
-                "Crustacean" = "crustacean",
-                "Pelagic" = "pelagic",
-                "All Stocks" = "All")
-            )
-          ),
-          column(6,
-            uiOutput(ns("kobe_cld_slider"), inline = T)
-                 ))
-        ),
-        fluidRow(
-          column(6,
-            card(fillable = T, height = "75vh", full_screen = T,
-              withSpinner(plotOutput(ns("status_cld"), height = "67vh"))
-                   )),
-          column(6,
-            card(fillable = T, height = "75vh", full_screen = T,
-              withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
-                   )
           )
         )
-      )),
-      
-      nav_panel("Stock status Lookup",
-          layout_sidebar(
-            sidebar = sidebar(width = "33vw", bg = "white", fg = "black", 
-                                       open = FALSE,
-                                       uiOutput(ns("status_text4"))),
-            
-        withSpinner(reactableOutput(ns("stock_status_table_reactable")))
-      )
+      ),
+      nav_panel(
+        "Trends by group",
+        layout_sidebar(
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("status_text2"))
+          ),
+          column(
+            12,
+            card(
+              height = "85vh", full_screen = T,
+              card_header(
+                
+                  radioButtons(ns("status_trend_selector"), "Select group",
+                    inline = T,
+                    choices = c(
+                      "Elasmobranchs" = "elasmobranch",
+                      "Benthic" = "benthic",
+                      "Crustacean" = "crustacean",
+                      "Demersal" = "demersal",
+                      "Pelagic" = "pelagic"
+                    )
+                  ),
+                  downloadLink(ns("download_trends_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                
+              ),
+              card_body(
+                withSpinner(
+                  plotlyOutput(ns("status_trends"), height = "68vh")
+                )
+              )
+            )
+          )
+        )
+      ),
+      nav_panel(
+        "Kobe-CLD",
+        layout_sidebar(
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black", open = FALSE,
+            uiOutput(ns("status_text3"))
+          ),          
+          card(
+            card_header(
+              column(
+                6,
+                div(
+                  style = "display: flex;
+                          justify-content: space-between;
+                          align-items: center;
+                          width: 100%;
+                          padding: 0 16px;   /* left/right padding inside header */",
+                radioButtons(ns("status_kobe_cld_selector"), "Select group",
+                  inline = T,
+                  choices = c(
+                    "Benthic" = "benthic",
+                    "Demersal" = "demersal",
+                    "Crustacean" = "crustacean",
+                    "Pelagic" = "pelagic",
+                    "All Stocks" = "All"
+                  ),
+                  selected = "All",
+                )
+                )
+              ),
+              column(
+                6,
+                div(
+                  style = "display: flex;
+                          justify-content: space-between;
+                          align-items: center;
+                          width: 100%;
+                          padding: 0 16px;   /* left/right padding inside header */",
+                  uiOutput(ns("kobe_cld_slider")),
+                  downloadLink(ns("download_CLD_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                )
+              )
+            )
+          ),
+          fluidRow(
+            column(
+              6,
+              card(
+                fillable = T, height = "70vh", full_screen = T,
+                withSpinner(plotOutput(ns("status_cld"), height = "67vh")) # ,
+              )
+            ),
+            column(
+              6,
+              card(
+                fillable = T, height = "75vh", full_screen = T,
+                withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
+              )
+            )
+          )
+        )
+      ),
+      nav_panel(
+        "Stock status Lookup",
+        layout_sidebar(
+          sidebar = sidebar(
+            width = "33vw", bg = "white", fg = "black",
+            open = FALSE,
+            uiOutput(ns("status_text4"))
+          ),
+          card(
+            card_header(
+              "Stock status table",
+              downloadLink(ns("download_status_table"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+           ),
+              card_body(
+                withSpinner(reactableOutput(ns("stock_status_table_reactable")))
+              )
+          )
+        )
       )
     )
   )
@@ -142,36 +213,37 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
       stockstatus_CLD_current(format_sag(shared$SAG, shared$SID))
     })
 
-    output$status_summary <- renderPlot({
-      req(!is.null(input$status_indicator_selector))
-
-      if (input$status_indicator_selector == "ices") {
-        plot_status_prop_pies_app(clean_status(), cap_month, cap_year)
-      } else if ((input$status_indicator_selector == "ges")) {
-        plot_GES_pies_app(ges_prop_pies_data(), cap_month, cap_year)
-      }
-    })
     output$status_summary_ices <- renderPlot({
-            
       plot_status_prop_pies(shared$clean_status, cap_month, cap_year)
     })
-    output$status_summary_ges <- renderPlot({
-      
+
+    # Download handler
+    output$download_clean_status_data <- downloadHandler(
+      filename = function() {
+        paste0("status_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(shared$clean_status, file, row.names = FALSE)
+      }
+    )
+
+    output$status_summary_ges <- renderPlot({      
       plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year)
     })
 
+    # Download handler
+    output$download_status_catch_data <- downloadHandler(
+      filename = function() {
+        paste0("status_catch_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year, return_data = TRUE), file, row.names = FALSE)
+      }
+    )
+
 
     trends_data <- reactive({
-      # stopifnot(sum(is.na(current_catches$FisheriesGuild)) ==0)
-
-      # if(input$status_trend_selector == "all_stocks") {
-      #   guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
-      # } else {
-      #   guild <- input$status_trend_selector
-      # }
-
-      stock_trends(format_sag(shared$SAG, shared$SID)) # %>% filter(FisheriesGuild %in% guild)
-      # prepare_stock_trends()
+      stock_trends(format_sag(shared$SAG, shared$SID))     
     })
 
     output$status_trends <- renderPlotly({
@@ -185,12 +257,22 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
       plot_stock_trends(trends_data(), guild, cap_year, cap_month)
     })
 
+    # Download handler
+    output$download_trends_data <- downloadHandler(
+      filename = function() {
+        paste0("status_trends_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(trends_data(), file, row.names = FALSE)
+      }
+    )
+
 
     output$kobe_cld_slider <- renderUI({
       slider_max <- nrow(kobe_cld_data())
       div(
         id = "custom_slider",
-        sliderInput(ns("n_selector"), HTML("Top <em>n</em> stocks"),
+        sliderInput(ns("n_selector"), HTML("Choose <em>n</em> of stocks"),
           min = 1, max = slider_max, value = min(10, slider_max), step = 1
         )
       )
@@ -226,6 +308,15 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
       plot_CLD_bar_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = FALSE)
     })
 
+    # Download handler
+    output$download_CLD_data <- downloadHandler(
+      filename = function() {
+        paste0("status_CLD_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(kobe_cld_data(), file, row.names = FALSE)
+      }
+    )
 
     processed_data_reactable <- reactive({
       annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
@@ -269,6 +360,16 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
         )
     })
 
+
+    # Download handler
+    output$download_status_table <- downloadHandler(
+      filename = function() {
+        paste0("status_table_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG), file, row.names = FALSE)
+      }
+    )
 
     output$stock_status_table_reactable <- renderReactable({
       req(nrow(processed_data_reactable()) != 0)
