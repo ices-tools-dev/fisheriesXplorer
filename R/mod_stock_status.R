@@ -220,7 +220,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
     # Download handler
     output$download_clean_status_data <- downloadHandler(
       filename = function() {
-        paste0("plot_data_", Sys.Date(), ".csv")
+        paste0("status_data_", Sys.Date(), ".csv")
       },
       content = function(file) {
         write.csv(shared$clean_status, file, row.names = FALSE)
@@ -234,7 +234,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
     # Download handler
     output$download_status_catch_data <- downloadHandler(
       filename = function() {
-        paste0("plot_data_", Sys.Date(), ".csv")
+        paste0("status_catch_data_", Sys.Date(), ".csv")
       },
       content = function(file) {
         write.csv(plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year, return_data = TRUE), file, row.names = FALSE)
@@ -260,7 +260,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
     # Download handler
     output$download_trends_data <- downloadHandler(
       filename = function() {
-        paste0("plot_data_", Sys.Date(), ".csv")
+        paste0("status_trends_data_", Sys.Date(), ".csv")
       },
       content = function(file) {
         write.csv(trends_data(), file, row.names = FALSE)
@@ -311,7 +311,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
     # Download handler
     output$download_CLD_data <- downloadHandler(
       filename = function() {
-        paste0("plot_data_", Sys.Date(), ".csv")
+        paste0("status_CLD_data_", Sys.Date(), ".csv")
       },
       content = function(file) {
         write.csv(kobe_cld_data(), file, row.names = FALSE)
@@ -364,7 +364,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
     # Download handler
     output$download_status_table <- downloadHandler(
       filename = function() {
-        paste0("plot_data_", Sys.Date(), ".csv")
+        paste0("status_table_data_", Sys.Date(), ".csv")
       },
       content = function(file) {
         write.csv(format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG), file, row.names = FALSE)

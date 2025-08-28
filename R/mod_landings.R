@@ -147,7 +147,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
     # Download handler
     output$download_landings_data <- downloadHandler(
       filename = function() {
-        paste0("plot_data_", Sys.Date(), ".csv")
+        paste0("landings_trends_data_", Sys.Date(), ".csv")
       },
       content = function(file) {        
         ecoregion <- selected_ecoregion()
@@ -180,7 +180,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
     # Download handler
     output$download_discard_data <- downloadHandler(
       filename = function() {
-        paste0("plot_data_", Sys.Date(), ".csv")
+        paste0("discard_data_", Sys.Date(), ".csv")
       },
       content = function(file) {
         write.csv(CLD_trends(format_sag(shared$SAG, shared$SID)), file, row.names = FALSE)
