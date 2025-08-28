@@ -414,7 +414,7 @@ getStatusWebService <- function(Ecoregion, sid) {
 
 format_sag_status_new <- function(df) {
      
-        df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
+        df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "GREY",
                                                   status == 1 ~ "GREEN",
                                                   status == 2 ~ "GREEN", #qualitative green
                                                   status == 3 ~ "ORANGE",

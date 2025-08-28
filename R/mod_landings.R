@@ -35,17 +35,19 @@ mod_landings_ui <- function(id) {
           card(
             height = "85vh",
             card_header(
-              div(
-                style = "margin-left: 12px;",
+              # div(
+                # style = "margin-left: 12px;",
                 radioButtons(ns("landings_layer_selector"), NULL,
                   inline = T,
                   choices = c("Main landed species" = "Common name", "Fisheries Guild" = "Fisheries guild", "Country" = "Country")
-                )
-              )
+                ),
+                downloadLink(ns("download_landings_data"), HTML(paste0("<span class='hovertext' data-hover='Download landings (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
             ),
-            card_body(withSpinner(
-              plotlyOutput(ns("landings_layer"), height = "65vh")
-            ))
+            card_body(
+              withSpinner(
+                plotlyOutput(ns("landings_layer"), height = "65vh")
+              )
+            )
           )
         )
       ),
@@ -59,8 +61,10 @@ mod_landings_ui <- function(id) {
             uiOutput(ns("discards_text"))
           ),
           card(
-            
-            # height = "45vh",
+            card_header(
+              "Discard trends",
+              downloadLink(ns("download_discard_data"), HTML(paste0("<span class='hovertext' data-hover='Download discards (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+           ),
             card_body(
               style = "overflow-y: hidden;",
               withSpinner(plotlyOutput(ns("discard_trends")))
@@ -80,7 +84,6 @@ mod_landings_ui <- function(id) {
     )
   )
 }
-    
 #' landings Server Functions
 #'
 #' @noRd 
@@ -141,7 +144,19 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
       }
       fig
     })
-    
+    # Download handler
+    output$download_landings_data <- downloadHandler(
+      filename = function() {
+        paste0("landings_trends_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {        
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        rda_path <- paste0("./data/", acronym, ".rda")
+        load(rda_path)
+        write.csv(get(get_ecoregion_acronym(ecoregion)), file, row.names = FALSE)
+      }
+    )
     year <- 2024
     
     output$discard_trends <- renderPlotly({
@@ -154,15 +169,23 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
       fig2
     })
     output$recorded_discards <- renderPlotly({
-      catch_trends2 <- CLD_trends(format_sag(shared$SAG, shared$SID)) %>% filter(Discards > 0)
-      
+      catch_trends2 <- CLD_trends(format_sag(shared$SAG, shared$SID)) %>% filter(Discards > 0)      
       plot_discard_current_plotly(catch_trends2, year = year, position_letter = "Stocks with recorded discards (2024)", cap_year = cap_year, cap_month = cap_month)
     })
 
-    output$all_discards <- renderPlotly({
-      
+    output$all_discards <- renderPlotly({      
       plot_discard_current_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)), year = year, position_letter = "All Stocks (2024)", cap_year = cap_year, cap_month = cap_month)
     })
+
+    # Download handler
+    output$download_discard_data <- downloadHandler(
+      filename = function() {
+        paste0("discard_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(CLD_trends(format_sag(shared$SAG, shared$SID)), file, row.names = FALSE)
+      }
+    )
     
   })
 }
