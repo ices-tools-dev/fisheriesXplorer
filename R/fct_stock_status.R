@@ -962,194 +962,294 @@ stock_trends <- function(x){
 
 
 
-# plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE){
-#         df<- dplyr::filter(x,FisheriesGuild == guild)
-#         adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
-#         values <- ggthemes::tableau_color_pal('Tableau 20')(length(adj_names))
-#         legend_pos <- "bottom"
+
+# plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
+#         df <- dplyr::filter(x, FisheriesGuild == guild)
+#         adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
+#         values <- ggthemes::tableau_color_pal("Tableau 20")(length(adj_names))
 #         names(values) <- adj_names
 #         values <- c(values, c(MEAN = "black"))
-#         plot_title <- guild
-#         cap_lab <- ggplot2::labs(title = plot_title, x = "Year", y = "",
-#                 caption = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen",
-#                                   cap_month,
-#                                   cap_year))
-#         duplicates <- dplyr::group_by(df,Value)
-#         duplicates <- dplyr::filter(duplicates, dplyr::n()>1)
-#         duplicates <- dplyr::filter(duplicates,StockKeyLabel == "MEAN")
-#         df <- dplyr::anti_join(df,duplicates)
-#         df <- dplyr::filter(df,Metric %in% c("F_FMSY", "SSB_MSYBtrigger"))
-#         df$Metric[which(df$Metric == "F_FMSY")] <- "F/F[MSY]"
-#         df$Metric[which(df$Metric == "SSB_MSYBtrigger")] <- "SSB/MSY~B[trigger]"
-#         mean <- dplyr::filter(df, StockKeyLabel == "MEAN")
-#         df2 <- dplyr::filter(df,StockKeyLabel != "MEAN")
-        
-#         plot <- ggplot2::ggplot(df2, ggplot2::aes(x = Year, y = Value,
-#                       color = StockKeyLabel,
-#                       fill = StockKeyLabel)) +
-#                 ggplot2::geom_hline(yintercept = 1, col = "grey60") +
-#                 ggplot2::theme_bw(base_size = 14) +
-#                 ggplot2::scale_color_manual(values = values) +
-#                 ggplot2::scale_fill_manual(values = values) +
-#                 ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +
-#                 # ggplot2::scale_y_continuous(limits = c(0, 10)) + ##
-#                 ggplot2::guides(fill = FALSE) +
-#                 ggplot2::theme(legend.position = legend_pos,
-#                         strip.text = ggplot2::element_text(size = 9, angle = 0, hjust = 0),
-#                         strip.background = ggplot2::element_blank(),
-#                         strip.placement = "outside",
-#                         panel.grid.major = ggplot2::element_blank(),
-#                         panel.grid.minor = ggplot2::element_blank(),
-#                         legend.key = ggplot2::element_rect(colour = NA),
-#                         legend.title = ggplot2::element_blank(),
-#                         plot.caption = ggplot2::element_text(size = 10)) +
-#                 cap_lab +
-#                 ggplot2::facet_wrap(~ Metric, scales = "free_y", labeller = ggplot2::label_parsed, strip.position = "left", ncol = 1, nrow = 2)
-#         plot <- plot + ggplot2::geom_line(data = df,alpha = 0.8)
-#         plot <- plot + ggplot2::geom_line(data = mean,
-#                                alpha = 0.9, size = 1.15)
-        
-#         if(return_data == T){
-#                 df
-#         }else{
-#                 plotly::ggplotly(plot) %>% 
-#                 plotly::highlight(on = "plotly_hover", selected = plotly::attrs_selected(showlegend = FALSE))
+
+#         df <- df %>%
+#                 dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
+#                 dplyr::mutate(Metric = dplyr::recode(Metric,
+#                         "F_FMSY" = "F/F<sub>MSY</sub>",
+#                         "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
+#                 ))
+
+#         mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+#         df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
+
+#         # Function to create an individual plot for a given metric
+#         create_plot <- function(metric_name, yaxis_title, show_legend=TRUE) {
+#                 df_metric <- dplyr::filter(df2, Metric == metric_name)
+#                 mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
+                
+#                 df_metric <- plotly::highlight_key(df_metric, key = ~StockKeyLabel)
+
+#                 plotly::plot_ly() %>%
+#                         plotly::add_trace(
+#                                 data = df_metric, x = ~Year, y = ~Value, color = ~StockKeyLabel,
+#                                 colors = values, type = "scatter", mode = "lines",
+#                                 line = list(width = 3), name = ~StockKeyLabel,
+#                                 showlegend = show_legend
+#                         ) %>%
+#                         plotly::add_trace(
+#                                 data = mean_metric, x = ~Year, y = ~Value, name = "Mean",
+#                                 type = "scatter", mode = "lines", line = list(color = "black", width = 5),
+#                                 showlegend = show_legend
+#                         ) %>%
+#                         plotly::layout(
+#                                 yaxis = list(title = yaxis_title, zeroline = TRUE),
+#                                 shapes = list(
+#                                         list(
+#                                                 type = "rect", x0 = min(df$Year), x1 = max(df$Year),
+#                                                 y0 = 1, y1 = 1, line = list(color = "#000000", width = 1)
+#                                         )
+#                                 )
+#                         ) %>%
+#                         plotly::highlight(
+#                                 on = 'plotly_hover',
+#                                 off = 'plotly_doubleclick',
+#                                 selected = plotly::attrs_selected(
+#                                         opacity = 0.7,
+#                                         showlegend = TRUE,
+#                                         line = list(width = 5) 
+#                                 )
+#                         )
+#         }
+
+#         # Create individual subplots
+#         plot1 <- create_plot("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
+#         plot2 <- create_plot("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
+
+#         # Combine plots into a subplot layout
+#         final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+#                 plotly::layout(
+#                         title = guild,
+#                         xaxis = list(title = "Year"),
+#                         margin = list(b = 100),
+#                         annotations = list(
+#                                 list(
+#                                         x = 1, y = -0.25, xref = "paper", yref = "paper",
+#                                         text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
+#                                         showarrow = FALSE, xanchor = "right", yanchor = "bottom"
+#                                 )
+#                         )
+#                 )  
+                
+
+#         if (return_data) {
+#                 return(df)
+#         } else {
+#                 return(final_plot)
 #         }
 # }
 
 
+
+
 # plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
 #   df <- dplyr::filter(x, FisheriesGuild == guild)
-#   adj_names <- sort(setdiff(unique(df$StockKeyLabel), "MEAN"))
-#   values <- ggthemes::tableau_color_pal('Tableau 20')(length(adj_names))
-#   names(values) <- adj_names
-#   values <- c(values, c(MEAN = "black"))
-  
-#   plot_title <- guild
-#   cap_lab <- ggplot2::labs(
-#     title = plot_title, 
-#     x = "Year", 
-#     caption = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year)
-#   )
+#   adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
+# #   values <- ggthemes::tableau_color_pal("Tableau 20")(length(adj_names))
+# #   names(values) <- adj_names
+# #   values <- c(values, c(MEAN = "black"))
+#         values <- grDevices::hcl.colors(length(adj_names), palette = "Zissou 1")
+#         browser()
+#         names(values) <- adj_names
+#         values <- c(values, c(MEAN = "black"))
 
 #   df <- df %>%
 #     dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
-#     dplyr::mutate(Metric = dplyr::recode(Metric, "F_FMSY" = "F/F[MSY]", "SSB_MSYBtrigger" = "SSB/MSY~B[trigger]"))
+#     dplyr::mutate(Metric = dplyr::recode(Metric,
+#       "F_FMSY" = "F/F<sub>MSY</sub>",
+#       "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
+#     ))
 
-#   mean_df <- dplyr::filter(df, StockKeyLabel == "MEAN")
-#   df2 <- dplyr::filter(df, StockKeyLabel != "MEAN")
+#   mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+#   df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
 
-#   plot <- ggplot2::ggplot(df2, aes(x = Year, y = Value, color = StockKeyLabel, fill = StockKeyLabel)) +
-#     ggplot2::geom_hline(yintercept = 1, col = "grey60") +
-#     ggplot2::geom_line(alpha = 0.8) +
-#     ggplot2::geom_line(data = mean_df, alpha = 0.9, size = 1.15) +
-#     ggplot2::scale_color_manual(values = values) +
-#     ggplot2::scale_fill_manual(values = values) +
-#     ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) +
-#     ggplot2::theme_bw(base_size = 14) +
-#     ggplot2::theme(
-#       legend.position = "bottom",
-#       strip.text = element_text(size = 14, hjust = 0.5),
-#       strip.background = element_blank(),
-#       strip.placement = "outside",
-#       panel.grid.major = element_blank(),
-#       panel.grid.minor = element_blank(),
-#       plot.caption = element_text(size = 10),
-#       axis.title.y = element_blank()  # Removes default y-axis label
-#     ) +
-#     cap_lab +
-#     ggplot2::facet_wrap(~ Metric, scales = "free_y", labeller = label_parsed, strip.position = "left", ncol = 1, nrow = 2) 
+#   # Function to create an individual plot for a given metric
+#   create_plot <- function(metric_name, yaxis_title, show_legend = TRUE) {
+#     df_metric <- dplyr::filter(df2, Metric == metric_name)
+#     mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
 
-#   p <- plotly::ggplotly(plot) %>% plotly::highlight(on = "plotly_hover", selected = plotly::attrs_selected(showlegend = FALSE))
+#     df_metric_key <- plotly::highlight_key(df_metric, key = ~StockKeyLabel, group = "stocks")
+
+#     plotly::plot_ly(
+#       data = df_metric_key, x = ~Year, y = ~Value, color = ~StockKeyLabel,
+#       colors = values, type = "scatter", mode = "lines",
+#       line = list(width = 3), name = ~StockKeyLabel,
+#       showlegend = show_legend
+#     ) %>%
+#       plotly::add_trace(
+#         data = mean_metric, x = ~Year, y = ~Value, name = "Mean",
+#         type = "scatter", mode = "lines", line = list(color = "black", width = 5),
+#         showlegend = show_legend
+#       ) %>%
+#       plotly::layout(
+#         yaxis = list(
+#           title = yaxis_title,
+#           zeroline = TRUE,
+#           zerolinecolor = "black",
+#           zerolinewidth = 1.5,
+#           rangemode = "tozero",  # keeps scale natural but centered around 1
+#           titlefont = list(size = 16),
+#           tickfont  = list(size = 14)
+#         ),
+#         shapes = list(
+#           # reference line at y = 1
+#           list(
+#             type = "line", x0 = min(df$Year), x1 = max(df$Year),
+#             y0 = 1, y1 = 1, line = list(color = "#000000", width = 1)
+#           ),
+#           # black border around the plot
+#           list(
+#             type = "rect", xref = "paper", yref = "paper",
+#             x0 = 0, x1 = 1, y0 = 0, y1 = 1,
+#             line = list(color = "black", width = 1),
+#             fillcolor = "rgba(0,0,0,0)"
+#           )
+#         )
+#       )
+#   }
+
+#   # Create individual subplots
+#   plot1 <- create_plot("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
+#   plot2 <- create_plot("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
+
+#   # Combine plots into a subplot layout
+#   final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+#     plotly::layout(
+#       title = guild,
+#       xaxis = list(title = "Year"),
+#       margin = list(b = 100),
+#       annotations = list(
+#         list(
+#           x = 1, y = -0.25, xref = "paper", yref = "paper",
+#           text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
+#           showarrow = FALSE, xanchor = "right", yanchor = "bottom"
+#         )
+#       )
+#     ) %>%
+#     plotly::highlight(
+#       on = "plotly_hover",
+#       off = "plotly_doubleclick",
+#       selected = plotly::attrs_selected(
+#         opacity = 0.7,
+#         line = list(width = 5)
+#       )
+#     )
 
 #   if (return_data) {
 #     return(df)
 #   } else {
-#     return(p)
+#     return(final_plot)
 #   }
 # }
 plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
-        df <- dplyr::filter(x, FisheriesGuild == guild)
-        adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
-        values <- ggthemes::tableau_color_pal("Tableau 20")(length(adj_names))
-        names(values) <- adj_names
-        values <- c(values, c(MEAN = "black"))
+  # Filter for selected guild
+  df <- dplyr::filter(x, FisheriesGuild == guild)
 
-        df <- df %>%
-                dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
-                dplyr::mutate(Metric = dplyr::recode(Metric,
-                        "F_FMSY" = "F/F<sub>MSY</sub>",
-                        "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
-                ))
+  # Build color palette dynamically (enough colors for all stocks)
+  adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
+  values <- grDevices::hcl.colors(length(adj_names), palette = "Temps")
+  names(values) <- adj_names
+  values <- c(values, c(MEAN = "black"))
 
-        mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
-        df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
+  # Restrict to metrics of interest and rename
+  df <- df %>%
+    dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
+    dplyr::mutate(Metric = dplyr::recode(Metric,
+      "F_FMSY" = "F/F<sub>MSY</sub>",
+      "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
+    ))
 
-        # Function to create an individual plot for a given metric
-        create_plot <- function(metric_name, yaxis_title, show_legend=TRUE) {
-                df_metric <- dplyr::filter(df2, Metric == metric_name)
-                mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
-                
-                df_metric <- plotly::highlight_key(df_metric, key = ~StockKeyLabel)
+  mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+  df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
 
-                plotly::plot_ly() %>%
-                        plotly::add_trace(
-                                data = df_metric, x = ~Year, y = ~Value, color = ~StockKeyLabel,
-                                colors = values, type = "scatter", mode = "lines",
-                                line = list(width = 3), name = ~StockKeyLabel,
-                                showlegend = show_legend
-                        ) %>%
-                        plotly::add_trace(
-                                data = mean_metric, x = ~Year, y = ~Value, name = "Mean",
-                                type = "scatter", mode = "lines", line = list(color = "black", width = 5),
-                                showlegend = show_legend
-                        ) %>%
-                        plotly::layout(
-                                yaxis = list(title = yaxis_title, zeroline = TRUE),
-                                shapes = list(
-                                        list(
-                                                type = "rect", x0 = min(df$Year), x1 = max(df$Year),
-                                                y0 = 1, y1 = 1, line = list(color = "#000000", width = 1)
-                                        )
-                                )
-                        ) %>%
-                        plotly::highlight(
-                                on = 'plotly_hover',
-                                off = 'plotly_doubleclick',
-                                selected = plotly::attrs_selected(
-                                        opacity = 0.7,
-                                        showlegend = TRUE,
-                                        line = list(width = 5) 
-                                )
-                        )
-        }
+  # ---- Create plot for one metric ----
+  create_plot <- function(metric_name, yaxis_title, show_legend = TRUE) {
+    # Filter for one metric
+    df_metric <- dplyr::filter(df2, Metric == metric_name)
+    mean_metric <- dplyr::filter(mean_df, Metric == metric_name)
 
-        # Create individual subplots
-        plot1 <- create_plot("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
-        plot2 <- create_plot("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
+    # Create new highlight_key object (always refreshed per call)
+    df_metric_key <- plotly::highlight_key(df_metric, key = ~StockKeyLabel, group = "stocks")
 
-        # Combine plots into a subplot layout
-        final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
-                plotly::layout(
-                        title = guild,
-                        xaxis = list(title = "Year"),
-                        margin = list(b = 100),
-                        annotations = list(
-                                list(
-                                        x = 1, y = -0.25, xref = "paper", yref = "paper",
-                                        text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
-                                        showarrow = FALSE, xanchor = "right", yanchor = "bottom"
-                                )
-                        )
-                )  
-                
+    plotly::plot_ly(
+      data = df_metric_key, x = ~Year, y = ~Value, color = ~StockKeyLabel,
+      colors = values, type = "scatter", mode = "lines",
+      line = list(width = 3), name = ~StockKeyLabel,
+      showlegend = show_legend
+    ) %>%
+      plotly::add_trace(
+        data = mean_metric, x = ~Year, y = ~Value, name = "Mean",
+        type = "scatter", mode = "lines", line = list(color = "black", width = 5),
+        showlegend = show_legend
+      ) %>%
+      plotly::layout(
+        yaxis = list(
+          title = yaxis_title,
+          titlefont = list(size = 20),
+          tickfont  = list(size = 18)
+        ),
+        shapes = list(
+          # horizontal ref line at 1
+          list(
+            type = "line", x0 = min(df$Year), x1 = max(df$Year),
+            y0 = 1, y1 = 1, line = list(color = "#000000", width = 1)
+          ),
+          # black border around each subplot
+          list(
+            type = "rect", xref = "paper", yref = "paper",
+            x0 = 0, x1 = 1, y0 = 0, y1 = 1,
+            line = list(color = "black", width = 1),
+            fillcolor = "rgba(0,0,0,0)"
+          )
+        )
+      )
+  }
 
-        if (return_data) {
-                return(df)
-        } else {
-                return(final_plot)
-        }
+  # ---- Build both subplots ----
+  plot1 <- create_plot("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
+  plot2 <- create_plot("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
+
+  # ---- Combine and link highlights ----
+  final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+    plotly::layout(
+      title = guild,
+      xaxis = list(
+        title = "Year",
+        titlefont = list(size = 20),
+        tickfont  = list(size = 18)
+      ),
+      margin = list(b = 100),
+      annotations = list(
+        list(
+          x = 1, y = -0.25, xref = "paper", yref = "paper",
+          text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
+          showarrow = FALSE, xanchor = "right", yanchor = "bottom"
+        )
+      )
+    ) %>%
+    plotly::highlight(
+      on = "plotly_hover",
+      off = "plotly_doubleclick",
+      selected = plotly::attrs_selected(
+        opacity = 0.7,
+        line = list(width = 5)
+      )
+    )
+
+  if (return_data) {
+    return(df)
+  } else {
+    return(final_plot)
+  }
 }
+
 
 match_stockcode_to_illustration <- function(StockKeyLabel, df) {
 
