@@ -63,3 +63,12 @@ make_tooltip_choice <- function(label_text, tooltip_html) {
       tags$span(class = "custom-tooltip", HTML(tooltip_html))
     )
   }
+
+
+safe_min <- function(x, default = NA) {
+  if (length(x) == 0) default else min(x, na.rm = TRUE)
+}
+
+safe_max <- function(x, default = NA) {
+  if (length(x) == 0) default else max(x, na.rm = TRUE)
+}
