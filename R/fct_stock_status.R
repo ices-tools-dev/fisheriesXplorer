@@ -843,74 +843,7 @@ plot_GES_pies_interactive <- function(x, y, cap_month = "August",
     p
 }
 
-# stock_trends <- function(x){
-#         x$FishingPressure <- as.numeric(x$FishingPressure)
-#         x$StockSize <- as.numeric(x$StockSize)
-#         x$FMSY <- as.numeric(x$FMSY)
-#         x$MSYBtrigger <- as.numeric(x$MSYBtrigger)
-#         x$Year <- as.numeric(x$Year)
-#         df <- dplyr::mutate(x,FMEAN = mean(FishingPressure, na.rm = TRUE),
-#                        SSBMEAN = mean(StockSize, na.rm = TRUE),
-#                        FMEAN = ifelse(!grepl("F|F(ages 3-6)", FishingPressureDescription),
-#                                       NA,
-#                                       FMEAN),
-#                        SSBMEAN = ifelse(!grepl("StockSize", StockSizeDescription),
-#                                         NA,
-#                                         SSBMEAN))
-#         df <- dplyr::mutate(df,F_FMSY = ifelse(!is.na(FMSY),
-#                                        FishingPressure / FMSY,
-#                                        NA),
-#                        SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger),
-#                                                 StockSize / MSYBtrigger,
-#                                                 NA))
-#         df <- dplyr::mutate(df,F_FMEAN = ifelse(!is.na(FMEAN),
-#                                         FishingPressure / FMEAN, 
-#                                         NA),
-#                        SSB_SSBMEAN = ifelse(!is.na(SSBMEAN),
-#                                             StockSize / SSBMEAN,
-#                                           NA))
-                                 
-#         df <- df %>%
-#                 # dplyr::rename("StockKeyLabel" = FishStock) %>%
-#                 dplyr::select(
-#                         Year,
-#                         StockKeyLabel,
-#                         FisheriesGuild,
-#                         F_FMSY,
-#                         SSB_MSYBtrigger,
-#                         F_FMEAN,
-#                         SSB_SSBMEAN
-#                 )
-#         df2 <-tidyr::gather(df,Metric, Value, -Year, -StockKeyLabel, -FisheriesGuild) 
-#         df2 <- dplyr::filter(df2,!is.na(Year))
-        
-#         df3 <- dplyr::group_by(df2,StockKeyLabel, FisheriesGuild,Metric, Year)
-#         df3 <- dplyr::summarize(df3,Value = mean(Value, na.rm = TRUE))
-#         df3 <- dplyr::select(df3,FisheriesGuild,
-#                        StockKeyLabel,
-#                        Year,
-#                        Metric,
-#                        Value) 
-#         df3 <- dplyr::filter(df3, !is.na(Value))
-        
-#         means <- dplyr::group_by(df2,FisheriesGuild, Metric, Year) 
-#         # means <- dplyr::summarize(means, Value = mean(Value, na.rm = TRUE),
-#         #                   StockKeyLabel = "MEAN")
-#         means <- dplyr::summarize(means, 
-#                           Value = dplyr::case_when(dplyr::n() >= 2 ~ mean(Value, na.rm = TRUE), 
-#                                                    TRUE ~ as.numeric(NA)), 
-#                           StockKeyLabel = "Mean")
-#         means <- dplyr::select(means, FisheriesGuild,
-#                        StockKeyLabel,
-#                        Year,
-#                        Metric,
-#                        Value)
-#         means <- dplyr::filter(means, !is.na(Value))
-        
-#         df4 <- dplyr::bind_rows(df3,means) 
-#         df4 <- dplyr::distinct(df4,.keep_all = TRUE)
-#         return(df4)
-# }
+
 stock_trends <- function(x){
   x$FishingPressure <- as.numeric(x$FishingPressure)
   x$StockSize <- as.numeric(x$StockSize)
