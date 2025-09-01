@@ -908,9 +908,9 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                                         annotations = list(
                                                 list(
                                                         text = paste0("No data available for guild: ", guild),
-                                                        xref = "paper", 
+                                                        xref = "paper",
                                                         yref = "paper",
-                                                        x = 0.5, 
+                                                        x = 0.5,
                                                         y = 0.5, # center of plot
                                                         showarrow = FALSE,
                                                         font = list(size = 20)
@@ -970,13 +970,13 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                 ) %>%
                         plotly::add_trace(
                                 data = dplyr::filter(mean_df, Metric == metric_label),
-                                x = ~Year, 
-                                y = ~Value, 
+                                x = ~Year,
+                                y = ~Value,
                                 name = "Mean",
-                                type = "scatter", 
+                                type = "scatter",
                                 mode = "lines",
                                 line = list(color = "black", width = 5),
-                                showlegend = show_legend, 
+                                showlegend = show_legend,
                                 inherit = FALSE
                         ) %>%
                         plotly::layout(
@@ -1022,16 +1022,24 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
                 plotly::layout(
                         title = guild,
-                        xaxis = list(title = "Year", titlefont = list(size = 20), tickfont = list(size = 18)),
+                        xaxis = list(
+                                title = "Year",
+                                titlefont = list(size = 20),
+                                tickfont = list(size = 18)
+                        ),
                         margin = list(b = 100),
+                        legend = list(
+                                title = list(text = "Stock name", font = list(size = 18)),
+                                font = list(size = 18)
+                        ),
                         annotations = list(
                                 list(
-                                        x = 1, y = -0.25, 
-                                        xref = "paper", 
+                                        x = 1, y = -0.25,
+                                        xref = "paper",
                                         yref = "paper",
                                         text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
-                                        showarrow = FALSE, 
-                                        xanchor = "right", 
+                                        showarrow = FALSE,
+                                        xanchor = "right",
                                         yanchor = "bottom"
                                 )
                         )
