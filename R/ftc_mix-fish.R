@@ -389,7 +389,7 @@ plot_catchScenStk_int <- function(data, adv, #ofwhich = FALSE,
 
 
 plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
-                                     xlab = "Scenario", ylab = "Catch [t]") {
+                                     xlab = "Scenarios", ylab = "Catch (tonnes)") {
   data <- dplyr::filter(data, stock %in% adv$stock)
   
   # Add dummy advice range values if missing
@@ -483,7 +483,7 @@ plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
     # Apply layout and background shapes
     p <- p %>%
       plotly::layout(
-        xaxis = list(title = xlab, tickangle = 45),
+        xaxis = list( tickangle = 45),
         yaxis = list(title = ylab, range = c(0, max_y)),
         shapes = shape_list,
         annotations = list(
@@ -508,15 +508,36 @@ plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
     shareX = TRUE,
     shareY = FALSE,
     titleY = FALSE,
-    titleX = TRUE,
+    titleX = FALSE,
     margin = 0.05
   ) %>%
     plotly::layout(
       grid = list(rows = n_rows, columns = n_cols, pattern = "independent"),
-      showlegend = FALSE
+      showlegend = FALSE,
+      margin = list(l = 80, b = 90),
+      annotations = list(
+      list(
+        text = ylab,
+        x = -0.05, y = 0.5,
+        xref = "paper", yref = "paper",
+        showarrow = FALSE,
+        xanchor = "center",
+        yanchor = "middle",
+        textangle = -90,   # vertical orientation
+        font = list(size = 16) # adjust font size
+      ),
+      list(
+        text = xlab,
+        x = .5, y = -0.15,
+        xref = "paper", yref = "paper",
+        showarrow = FALSE,
+        xanchor = "middle",
+        yanchor = "center",
+        # textangle = -90,   # vertical orientation
+        font = list(size = 16) # adjust font size
+      )
     )
-  
-  fig
+  )
 }
 
 #############################################################################

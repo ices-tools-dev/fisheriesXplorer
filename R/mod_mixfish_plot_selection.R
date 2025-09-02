@@ -10,7 +10,7 @@ mod_mixfish_plot_selection_ui <- function(id) {
       selected = "plot1",
       direction = "vertical",
       choiceNames = list(
-        make_tooltip_choice("Headline", "<strong>Headline</strong><br>Main highlights and signals"),
+        make_tooltip_choice("Scenarios", "<strong>Scenarios</strong><br>Main highlights and signals"),
         make_tooltip_choice("Effort By Fleet/Stock", "<strong>Effort</strong><br>Effort by fleet and stock"),
         make_tooltip_choice("Landings By Fleet/Stock", "<strong>Landings</strong><br>by fleet and stock"),
         make_tooltip_choice("Landings By Stock", "<strong>Landings</strong><br>Aggregated by stock"),
@@ -44,7 +44,7 @@ mod_mixfish_plot_selection_server <- function(id, selected_ecoregion) {
         selected_subRegion(new_choices[1])
 
         selectInput(ns("subRegion"),
-          "Select sub-region",
+          "Select case study",
           choices = new_choices,
           selected = new_choices[1]
         )
