@@ -93,7 +93,7 @@ golem_add_external_resources <- function() {
     "www",
     app_sys("app/www")
   )
-  
+
   tags$head(
     tags$link(rel = "shortcut icon", href = "www/fishriesXplorer_PNG.png"),
     includeHTML(("R/google-analytics.html")),
@@ -104,16 +104,21 @@ golem_add_external_resources <- function() {
     tags$style(HTML("
     #custom_slider .shiny-input-container {
       margin-top: 0px !important;  /* Remove top margin */
-    }"
-    )),
+    }")),
+    tags$script(HTML("
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.collapse-toggle').forEach(btn => {
+          btn.setAttribute('title', 'Open/close sidebar for additional information');
+        });
+      });
+    ")),
     tags$link(rel = "stylesheet", type = "text/css", href = "css/gothic-a1.css"),
     tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"),
     tags$script(src = "https://kit.fontawesome.com/ac71e9cf8e.js"),
     tags$style("body {font-family: 'Gothic A1', sans-serif;}"),
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
-    
+
     # Add here other external resources
     useShinyjs()
-    
   )
 }

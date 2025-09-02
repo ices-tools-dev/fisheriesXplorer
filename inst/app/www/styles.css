@@ -400,3 +400,24 @@ caption {
   font-size: 16px;  /* larger text */
   padding: 20px;  /* more spacing */
 }
+
+
+.bslib-sidebar-layout>.collapse-toggle {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background-color: #00B6F1;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+.bslib-sidebar-layout>.collapse-toggle .collapse-icon {
+      width: 15px;
+      height: 15px;
+      stroke: white;
+    }
+.bslib-sidebar-layout>.collapse-toggle:hover {
+      background-color: #99AABF;
+    }
+
