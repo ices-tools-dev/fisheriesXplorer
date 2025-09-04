@@ -15,7 +15,7 @@ mod_mixfish_plot_display_ui <- function(id) {
         fillable = TRUE, fill = TRUE, class = "p-1",
         uiOutput(ns("filter_ui")),
         withSpinner(
-          plotlyOutput(ns("plot"), height = "65vh"),
+          plotlyOutput(ns("plot"), height = "70vh"),
           caption = "Getting mix-fish results..."
         )
       )
@@ -188,6 +188,8 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
         "plot2" = plot_effortFltStk_plotly(
           data = data_filter_module()(),
           refTable = data_reactive_all()$refTable_filtered
+          # ncol = 2,          # how many facet columns
+          # rowHeight = 200
         ),
         "plot3" = plot_landByMetStock_plotly(
           data = data_filter_module()(),
