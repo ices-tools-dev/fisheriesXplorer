@@ -541,44 +541,47 @@ plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
 }
 
 #############################################################################
-plot_effortFltStk_plotly <- function(data, refTable,
-  xlab = "Stock", ylab = "Effort ['000 KW days]",
-  fillLegendTitle = "Stock", colLegendTitle = "Limiting stock",
-  linewidthDefault = 0.5, linewidthLimitation = 1)
-{
-  stkFill <- data.frame(stock = unique(data$stock))
-  stkFill <- merge(x = stkFill, y = refTable, all.x = TRUE)
-  stkFill <- stkFill[order(stkFill$order), ]
-  stkColors <- stkFill$col
-  names(stkColors) <- stkFill$stock
-  stkColorScale <- scale_colour_manual(name = fillLegendTitle,
-    values = stkColors, aesthetics = c("fill"))
-  data$stock <- factor(data$stock, levels = stkFill$stock)
+#original
+# plot_effortFltStk_plotly <- function(data, refTable,
+#   xlab = "Stock", ylab = "Effort ['000 KW days]",
+#   fillLegendTitle = "Stock", colLegendTitle = "Limiting stock",
+#   linewidthDefault = 0.5, linewidthLimitation = 1)
+# {
+#   stkFill <- data.frame(stock = unique(data$stock))
+#   stkFill <- merge(x = stkFill, y = refTable, all.x = TRUE)
+#   stkFill <- stkFill[order(stkFill$order), ]
+#   stkColors <- stkFill$col
+#   names(stkColors) <- stkFill$stock
+#   stkColorScale <- scale_colour_manual(name = fillLegendTitle,
+#     values = stkColors, aesthetics = c("fill"))
+#   data$stock <- factor(data$stock, levels = stkFill$stock)
 
-  p <- ggplot(data) +
-    aes(x = stock, y = quotaEffort, fill = stock,
-      color = Limitation, group = fleet) +
-    facet_wrap(fleet ~ ., scales = "free_y", ncol = 3) +
-    geom_bar(stat = "identity", linewidth = linewidthDefault, fill = NA,
-      color = "black") +
-    geom_bar(stat = "identity", linewidth = linewidthLimitation) +
-    geom_hline(data = data, aes(yintercept = sqEffort), lty = 2) +
-    scale_color_manual(values = c('green', 'red'), na.value = NA,
-      limits = c('least','most'), labels = c("least", "most (*)")) +
-    geom_text(data = subset(data, Limitation == "most"),
-      aes(label = "*"), vjust = 0.2, show.legend = FALSE) +
-    xlab(xlab) + ylab(ylab) + stkColorScale + theme_bw() +
-    theme(
-      axis.text.x = element_text(angle = 90, hjust = 1,
-      vjust = 0.5, size = 7), panel.grid = element_blank(),
-      text = element_text(size = 9), strip.text = element_text(size = 9)) +
-    guides(
-      colour = guide_legend(order = 2, override.aes = list(fill = NA)),
-      fill = guide_legend(order = 1,
-        override.aes = list(color = "black", linewidth = linewidthDefault))) +
-    labs(fill = fillLegendTitle, color = colLegendTitle)
-  return(plotly::ggplotly(p))
-}
+#   p <- ggplot(data) +
+#     aes(x = stock, y = quotaEffort, fill = stock,
+#       color = Limitation, group = fleet) +
+#     facet_wrap(fleet ~ ., scales = "free_y", ncol = 3) +
+#     geom_bar(stat = "identity", linewidth = linewidthDefault, fill = NA,
+#       color = "black") +
+#     geom_bar(stat = "identity", linewidth = linewidthLimitation) +
+#     geom_hline(data = data, aes(yintercept = sqEffort), lty = 2) +
+#     scale_color_manual(values = c('green', 'red'), na.value = NA,
+#       limits = c('least','most'), labels = c("least", "most (*)")) +
+#     geom_text(data = subset(data, Limitation == "most"),
+#       aes(label = "*"), vjust = 0.2, show.legend = FALSE) +
+#     xlab(xlab) + ylab(ylab) + stkColorScale + theme_bw() +
+#     theme(
+#       axis.text.x = element_text(angle = 90, hjust = 1,
+#       vjust = 0.5, size = 7), panel.grid = element_blank(),
+#       text = element_text(size = 9), strip.text = element_text(size = 9)) +
+#     guides(
+#       colour = guide_legend(order = 2, override.aes = list(fill = NA)),
+#       fill = guide_legend(order = 1,
+#         override.aes = list(color = "black", linewidth = linewidthDefault))) +
+#     labs(fill = fillLegendTitle, color = colLegendTitle)
+#   return(plotly::ggplotly(p))
+# }
+
+################################################################################
 # plot_effortFltStk_plotly <- function(data, refTable,
 #   xlab = "Stock", ylab = "Effort ['000 KW days]",
 #   fillLegendTitle = "Stock", colLegendTitle = "Limiting stock",
@@ -896,6 +899,196 @@ plot_effortFltStk_plotly <- function(data, refTable,
 
 #   return(fig)
 # }
+plot_effortFltStk_plotly <- function(
+  data, refTable,
+  xlab = "Stock", ylab = "Effort (Thousands KW days)",
+  linewidthDefault = 0.5, linewidthLimitation = 1.5,
+  ncol = 3, rowHeight = 200) {
+
+  # Build stock color mapping (keep order from refTable)
+  stkFill <- data.frame(stock = unique(data$stock))
+  stkFill <- merge(x = stkFill, y = refTable, all.x = TRUE)
+  stkFill <- stkFill[order(stkFill$order), ]
+  stkColors <- stkFill$col
+  names(stkColors) <- stkFill$stock
+
+  # Convert stocks to factors to maintain order everywhere
+  stocks <- stkFill$stock
+  data$stock <- factor(as.character(data$stock), levels = stocks)
+
+  # Get unique fleets (keep input order)
+  fleets <- unique(data$fleet)
+
+  # Calculate dynamic height
+  n_rows <- ceiling(length(fleets) / ncol)
+  fig_height <- rowHeight * n_rows
+
+  # Legend tracking
+  legend_shown_stocks <- setNames(rep(FALSE, length(stocks)), stocks)
+  legend_shown_lim <- list(most = FALSE, least = FALSE)
+  legend_shown_sq <- FALSE
+
+  plot_list <- list()
+
+  for (i in seq_along(fleets)) {
+    fleet <- fleets[i]
+    fleet_data <- data[data$fleet == fleet, ]
+
+    p <- plotly::plot_ly()
+
+    # Bars: one trace per stock
+    for (stock in stocks) {
+      stock_data <- fleet_data[fleet_data$stock == stock, , drop = FALSE]
+      if (nrow(stock_data) == 0) next
+
+      # Show legend for each stock only once across all fleets
+      show_legend_stock <- !legend_shown_stocks[[stock]]
+      if (show_legend_stock) legend_shown_stocks[[stock]] <- TRUE
+
+      p <- p %>% plotly::add_bars(
+        data = stock_data,
+        x = ~stock,
+        y = ~quotaEffort,
+        name = stock,
+        width = 0.9,
+        legendgroup = paste0("stock_", stock),
+        marker = list(color = stkColors[stock], line = list(width = 0)),
+        showlegend = show_legend_stock,
+        hovertemplate = paste0(
+          "Stock: ", stock, "<br>",
+          "Effort: %{y:.2f}<br>",
+          "Fleet: ", fleet, "<extra></extra>"
+        )
+      )
+    }
+
+    # Limitation outlines: transparent-fill bars with outline
+    for (stock in stocks) {
+      stock_data <- fleet_data[fleet_data$stock == stock, , drop = FALSE]
+      if (nrow(stock_data) == 0) next
+      if (all(is.na(stock_data$Limitation))) next
+
+      lim_val <- stock_data$Limitation[1]
+      if (is.na(lim_val)) next
+      limitation_color <- ifelse(lim_val == "most", "red", "green")
+      lim_name <- ifelse(lim_val == "most", "most (*)", "least")
+
+      show_legend_lim <- FALSE
+      if (lim_val == "most" && !legend_shown_lim$most) {
+        show_legend_lim <- TRUE; legend_shown_lim$most <- TRUE
+      } else if (lim_val == "least" && !legend_shown_lim$least) {
+        show_legend_lim <- TRUE; legend_shown_lim$least <- TRUE
+      }
+
+      p <- p %>% plotly::add_bars(
+        data = stock_data,
+        x = ~stock,
+        y = ~quotaEffort,
+        name = lim_name,
+        width = 0.9,
+        legendgroup = paste0("lim_", lim_val),
+        marker = list(
+          color = "rgba(0,0,0,0)",
+          line = list(color = limitation_color, width = linewidthLimitation)
+        ),
+        showlegend = show_legend_lim,
+        hovertemplate = paste0(
+          "Stock: ", stock, "<br>",
+          "Effort: %{y:.2f}<br>",
+          "Limitation: ", lim_val, "<br>",
+          "Fleet: ", fleet, "<extra></extra>"
+        )
+      )
+
+      if (lim_val == "most") {
+        y_pos <- max(stock_data$quotaEffort, na.rm = TRUE)
+        p <- p %>% plotly::add_annotations(
+          x = stock,
+          y = y_pos,
+          text = "*",
+          color = "red",
+          showarrow = FALSE,
+          font = list(size = 14),
+          yshift = 10
+        )
+      }
+    }
+
+    # Status quo line
+    if (nrow(fleet_data) > 0 && !is.na(fleet_data$sqEffort[1])) {
+      show_legend_sq <- !legend_shown_sq
+      if (show_legend_sq) legend_shown_sq <- TRUE
+
+      line_df <- data.frame(stock = factor(stocks, levels = stocks),
+                            sq = rep(fleet_data$sqEffort[1], length(stocks)),
+                            stringsAsFactors = FALSE)
+
+      p <- p %>% plotly::add_lines(
+        data = line_df,
+        x = ~stock,
+        y = ~sq,
+        name = "Status quo effort",
+        legendgroup = "sq",
+        line = list(dash = "dash", color = "black"),
+        showlegend = show_legend_sq,
+        hovertemplate = paste0("Status quo effort: ", fleet_data$sqEffort[1],
+                               "<br>Fleet: ", fleet, "<extra></extra>")
+      )
+    }
+
+    # Compute axis titles only for bottom / left plots
+    row_index <- ceiling(i / ncol)
+    show_x_title <- if (row_index == n_rows) xlab else ""
+    show_y_title <- if (((i - 1) %% ncol) == 0) ylab else ""
+
+    p <- p %>% plotly::layout(
+      xaxis = list(
+        title = show_x_title,
+        tickangle = -90,
+        categoryorder = "array",
+        categoryarray = stocks,
+        type = "category"
+      ),
+      yaxis = list(
+        title = show_y_title,
+        type = "linear"
+      ),
+      barmode = "overlay"
+    )
+
+    # Fleet title annotation
+    p <- p %>% plotly::add_annotations(
+      x = 0.5, y = 1, xref = "paper", yref = "paper",
+      text = fleet, showarrow = FALSE, font = list(size = 14), yshift = 10
+    )
+
+    plot_list[[i]] <- p
+  }
+
+  # Combine subplots
+  fig <- plotly::subplot(
+    plot_list, nrows = n_rows, shareX = TRUE, shareY = FALSE,
+    titleX = TRUE, titleY = TRUE
+  ) %>% plotly::layout(
+    height = fig_height,
+    # margin = list(b = 100, r = 50, t = 100),
+    legend = list(
+      orientation = "h",
+      x = 0.5, y = 1,                # center above the plot
+      xanchor = "center", 
+      yanchor = "bottom",
+      tracegroupgap = 20
+    ),
+    barmode = "overlay",
+    xaxis = list(categoryorder = "array", categoryarray = stocks, tickangle = -90)
+  )
+
+  return(fig)
+}
+
+
+
+
 
 #############################################################################
 
