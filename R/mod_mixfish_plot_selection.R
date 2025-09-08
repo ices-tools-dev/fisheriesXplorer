@@ -11,10 +11,10 @@ mod_mixfish_plot_selection_ui <- function(id) {
       direction = "vertical",
       choiceNames = list(
         make_tooltip_choice("Scenarios", "<strong>Scenarios</strong><br>Main highlights and signals"),
-        make_tooltip_choice("Effort By Fleet/Stock", "<strong>Effort</strong><br>Effort by fleet and stock"),
-        make_tooltip_choice("Landings By Fleet/Stock", "<strong>Landings</strong><br>by fleet and stock"),
+        make_tooltip_choice("Effort By Fleet & Stock", "<strong>Effort</strong><br>Effort by fleet and stock"),
+        make_tooltip_choice("Landings By Métier & Stock", "<strong>Landings</strong><br>by fleet and stock"),
         make_tooltip_choice("Landings By Stock", "<strong>Landings</strong><br>Aggregated by stock"),
-        make_tooltip_choice("Catch Composition", "<strong>Composition</strong><br>Species-level breakdown")
+        make_tooltip_choice("Landings compositions by fleet", "<strong>Composition</strong><br>Species-level breakdown")
       ),
       choiceValues = c("plot1", "plot2", "plot3", "plot4", "plot5")
     )
