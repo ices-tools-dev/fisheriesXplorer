@@ -903,7 +903,7 @@ plot_effortFltStk_plotly <- function(
   data, refTable,
   xlab = "Stock", ylab = "Effort (Thousands KW days)",
   linewidthDefault = 0.5, linewidthLimitation = 1.5,
-  ncol = 3, rowHeight = 200) {
+  ncol = 4, rowHeight = 200) {
 
   # Build stock color mapping (keep order from refTable)
   stkFill <- data.frame(stock = unique(data$stock))
@@ -920,6 +920,10 @@ plot_effortFltStk_plotly <- function(
   fleets <- unique(data$fleet)
 
   # Calculate dynamic height
+  # subplots <- list()
+  unique_fleets <- unique(data$fleet)
+  n_fleets <- length(unique_fleets)
+  n_cols <- min(4, n_fleets)
   n_rows <- ceiling(length(fleets) / ncol)
   fig_height <- rowHeight * n_rows
 
@@ -950,7 +954,7 @@ plot_effortFltStk_plotly <- function(
         x = ~stock,
         y = ~quotaEffort,
         name = stock,
-        width = 0.9,
+        width = 1,
         legendgroup = paste0("stock_", stock),
         marker = list(color = stkColors[stock], line = list(width = 0)),
         showlegend = show_legend_stock,
@@ -985,7 +989,7 @@ plot_effortFltStk_plotly <- function(
         x = ~stock,
         y = ~quotaEffort,
         name = lim_name,
-        width = 0.9,
+        width = 1,
         legendgroup = paste0("lim_", lim_val),
         marker = list(
           color = "rgba(0,0,0,0)",
@@ -1044,7 +1048,7 @@ plot_effortFltStk_plotly <- function(
     p <- p %>% plotly::layout(
       xaxis = list(
         title = show_x_title,
-        tickangle = -90,
+        tickangle = 45,
         categoryorder = "array",
         categoryarray = stocks,
         type = "category"
@@ -1058,29 +1062,68 @@ plot_effortFltStk_plotly <- function(
 
     # Fleet title annotation
     p <- p %>% plotly::add_annotations(
-      x = 0.5, y = 1, xref = "paper", yref = "paper",
-      text = fleet, showarrow = FALSE, font = list(size = 14), yshift = 10
+      x = 0.5, 
+      y = 1.05, 
+      xref = "paper", 
+      yref = "paper",
+      text = fleet, 
+      xanchor = "center",
+      yanchor = "bottom",
+      showarrow = FALSE, 
+      font = list(size = 16)
+      # yshift = 10
     )
+
+    
 
     plot_list[[i]] <- p
   }
 
   # Combine subplots
   fig <- plotly::subplot(
-    plot_list, nrows = n_rows, shareX = TRUE, shareY = FALSE,
-    titleX = TRUE, titleY = TRUE
-  ) %>% plotly::layout(
-    height = fig_height,
-    # margin = list(b = 100, r = 50, t = 100),
+    plot_list, 
+    nrows = n_rows,  
+    shareX = TRUE, 
+    shareY = FALSE,
+    titleX = FALSE, 
+    titleY = FALSE
+  )
+    
+  fig <- fig %>% plotly::layout( 
+    # grid = list(rows = n_rows, columns = n_cols, pattern = "independent"),
+    height = fig_height,   
+    margin = list(t = 120, b = 90),
     legend = list(
       orientation = "h",
-      x = 0.5, y = 1,                # center above the plot
+      x = 0.5, y = 1.05,                # center above the plot
       xanchor = "center", 
       yanchor = "bottom",
       tracegroupgap = 20
     ),
     barmode = "overlay",
-    xaxis = list(categoryorder = "array", categoryarray = stocks, tickangle = -90)
+    xaxis = list(categoryorder = "array", categoryarray = stocks, tickangle = 45),
+    annotations = list(
+      list(
+        text = ylab,
+        x = -0.05, y = 0.5,
+        xref = "paper", yref = "paper",
+        showarrow = FALSE,
+        xanchor = "center",
+        yanchor = "middle",
+        textangle = -90,   # vertical orientation
+        font = list(size = 16) # adjust font size
+      ),
+      list(
+        text = xlab,
+        x = .5, y = -0.8,
+        xref = "paper", yref = "paper",
+        showarrow = FALSE,
+        xanchor = "middle",
+        yanchor = "center",
+        # textangle = -90,   # vertical orientation
+        font = list(size = 16) # adjust font size
+      )
+    )
   )
 
   return(fig)

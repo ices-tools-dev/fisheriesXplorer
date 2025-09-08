@@ -15,7 +15,7 @@ mod_mixfish_plot_display_ui <- function(id) {
         fillable = TRUE, fill = TRUE, class = "p-1",
         uiOutput(ns("filter_ui")),
         withSpinner(
-          plotlyOutput(ns("plot"), height = "70vh"),
+          plotlyOutput(ns("plot"), height = "73vh"),
           caption = "Getting mix-fish results..."
         )
       )
@@ -99,7 +99,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           label = NULL,
           id = ns("my-filters-mixfish"),
           params = list(
-            stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock"),
+            # stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock"),
             fleet = list(inputId = "fleet", label = "Fleet", placeholder = "Select fleet")
           )
         )
@@ -155,7 +155,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           if (plot_name() == "plot1") {
             c("scenario", "stock")
           } else if (plot_name() == "plot2") {
-            c("stock", "fleet")
+            c("stock","fleet")
           } else if (plot_name() == "plot3") {
             c("stock", "metier")
           } else if (plot_name() == "plot5") {
