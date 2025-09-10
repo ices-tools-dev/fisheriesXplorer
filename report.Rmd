@@ -1,0 +1,34 @@
+---
+title: "Curated Snapshot Report"
+output: pdf_document
+params:
+  modules: NULL
+---
+
+for (mod in params$modules) {
+  
+  
+  
+  
+  if (!is.null(mod$text)) {
+    cat(mod$text, "\n\n")
+  }
+  
+  
+  if (!is.null(mod$tables) && length(mod$tables) > 0) {
+    
+    for (tbl in mod$tables) {
+      knitr::kable(tbl)
+      cat("\n\n")
+    }
+  }
+  
+  
+  if (!is.null(mod$plots) && length(mod$plots) > 0) {
+    
+    for (p in mod$plots) {
+      print(p)
+    }
+  }
+}
+

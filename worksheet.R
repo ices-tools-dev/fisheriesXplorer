@@ -676,3 +676,246 @@ save(NrS_catchRange, file = "D:/GitHub_2023/fisheriesXplorer/data/NrS_catchRange
 
 
 devtools::load_all(); run_app()
+
+
+
+
+getSID <- function(year, EcoR) {
+        message("Downloading SID data for year: ", year)
+        stock_list_long <- jsonlite::fromJSON(
+                URLencode(
+                        sprintf("http://sd.ices.dk/services/odata4/StockListDWs4?$filter=ActiveYear eq %s&$select=StockKeyLabel,
+                        EcoRegion,
+                        YearOfLastAssessment,
+                        AssessmentKey,
+                        StockKeyDescription,
+                        SpeciesScientificName,
+                        SpeciesCommonName,
+                        AdviceCategory,
+                        DataCategory,
+                        YearOfLastAssessment,
+                        FisheriesGuild", year)
+                )
+        )$value
+
+        stock_list_long <- stock_list_long %>%
+                mutate(EcoRegion = as.character(EcoRegion)) %>%
+                tidyr::separate_rows(EcoRegion, sep = ", ")
+
+        stock_list_long <- stock_list_long %>%
+                filter(EcoRegion == EcoR)
+
+
+        stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
+        # message("SID Data processing complete.")
+        return(stock_list_long)
+}
+
+getStatusWebService <- function(Ecoregion, sid) {
+        EcoregionCode <- get_ecoregion_acronym(Ecoregion)
+        
+        status <- jsonlite::fromJSON(
+                URLencode(
+                        sprintf("https://sag.ices.dk/test_api/LatestStocks/Status?ecoregion=%s", EcoregionCode)
+                )
+        )
+        status_long <- status %>%
+                tidyr::unnest(YearStatus)
+
+        df_status <- merge(sid, status_long, by = "AssessmentKey", all.x = TRUE)
+        df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
+
+        return(df_status)
+}
+
+format_sag_status_new <- function(df) {
+#       
+        df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "UNDEFINED",
+                                                  status == 1 ~ "GREEN",
+                                                  status == 2 ~ "GREEN", #qualitative green
+                                                  status == 3 ~ "ORANGE",
+                                                  status == 4 ~ "RED",
+                                                  status == 5 ~ "RED", #qualitative red
+                                                  status == 6 ~ "GREY",
+                                                  status == 7 ~ "qual_UP",
+                                                  status == 8 ~ "qual_STEADY",
+                                                  status == 9 ~ "qual_DOWN",
+                                                  TRUE ~ "OTHER"),
+                            fishingPressure = dplyr::case_when(fishingPressure == "-" &
+                                                                type == "Fishing pressure" ~ "FQual",
+                                                        TRUE ~ fishingPressure),
+                            stockSize = dplyr::case_when(stockSize == "-" &
+                                                          type == "Stock Size" ~ "SSBQual",
+                                                  TRUE ~ stockSize),
+                            stockSize = gsub("MSY BT*|MSY Bt*|MSYBT|MSYBt", "MSYBt", stockSize),
+                            variable = dplyr::case_when(type == "Fishing pressure" ~ fishingPressure,
+                                                 type == "Stock Size" ~ stockSize,
+                                                 TRUE ~ type),
+                            variable = dplyr::case_when(lineDescription == "Management plan" &
+                                                         type == "Fishing pressure" ~ "FMGT",
+                                                 lineDescription == "Management plan" &
+                                                         type == "Stock Size" ~ "SSBMGT",
+                                                 TRUE ~ variable),
+                            variable = dplyr::case_when(
+                                    grepl("Fpa", variable) ~ "FPA",
+                                    grepl("Bpa", variable) ~ "BPA",
+                                    grepl("^Qual*", variable) ~ "SSBQual",
+                                    grepl("-", variable) ~ "FQual",
+                                    grepl("^BMGT", variable) ~ "SSBMGT",
+                                    grepl("MSYBtrigger", variable) ~ "BMSY",
+                                    grepl("FMSY", variable) ~ "FMSY",
+                                    TRUE ~ variable
+                            )) 
+        
+        df <- dplyr::filter(df,variable != "-")
+        
+        df <- dplyr::filter(df, lineDescription != "Management plan")
+        df <- dplyr::filter(df, lineDescription != "Qualitative evaluation")
+        df <- dplyr::mutate(df,key = paste(StockKeyLabel, lineDescription, type))
+        # df <- dplyr::mutate(df,key = paste( lineDescription, type)) #stockComponent,
+        df<- df[order(-df$year),]
+        df <- df[!duplicated(df$key), ]
+        df<- subset(df, select = -key)
+        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild)) #, stockComponent,adviceValue
+        df<- tidyr::spread(df,type, status)
+        
+        df2<- dplyr::filter(df,lineDescription != "Maximum Sustainable Yield")
+        df2<- dplyr::filter(df2,lineDescription != "Maximum sustainable yield")
+        
+        df <- df %>% dplyr::rename(FishingPressure = `Fishing pressure`,
+                            StockSize = `Stock Size`)
+      
+        df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
+        df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
+        return(df)
+}
+library(dplyr)
+sid <- getSID(2025, "Baltic Sea")
+status <- getStatusWebService("Baltic Sea", sid)
+clean_status <- format_sag_status_new(status)
+
+df <- status
+
+
+
+
+
+library(dplyr)  # for %>%, group_by(), mutate(), slice()
+library(plotly)
+
+data(iris)
+iris1 <- iris %>%
+  group_by(Species) %>%
+  mutate(PL = mean(Petal.Length), PW = mean(Petal.Width)) %>%
+  highlight_key(~Species) 
+
+fig1 <- plot_ly(
+  x = ~Petal.Length, 
+  y = ~Petal.Width, 
+  type  = "scatter",
+  mode  = "markers",
+  color = ~Species,
+  data  = iris1)
+
+fig2 <- plot_ly(data = iris1) %>%  # initiate plot with same data frame
+  slice(1) %>%                     # use dplyr verb on plotly object
+  add_markers(
+    x     = ~PL,
+    y     = ~PW,
+    color = ~Species)
+
+subplot(fig1, fig2)
+
+
+
+
+
+
+library(shiny)
+library(ggplot2)
+library(rmarkdown)
+
+# --- Module 1: Plot ---
+mod_plot_ui <- function(id) {
+  ns <- NS(id)
+  plotOutput(ns("plot"))
+}
+
+mod_plot_server <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    data <- reactive({ data.frame(x = 1:10, y = (1:10)^2) })
+    plt <- reactive({
+      ggplot(data(), aes(x, y)) + geom_line(color = "blue") + theme_minimal()
+    })
+    output$plot <- renderPlot({ plt() })
+    
+    reactive({
+      list(
+        name = "Plot Module",
+        text = "This plot shows y = x² for x from 1 to 10.",
+        tables = list(),
+        plots = list(plt())
+      )
+    })
+  })
+}
+
+# --- Module 2: Table ---
+mod_table_ui <- function(id) {
+  ns <- NS(id)
+  tableOutput(ns("table"))
+}
+
+mod_table_server <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    data <- reactive({ head(mtcars, 5) })
+    output$table <- renderTable({ data() })
+    
+    reactive({
+      list(
+        name = "Table Module",
+        text = "This table shows the first 5 rows of the mtcars dataset.",
+        tables = list(data()),
+        plots = list()
+      )
+    })
+  })
+}
+
+# --- App UI ---
+ui <- fluidPage(
+  titlePanel("Multi-module Shiny app with Snapshot Report"),
+  fluidRow(
+    column(6, mod_plot_ui("plotModule")),
+    column(6, mod_table_ui("tableModule"))
+  ),
+  hr(),
+  downloadButton("downloadReport", "Download Snapshot PDF")
+)
+
+# --- App Server ---
+server <- function(input, output, session) {
+  module1 <- mod_plot_server("plotModule")
+  module2 <- mod_table_server("tableModule")
+  
+  all_modules <- reactive({
+    list(
+      module1(),
+      module2()
+    )
+  })
+  
+  output$downloadReport <- downloadHandler(
+    filename = function() {
+      paste0("snapshot-", Sys.Date(), ".html")
+    },
+    content = function(file) {
+      rmarkdown::render("report.Rmd",
+                        output_file = file,
+                        params = list(modules = all_modules()),
+                        envir = new.env(parent = globalenv()))
+    }
+  )
+}
+
+shinyApp(ui, server)
