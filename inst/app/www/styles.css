@@ -421,3 +421,18 @@ caption {
       background-color: #99AABF;
     }
 
+@media (max-width: 600px) {
+  .js-plotly-plot .xtick text,
+  .js-plotly-plot .ytick text,
+  .js-plotly-plot .legend text {
+    font-size: 10px !important;
+  }
+}
+@media (min-width: 601px) {
+  .js-plotly-plot .xtick text,
+  .js-plotly-plot .ytick text,
+  .js-plotly-plot .legend text {
+    font-size: 15px !important;
+  }
+}
+

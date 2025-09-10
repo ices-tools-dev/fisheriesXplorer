@@ -776,7 +776,7 @@ for (stock in stocks) {
     
   fig <- fig %>% plotly::layout( 
     height = fig_height,   
-    margin = list(t = 120, b = 90),
+    margin = list(t = 120, b = 90, r = 90),
     legend = list(
       orientation = "h",
       x = 0.5, y = 1.05,                # center above the plot
