@@ -388,157 +388,382 @@ plot_catchScenStk_int <- function(data, adv, #ofwhich = FALSE,
 # }
 
 
-plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
-                                     xlab = "Scenarios", ylab = "Catch (tonnes)") {
-  data <- dplyr::filter(data, stock %in% adv$stock)
-  
-  # Add dummy advice range values if missing
+# plot_catchScenStk_plotly <- function(data, adv, refTable, ofwhich = FALSE,
+#                                      xlab = "Scenarios", ylab = "Catch (tonnes)") {
+#   data <- dplyr::filter(data, stock %in% adv$stock)
+
+#   # Add dummy advice range values if missing
+#   if (!"upper" %in% names(adv)) adv$upper <- adv$advice
+#   if (!"lower" %in% names(adv)) adv$lower <- adv$advice
+
+#   subplots <- list()
+#   unique_stocks <- unique(data$stock)
+#   n_stocks <- length(unique_stocks)
+#   n_cols <- min(4, n_stocks)
+#   n_rows <- ceiling(n_stocks / n_cols)
+
+#   for (fishstock in unique_stocks) {
+#     stock_data <- dplyr::filter(data, stock == fishstock)
+#     stock_adv <- dplyr::filter(adv, stock == fishstock)
+#     width_plot <- length(unique(stock_data$scenario))
+#     max_y <- max(stock_data$catch) * 1.1
+#     bar_color <- dplyr::filter(refTable, stock == fishstock)$col
+#     if (length(bar_color) == 0) bar_color <- "grey" # fallback color
+
+#     # Define background shape zones
+#     shape_list <- list(
+#       list(
+#         type = "rect", x0 = -0.5, x1 = width_plot - 0.4, y0 = 0, y1 = stock_adv$advice[1],
+#         fillcolor = "green", opacity = 0.15, line = list(width = 0), layer = "below"
+#       ),
+#       list(
+#         type = "rect", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$advice[1], y1 = stock_adv$upper[1],
+#         fillcolor = "yellow", opacity = 0.15, line = list(width = 0), layer = "below"
+#       ),
+#       list(
+#         type = "rect", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$upper[1], y1 = max_y,
+#         fillcolor = "red", opacity = 0.15, line = list(width = 0), layer = "below"
+#       ),
+#       list(
+#         type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$advice[1], y1 = stock_adv$advice[1],
+#         line = list(color = "#6e6e6e", width = 1.5, dash = "solid")
+#       ),
+#       list(
+#         type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$upper[1], y1 = stock_adv$upper[1],
+#         line = list(color = "#6e6e6e", width = 1.5, dash = "dash")
+#       ),
+#       list(
+#         type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$lower[1], y1 = stock_adv$lower[1],
+#         line = list(color = "#6e6e6e", width = 1.5, dash = "dot")
+#       )
+#     )
+
+#     # Base bar chart
+#     p <- plotly::plot_ly(
+#       data = stock_data,
+#       x = ~scenario,
+#       y = ~catch,
+#       type = "bar",
+#       name = fishstock,
+#       marker = list(color = bar_color),
+#       hovertemplate = paste0(
+#         "Stock: ", fishstock, "<br>",
+#         "Scenario: %{x}<br>",
+#         "Catches (tonnes): %{y:.0f}<extra></extra>"
+#       )
+#     )
+
+#     # Add invisible hover lines for background info
+#     p <- p %>%
+#       plotly::add_trace(
+#         data = stock_data,
+#         x = ~scenario, y = rep(stock_adv$advice[1], nrow(stock_data)),
+#         type = "scatter",
+#         mode = "lines",
+#         line   = list(color = "rgba(0,0,0,0)"),
+#         marker = list(color = "rgba(0,0,0,0)"),
+#         hovertemplate = "Advice (tonnes): %{y:.0f}<extra></extra>",        
+#         showlegend = FALSE
+#       ) %>%
+#       plotly::add_trace(
+#         data = stock_data,
+#         x = ~scenario, y = rep(stock_adv$upper[1], nrow(stock_data)),
+#         type = "scatter",
+#         mode = "lines",
+#         line   = list(color = "rgba(0,0,0,0)"),
+#         marker = list(color = "rgba(0,0,0,0)"),
+#         hovertemplate = "Upper limit (tonnes): %{y:.0f}<extra></extra>",
+#         showlegend = FALSE
+#       ) %>%
+#       plotly::add_trace(
+#         data = stock_data,
+#         x = ~scenario, y = rep(stock_adv$lower[1], nrow(stock_data)),
+#         type = "scatter",
+#         mode = "lines",
+#         line   = list(color = "rgba(0,0,0,0)"),
+#         marker = list(color = "rgba(0,0,0,0)"),
+#         hovertemplate = "Lower limit (tonnes): %{y:.0f}<extra></extra>",
+#         showlegend = FALSE
+#       )
+
+#     # Apply layout and background shapes
+#     p <- p %>%
+#       plotly::layout(
+#         xaxis = list(tickangle = 45),
+#         yaxis = list(title = ylab, range = c(0, max_y)),
+#         shapes = shape_list,
+#         annotations = list(
+#           x = 0.5,
+#           y = 1.05,
+#           text = paste0(fishstock),
+#           xref = "paper",
+#           yref = "paper",
+#           xanchor = "center",
+#           yanchor = "bottom",
+#           showarrow = FALSE
+#         )
+#       )
+
+#     subplots[[fishstock]] <- p
+#   }
+
+#   # Combine all into one plot
+#   fig <- plotly::subplot(
+#     subplots,
+#     nrows = n_rows,
+#     shareX = TRUE,
+#     shareY = FALSE,
+#     titleY = FALSE,
+#     titleX = FALSE,
+#     margin = 0.05
+#   )
+
+#   # Final layout adjustments
+#   fig <- fig %>%
+#     plotly::layout(
+#       grid = list(rows = n_rows, columns = n_cols, pattern = "independent"),
+#       showlegend = TRUE,
+#       legend = list(
+#         orientation = "h",
+#         x = 0.5, y = 1.05, # center above the plot
+#         xanchor = "center",
+#         yanchor = "bottom",
+#         tracegroupgap = 20
+#       ),
+#       margin = list(l = 80, b = 90, t = 100),
+#       annotations = list(
+#         list(
+#           text = ylab,
+#           x = -0.05, y = 0.5,
+#           xref = "paper", yref = "paper",
+#           showarrow = FALSE,
+#           xanchor = "center",
+#           yanchor = "middle",
+#           textangle = -90, # vertical orientation
+#           font = list(size = 16) # adjust font size
+#         ),
+#         list(
+#           text = xlab,
+#           x = .5, y = -0.15,
+#           xref = "paper", yref = "paper",
+#           showarrow = FALSE,
+#           xanchor = "middle",
+#           yanchor = "center",
+#           # textangle = -90,   # vertical orientation
+#           font = list(size = 16) # adjust font size
+#         )
+#       )
+#     )
+# }
+plot_catchScenStk_plotly <- function(data, adv, refTable,
+                                     ofwhich = FALSE,
+                                     xlab = "Scenarios",
+                                     ylab = "Catch (tonnes)") {
+  stopifnot(all(c("stock","scenario","catch") %in% names(data)))
+  stopifnot(all(c("stock","advice") %in% names(adv)))
+
   if (!"upper" %in% names(adv)) adv$upper <- adv$advice
   if (!"lower" %in% names(adv)) adv$lower <- adv$advice
-  
-  subplots <- list()
+
+  data <- dplyr::filter(data, stock %in% adv$stock)
+
   unique_stocks <- unique(data$stock)
   n_stocks <- length(unique_stocks)
   n_cols <- min(4, n_stocks)
   n_rows <- ceiling(n_stocks / n_cols)
-  
-  for (fishstock in unique_stocks) {
+
+  # Global category order (shared x across subplots)
+  global_x <- as.character(unique(data$scenario))
+  pad_left  <- "..pad_left.."
+  pad_right <- "..pad_right.."
+  while (pad_left %in% global_x)  pad_left  <- paste0(pad_left, "_")
+  while (pad_right %in% global_x) pad_right <- paste0(pad_right, "_")
+  cat_array <- c(pad_left, global_x, pad_right)
+
+  show_once <- function(stock, first_stock) identical(stock, first_stock)
+  first_stock <- unique_stocks[1]
+
+  subplots <- vector("list", length(unique_stocks))
+
+  for (i in seq_along(unique_stocks)) {
+    fishstock  <- unique_stocks[i]
     stock_data <- dplyr::filter(data, stock == fishstock)
-    stock_adv <- dplyr::filter(adv, stock == fishstock)
-    width_plot <- length(unique(stock_data$scenario))
-    max_y <- max(stock_data$catch) * 1.1
+    stock_adv  <- dplyr::filter(adv,  stock == fishstock)[1, , drop = FALSE]
+
+    # Bars color
     bar_color <- dplyr::filter(refTable, stock == fishstock)$col
-    if (length(bar_color) == 0) bar_color <- "grey"  # fallback color
-  
-    # Define background shape zones
-    shape_list <- list(
-      list(type = 'rect', x0 = -0.5, x1 = width_plot - 0.4, y0 = 0, y1 = stock_adv$advice[1],
-           fillcolor = 'green', opacity = 0.15, line = list(width = 0), layer = 'below'),
-      list(type = 'rect', x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$advice[1], y1 = stock_adv$upper[1],
-           fillcolor = 'yellow', opacity = 0.15, line = list(width = 0), layer = 'below'),
-      list(type = 'rect', x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$upper[1], y1 = max_y,
-           fillcolor = 'red', opacity = 0.15, line = list(width = 0), layer = 'below'),
-      list(type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$advice[1], y1 = stock_adv$advice[1],
-           line = list(color = "black", width = 2, dash = "solid")),
-      list(type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$upper[1], y1 = stock_adv$upper[1],
-           line = list(color = "black", width = 2, dash = "dash")),
-      list(type = "line", x0 = -0.5, x1 = width_plot - 0.4, y0 = stock_adv$lower[1], y1 = stock_adv$lower[1],
-           line = list(color = "black", width = 2, dash = "dash"))
-    )
-    
-    # Base bar chart
-    p <- plotly::plot_ly(
-      data = stock_data,
-      x = ~scenario,
-      y = ~catch,
-      type = 'bar',
-      name = fishstock,
-      marker = list(color = bar_color),
-      hovertemplate = paste0(
-        "Stock: ", fishstock, "<br>",
-        "Scenario: %{x}<br>",
-        "Catches (tonnes): %{y:.0f}<extra></extra>"
+    if (length(bar_color) == 0) bar_color <- "grey"
+
+    # Thresholds
+    y_advice <- as.numeric(stock_adv$advice)
+    y_upper  <- as.numeric(stock_adv$upper)
+    y_lower  <- as.numeric(stock_adv$lower)
+
+    y_lo <- min(y_advice, y_upper, na.rm = TRUE)
+    y_hi <- max(y_advice, y_upper, na.rm = TRUE)
+    max_y <- max(c(stock_data$catch, y_upper, y_advice, y_lower), na.rm = TRUE) * 1.1
+
+    # We’ll span zones/lines across the padded x (pad_left, global_x..., pad_right)
+    x_zone <- cat_array
+
+    p <- plotly::plot_ly()
+
+    # --- ZONES (as filled scatter, now extend to edges via pads) ---
+    p <- p %>%
+      # Green: 0 -> y_lo
+      plotly::add_trace(
+        x = x_zone,
+        y = rep(y_lo, length(x_zone)),
+        type = "scatter", mode = "lines",
+        line = list(width = 0),
+        fill = "tozeroy", fillcolor = "rgba(0,128,0,0.15)",
+        name = "Below advice (zone)",
+        legendgroup = "zone_green",
+        showlegend = show_once(fishstock, first_stock),
+        hoverinfo = "none"
+      ) %>%
+      # Yellow: y_lo -> y_hi
+      plotly::add_trace(
+        x = x_zone,
+        y = rep(y_hi, length(x_zone)),
+        type = "scatter", mode = "lines",
+        line = list(width = 0),
+        fill = "tonexty", fillcolor = "rgba(255,215,0,0.15)",
+        name = "Within range (zone)",
+        legendgroup = "zone_yellow",
+        showlegend = show_once(fishstock, first_stock),
+        hoverinfo = "none"
+      ) %>%
+      # Red: y_hi -> max_y
+      plotly::add_trace(
+        x = x_zone,
+        y = rep(max_y, length(x_zone)),
+        type = "scatter", mode = "lines",
+        line = list(width = 0),
+        fill = "tonexty", fillcolor = "rgba(255,0,0,0.15)",
+        name = "Above upper (zone)",
+        legendgroup = "zone_red",
+        showlegend = show_once(fishstock, first_stock),
+        hoverinfo = "none"
       )
-    )
-    
-    # Add invisible hover lines for background info
+
+    # --- BARS (catches) ---
     p <- p %>%
       plotly::add_trace(
         data = stock_data,
-        x = ~scenario, y = rep(stock_adv$advice[1], nrow(stock_data)),
-        type = 'scatter', 
-        mode = 'lines',
-        line = list(color = 'rgba(0,0,0,0)'),
-        marker = list(color = 'rgba(0,0,0,0,0)'),
-        hovertemplate = "Advice (tonnes): %{y:.0f}<extra></extra>",
-        # hoverinfo = 'text',
-        # text = paste("Advice:", stock_adv$advice[1]),
-        showlegend = FALSE
-      ) %>%
-      plotly::add_trace(
-        data = stock_data,
-        x = ~scenario, y = rep(stock_adv$upper[1], nrow(stock_data)),
-        type = 'scatter', 
-        mode = 'lines',
-        line = list(color = 'rgba(0,0,0,0)'),
-        marker = list(color = 'rgba(0,0,0,0,0)'),
-        # hoverinfo = 'text',
-        # text = paste("Upper limit:", stock_adv$upper[1]),
-        hovertemplate = "Upper limit (tonnes): %{y:.0f}<extra></extra>",
-        showlegend = FALSE
-      ) %>%
-      plotly::add_trace(
-        data = stock_data,
-        x = ~scenario, y = rep(stock_adv$lower[1], nrow(stock_data)),
-        type = 'scatter', 
-        mode = 'lines',
-        line = list(color = 'rgba(0,0,0,0)'),
-        marker = list(color = 'rgba(0,0,0,0,0)'),
-        hovertemplate = "Lower limit (tonnes): %{y:.0f}<extra></extra>",
-        # hoverinfo = 'text',
-        # text = paste("Lower limit:", stock_adv$lower[1]),
-        showlegend = FALSE
-      )
-    
-    # Apply layout and background shapes
-    p <- p %>%
-      plotly::layout(
-        xaxis = list( tickangle = 45),
-        yaxis = list(title = ylab, range = c(0, max_y)),
-        shapes = shape_list,
-        annotations = list(
-          x = 0.5,
-          y = 1.05,
-          text = paste0(fishstock),
-          xref = "paper",
-          yref = "paper",
-          xanchor = "center",
-          yanchor = "bottom",
-          showarrow = FALSE
+        x = ~as.character(scenario),
+        y = ~catch,
+        type = "bar",
+        marker = list(color = bar_color),
+        name = "Catch bars",
+        legendgroup = "bars",
+        showlegend = show_once(fishstock, first_stock),
+        hovertemplate = paste0(
+          "Stock: ", fishstock, "<br>",
+          "Scenario: %{x}<br>",
+          "Catches (tonnes): %{y:.0f}<extra></extra>"
         )
       )
-    
-    subplots[[fishstock]] <- p
+
+    # --- HORIZONTAL LINES (extend across pads) ---
+    p <- p %>%
+      plotly::add_trace(
+        x = x_zone, y = rep(y_advice, length(x_zone)),
+        type = "scatter", mode = "lines",
+        line = list(color = "#6e6e6e", width = 1.5, dash = "solid"),
+        name = "Advice", legendgroup = "line_advice",
+        showlegend = show_once(fishstock, first_stock),
+        hovertemplate = "Advice (tonnes): %{y:.0f}<extra></extra>"
+      ) %>%
+      plotly::add_trace(
+        x = x_zone, y = rep(y_upper, length(x_zone)),
+        type = "scatter", mode = "lines",
+        line = list(color = "#6e6e6e", width = 1.5, dash = "dash"),
+        name = "Upper limit", legendgroup = "line_upper",
+        showlegend = show_once(fishstock, first_stock),
+        hovertemplate = "Upper limit (tonnes): %{y:.0f}<extra></extra>"
+      ) %>%
+      plotly::add_trace(
+        x = x_zone, y = rep(y_lower, length(x_zone)),
+        type = "scatter", mode = "lines",
+        line = list(color = "#6e6e6e", width = 1.5, dash = "dot"),
+        name = "Lower limit", legendgroup = "line_lower",
+        showlegend = show_once(fishstock, first_stock),
+        hovertemplate = "Lower limit (tonnes): %{y:.0f}<extra></extra>"
+      )
+
+    # Axes & small title per panel; hide pad ticks
+    p <- p %>%
+      plotly::layout(
+        xaxis = list(
+          title = "",
+          tickangle = 45,
+          type = "category",
+          categoryorder = "array",
+          categoryarray = cat_array,
+          tickmode = "array",
+          tickvals = global_x,   # show only real categories
+          ticktext = global_x
+        ),
+        yaxis = list(title = ylab, range = c(0, max_y)),
+        annotations = list(list(
+          x = 0.5, y = 1.05, text = paste0(fishstock),
+          xref = "paper", yref = "paper",
+          xanchor = "center", yanchor = "bottom",
+          showarrow = FALSE
+        ))
+      )
+
+    subplots[[i]] <- p
   }
-  
-  # Combine all into one plot
+
   fig <- plotly::subplot(
     subplots,
-    nrows = n_rows,
-    shareX = TRUE,
-    shareY = FALSE,
-    titleY = FALSE,
-    titleX = FALSE,
-    margin = 0.05
-  ) %>%
-    plotly::layout(
-      grid = list(rows = n_rows, columns = n_cols, pattern = "independent"),
-      showlegend = FALSE,
-      margin = list(l = 80, b = 90),
+    nrows = n_rows, shareX = TRUE, shareY = FALSE,
+    titleY = FALSE, titleX = FALSE, margin = 0.05
+  )
+
+  ffig <- fig %>%
+  plotly::layout(
+    barmode = "group",
+    showlegend = TRUE,
+    legend = list(
+      orientation = "h",
+      x = 0,                # left-align so wrapping behaves nicely
+      xanchor = "left",
+      y = 1.08,             # move above the plot
+      itemsizing = "constant",
+      itemwidth = 130,      # << try 100–160 until it looks right
+      tracegroupgap = 30,   # extra space between grouped items
+      font = list(size = 12)
+    ),
+    margin = list(l = 80, b = 90, t = 150, r = 120),
+  
       annotations = list(
-      list(
-        text = ylab,
-        x = -0.05, y = 0.5,
-        xref = "paper", yref = "paper",
-        showarrow = FALSE,
-        xanchor = "center",
-        yanchor = "middle",
-        textangle = -90,   # vertical orientation
-        font = list(size = 16) # adjust font size
-      ),
-      list(
-        text = xlab,
-        x = .5, y = -0.15,
-        xref = "paper", yref = "paper",
-        showarrow = FALSE,
-        xanchor = "middle",
-        yanchor = "center",
-        # textangle = -90,   # vertical orientation
-        font = list(size = 16) # adjust font size
+        list(
+          text = ylab,
+          x = -0.05, y = 0.5,
+          xref = "paper", yref = "paper",
+          showarrow = FALSE,
+          xanchor = "center", yanchor = "middle",
+          textangle = -90, font = list(size = 16)
+        ),
+        list(
+          text = xlab,
+          x = 0.5, y = -0.15,
+          xref = "paper", yref = "paper",
+          showarrow = FALSE,
+          xanchor = "middle", yanchor = "center",
+          font = list(size = 16)
+        )
       )
     )
-  )
+
+  fig
 }
+
+
+
 
 #############################################################################
 #original
@@ -782,7 +1007,7 @@ for (stock in stocks) {
       x = 0.5, y = 1.05,                # center above the plot
       xanchor = "center", 
       yanchor = "bottom",
-      tracegroupgap = 20
+      tracegroupgap = 30
     ),
     barmode = "overlay",
     xaxis = list(categoryorder = "array", categoryarray = stocks, tickangle = 45),
