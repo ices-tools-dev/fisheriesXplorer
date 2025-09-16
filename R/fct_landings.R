@@ -94,104 +94,7 @@ CLD_trends <- function(x){
         return(df)
 }
 
-# plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fisheries guild"),
-#                                      line_count = 10,
-#                                      plot_type = c("line", "area"),
-#                                      official_catches_year = NULL,
-#                                      return_data = FALSE, session = NULL) {
-#   w <- session$clientData$output_landings_1-landings_layer_width$value
-#   size <- max(8, min(16, round(w / 50)))
-#   # browser()
-#   names(x) <- c("Year", "Country", "iso3", "Fisheries guild", "Ecoregion", "Species name", "Species code", "Common name", "Value")
-#   capyear <- official_catches_year - 1
-#   cap_text <- sprintf("Historical Nominal Catches 1950-2006,\nOfficial Nominal Catches 2006-%s\nICES, Copenhagen.", capyear)
 
-#   df <- dplyr::rename(x, type_var = dplyr::all_of(type))
-
-#   if (type == "Common name") {
-#     df$type_var <- gsub("European ", "", df$type_var)
-#     df$type_var <- gsub("Sandeels.*", "sandeel", df$type_var)
-#     df$type_var <- gsub("Finfishes nei", "undefined finfish", df$type_var)
-#     df$type_var <- gsub("Blue whiting.*", "blue whiting", df$type_var)
-#     df$type_var <- gsub("Saithe.*", "saithe", df$type_var)
-#     df$type_var <- ifelse(grepl("Norway", df$type_var), df$type_var, tolower(df$type_var))
-#   }
-
-#   plot <- df %>%
-#     dplyr::group_by(type_var) %>%
-#     dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE)) %>%
-#     dplyr::arrange(dplyr::desc(typeTotal)) %>%
-#     dplyr::filter(typeTotal >= 1) %>%
-#     dplyr::mutate(RANK = dplyr::min_rank(dplyr::desc(typeTotal))) %>%
-#     dplyr::inner_join(df, by = "type_var") %>%
-#     dplyr::mutate(type_var = ifelse(RANK > line_count, "other", type_var)) %>%
-#     dplyr::group_by(type_var, Year) %>%
-#     dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE) / 1000) %>%
-#     dplyr::ungroup() %>%
-#     dplyr::filter(!is.na(Year))
-
-#   unique_types <- unique(plot$type_var)
-
-#   # Create a highlight key
-#   plot <- plotly::highlight_key(plot, key = ~type_var)
-#   p <- plotly::plot_ly(plot, x = ~Year, y = ~typeTotal, color = ~type_var)
-
-#   if (plot_type == "area") {
-#     p <- p %>% plotly::add_trace(type = "scatter", mode = "none", stackgroup = "one")
-#   } else {
-#     p <- p %>% plotly::add_trace(type = "scatter", mode = "lines", line = list(width = 3))
-#   }
-
-#   p <- p %>% plotly::layout(
-#     # title = "Landings Trends",
-#     xaxis = list(title = "Year"),
-#     yaxis = list(title = "Landings (thousand tonnes)"),
-#     margin = list(b = 100),
-#     annotations = list(
-#       list(
-#         x = 1, y = -0.2,
-#         text = cap_text,
-#         showarrow = FALSE,
-#         xref = "paper",
-#         yref = "paper",
-#         xanchor = "right",
-#         yanchor = "bottom"
-#       ),
-#       list(
-#         text = "Landings Trends",
-#         x = 0.01, y = 0.99, # relative to plotting area (0–1, left–right / bottom–top)
-#         xref = "paper", yref = "paper",
-#         showarrow = FALSE,
-#         xanchor = "left",
-#         yanchor = "top",
-#         font = list(size = 18, color = "black")
-#       )
-#     ),
-#     legend = list(
-#       title = list(text = type, font = list(size = 16)),
-#       orientation = "h",
-#       x = 0.5, y = 1.05, # center above the plot
-#       xanchor = "center",
-#       yanchor = "bottom",
-#       font = list(size = 16)
-#     )
-#   )
-#   p <- p %>% plotly::highlight(
-#     on = "plotly_hover",
-#     off = "plotly_doubleclick",
-#     selected = plotly::attrs_selected(
-#       opacity = 0.7,
-#       showlegend = TRUE,
-#       line = list(width = 5)
-#     )
-#   )
-
-#   if (return_data) {
-#     return(plot)
-#   } else {
-#     return(p)
-#   }
-# }
 plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fisheries guild"),
                                      line_count = 10,
                                      plot_type = c("line", "area"),
@@ -256,8 +159,9 @@ plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fish
     } else if (n <= 12) {
       RColorBrewer::brewer.pal(n, "Set3")
     } else {
-      hues <- seq(15, 375, length.out = n + 1)[-1]
-      grDevices::hcl(h = hues, c = 60, l = 60)
+      # hues <- seq(15, 375, length.out = n + 1)[-1]
+      # grDevices::hcl(h = hues, c = 60, l = 60)
+      viridisLite::viridis(n)
     }
   }
   pal <- palette_qual(n_types)
