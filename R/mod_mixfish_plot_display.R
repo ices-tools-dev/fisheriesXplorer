@@ -1,12 +1,6 @@
 mod_mixfish_plot_display_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # div(
-    #   style = "display: flex; justify-content: space-between; align-items: center;
-    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-    #   span(textOutput(ns("ecoregion_label"))),
-    #   span(textOutput(ns("current_date")))
-    # ),
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     card(
       height = "80vh", full_screen = TRUE, fill = FALSE,
