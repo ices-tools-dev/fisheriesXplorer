@@ -400,3 +400,42 @@ caption {
   font-size: 16px;  /* larger text */
   padding: 20px;  /* more spacing */
 }
+
+
+.bslib-sidebar-layout>.collapse-toggle {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background-color: #00B6F1;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+.bslib-sidebar-layout>.collapse-toggle .collapse-icon {
+      width: 15px;
+      height: 15px;
+      stroke: white;
+    }
+.bslib-sidebar-layout>.collapse-toggle:hover {
+      background-color: #99AABF;
+    }
+
+@media (max-width: 600px) {
+  .js-plotly-plot .xtick text,
+  .js-plotly-plot .ytick text,
+  .js-plotly-plot .legend text {
+    font-size: 8px !important;
+  }
+}
+@media (min-width: 601px) {
+  .js-plotly-plot .xtick text,
+  .js-plotly-plot .ytick text,
+  .js-plotly-plot .legend text {
+    font-size: 12px !important;
+  }
+}
+
+  /* .js-plotly-plot .g-xtitle text,  
+  .js-plotly-plot .g-ytitle text,  
+  .js-plotly-plot .annotation text { */

@@ -1,12 +1,6 @@
 mod_mixfish_plot_display_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # div(
-    #   style = "display: flex; justify-content: space-between; align-items: center;
-    #        padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",
-    #   span(textOutput(ns("ecoregion_label"))),
-    #   span(textOutput(ns("current_date")))
-    # ),
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     card(
       height = "80vh", full_screen = TRUE, fill = FALSE,
@@ -15,10 +9,10 @@ mod_mixfish_plot_display_ui <- function(id) {
         fillable = TRUE, fill = TRUE, class = "p-1",
         uiOutput(ns("filter_ui")),
         withSpinner(
-          plotlyOutput(ns("plot"), height = "65vh"),
+          plotlyOutput(ns("plot"), height = "73vh"),
           caption = "Getting mix-fish results..."
         )
-      )
+      )      
     )
   )
 }
@@ -99,7 +93,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           label = NULL,
           id = ns("my-filters-mixfish"),
           params = list(
-            stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock"),
+            # stock = list(inputId = "stock", label = "Fish Stock", placeholder = "Select stock"),
             fleet = list(inputId = "fleet", label = "Fleet", placeholder = "Select fleet")
           )
         )
@@ -155,7 +149,7 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
           if (plot_name() == "plot1") {
             c("scenario", "stock")
           } else if (plot_name() == "plot2") {
-            c("stock", "fleet")
+            c("stock","fleet")
           } else if (plot_name() == "plot3") {
             c("stock", "metier")
           } else if (plot_name() == "plot5") {
@@ -188,6 +182,8 @@ mod_mixfish_plot_display_server <- function(id, plot_name, selected_ecoregion, s
         "plot2" = plot_effortFltStk_plotly(
           data = data_filter_module()(),
           refTable = data_reactive_all()$refTable_filtered
+          # ncol = 2,          # how many facet columns
+          # rowHeight = 200
         ),
         "plot3" = plot_landByMetStock_plotly(
           data = data_filter_module()(),

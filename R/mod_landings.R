@@ -134,8 +134,8 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
   # Load the corresponding .rda file
       rda_path <- paste0("./data/", acronym, ".rda")
       load(rda_path)
-      fig <- ggplotly(plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year))) %>%
-        plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
+      fig <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year), session = session) #%>%
+        #plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
       
       for (i in 1:length(fig$x$data)) {
         if (!is.null(fig$x$data[[i]]$name)) {
