@@ -18,8 +18,7 @@ mod_mixfish_plot_display_ui <- function(id) {
           plotlyOutput(ns("plot"), height = "73vh"),
           caption = "Getting mix-fish results..."
         )
-      ),
-      bslib::card_footer("Test: Data source: MIX-FISH model (EU H2020 project, GA 101000770)")
+      )      
     )
   )
 }

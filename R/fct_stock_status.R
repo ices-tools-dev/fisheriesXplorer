@@ -1049,8 +1049,8 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                         legend = list(
                                 title = list(text = "Stock name", font = list(size = 16)),
                                 orientation = "h",
-                                x = 0.5, y = 1.05,                # center above the plot
-                                xanchor = "center", 
+                                x = 0.5, y = 1.05, # center above the plot
+                                xanchor = "center",
                                 yanchor = "bottom",
                                 font = list(size = 16)
                         ),
@@ -1065,14 +1065,14 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                                         yanchor = "bottom"
                                 ),
                                 list(
-                                text = guild,
-                                x = 0.01, y = 0.99,        # relative to plotting area (0–1, left–right / bottom–top)
-                                xref = "paper", yref = "paper",
-                                showarrow = FALSE,
-                                xanchor = "left",
-                                yanchor = "top",
-                                font = list(size = 18, color = "black")
-                                        )
+                                        text = guild,
+                                        x = 0.01, y = 0.99, # relative to plotting area (0–1, left–right / bottom–top)
+                                        xref = "paper", yref = "paper",
+                                        showarrow = FALSE,
+                                        xanchor = "left",
+                                        yanchor = "top",
+                                        font = list(size = 18, color = "black")
+                                )
                         )
                 ) %>%
                 plotly::highlight(

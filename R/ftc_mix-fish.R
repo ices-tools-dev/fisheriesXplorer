@@ -555,12 +555,218 @@ plot_catchScenStk_int <- function(data, adv, #ofwhich = FALSE,
 #       )
 #     )
 # }
+# plot_catchScenStk_plotly <- function(data, adv, refTable,
+#                                      ofwhich = FALSE,
+#                                      xlab = "Scenarios",
+#                                      ylab = "Catch (tonnes)") {
+#   stopifnot(all(c("stock", "scenario", "catch") %in% names(data)))
+#   stopifnot(all(c("stock", "advice") %in% names(adv)))
+
+#   if (!"upper" %in% names(adv)) adv$upper <- adv$advice
+#   if (!"lower" %in% names(adv)) adv$lower <- adv$advice
+
+#   data <- dplyr::filter(data, stock %in% adv$stock)
+
+#   unique_stocks <- unique(data$stock)
+#   n_stocks <- length(unique_stocks)
+#   n_cols <- min(4, n_stocks)
+#   n_rows <- ceiling(n_stocks / n_cols)
+
+#   # Global category order (shared x across subplots)
+#   global_x <- as.character(unique(data$scenario))
+#   pad_left <- "..pad_left.."
+#   pad_right <- "..pad_right.."
+#   while (pad_left %in% global_x) pad_left <- paste0(pad_left, "_")
+#   while (pad_right %in% global_x) pad_right <- paste0(pad_right, "_")
+#   cat_array <- c(pad_left, global_x, pad_right)
+
+#   show_once <- function(stock, first_stock) identical(stock, first_stock)
+#   first_stock <- unique_stocks[1]
+
+#   subplots <- vector("list", length(unique_stocks))
+
+#   for (i in seq_along(unique_stocks)) {
+#     fishstock <- unique_stocks[i]
+#     stock_data <- dplyr::filter(data, stock == fishstock)
+#     stock_adv <- dplyr::filter(adv, stock == fishstock)[1, , drop = FALSE]
+
+#     # Bars color
+#     bar_color <- dplyr::filter(refTable, stock == fishstock)$col
+#     if (length(bar_color) == 0) bar_color <- "grey"
+
+#     # Thresholds
+#     y_advice <- as.numeric(stock_adv$advice)
+#     y_upper <- as.numeric(stock_adv$upper)
+#     y_lower <- as.numeric(stock_adv$lower)
+
+#     y_lo <- min(y_advice, y_upper, na.rm = TRUE)
+#     y_hi <- max(y_advice, y_upper, na.rm = TRUE)
+#     max_y <- max(c(stock_data$catch, y_upper, y_advice, y_lower), na.rm = TRUE) * 1.1
+
+#     # We’ll span zones/lines across the padded x (pad_left, global_x..., pad_right)
+#     x_zone <- cat_array
+
+#     p <- plotly::plot_ly()
+
+#     # --- ZONES (as filled scatter, now extend to edges via pads) ---
+#     p <- p %>%
+#       # Green: 0 -> y_lo
+#       plotly::add_trace(
+#         x = x_zone,
+#         y = rep(y_lo, length(x_zone)),
+#         type = "scatter", mode = "lines",
+#         line = list(width = 0),
+#         fill = "tozeroy", fillcolor = "rgba(0,128,0,0.15)",
+#         name = "Below advice (zone)",
+#         legendgroup = "zone_green",
+#         showlegend = show_once(fishstock, first_stock),
+#         hoverinfo = "none"
+#       ) %>%
+#       # Yellow: y_lo -> y_hi
+#       plotly::add_trace(
+#         x = x_zone,
+#         y = rep(y_hi, length(x_zone)),
+#         type = "scatter", mode = "lines",
+#         line = list(width = 0),
+#         fill = "tonexty", fillcolor = "rgba(255,215,0,0.15)",
+#         name = "Within range (zone)",
+#         legendgroup = "zone_yellow",
+#         showlegend = show_once(fishstock, first_stock),
+#         hoverinfo = "none"
+#       ) %>%
+#       # Red: y_hi -> max_y
+#       plotly::add_trace(
+#         x = x_zone,
+#         y = rep(max_y, length(x_zone)),
+#         type = "scatter", mode = "lines",
+#         line = list(width = 0),
+#         fill = "tonexty", fillcolor = "rgba(255,0,0,0.15)",
+#         name = "Above upper (zone)",
+#         legendgroup = "zone_red",
+#         showlegend = show_once(fishstock, first_stock),
+#         hoverinfo = "none"
+#       )
+
+#     # --- BARS (catches) ---
+#     p <- p %>%
+#       plotly::add_trace(
+#         data = stock_data,
+#         x = ~ as.character(scenario),
+#         y = ~catch,
+#         type = "bar",
+#         marker = list(color = bar_color),
+#         name = "Catch bars",
+#         legendgroup = "bars",
+#         showlegend = show_once(fishstock, first_stock),
+#         hovertemplate = paste0(
+#           "Stock: ", fishstock, "<br>",
+#           "Scenario: %{x}<br>",
+#           "Catches (tonnes): %{y:.0f}<extra></extra>"
+#         )
+#       )
+
+#     # --- HORIZONTAL LINES (extend across pads) ---
+#     p <- p %>%
+#       plotly::add_trace(
+#         x = x_zone, y = rep(y_advice, length(x_zone)),
+#         type = "scatter", mode = "lines",
+#         line = list(color = "#6e6e6e", width = 1.5, dash = "solid"),
+#         name = "Advice", legendgroup = "line_advice",
+#         showlegend = show_once(fishstock, first_stock),
+#         hovertemplate = "Advice (tonnes): %{y:.0f}<extra></extra>"
+#       ) %>%
+#       plotly::add_trace(
+#         x = x_zone, y = rep(y_upper, length(x_zone)),
+#         type = "scatter", mode = "lines",
+#         line = list(color = "#6e6e6e", width = 1.5, dash = "dash"),
+#         name = "Upper limit", legendgroup = "line_upper",
+#         showlegend = show_once(fishstock, first_stock),
+#         hovertemplate = "Upper limit (tonnes): %{y:.0f}<extra></extra>"
+#       ) %>%
+#       plotly::add_trace(
+#         x = x_zone, y = rep(y_lower, length(x_zone)),
+#         type = "scatter", mode = "lines",
+#         line = list(color = "#6e6e6e", width = 1.5, dash = "dot"),
+#         name = "Lower limit", legendgroup = "line_lower",
+#         showlegend = show_once(fishstock, first_stock),
+#         hovertemplate = "Lower limit (tonnes): %{y:.0f}<extra></extra>"
+#       )
+
+#     # Axes & small title per panel; hide pad ticks
+#     p <- p %>%
+#       plotly::layout(
+#         xaxis = list(
+#           title = "",
+#           tickangle = 45,
+#           type = "category",
+#           categoryorder = "array",
+#           categoryarray = cat_array,
+#           tickmode = "array",
+#           tickvals = global_x, # show only real categories
+#           ticktext = global_x
+#         ),
+#         yaxis = list(title = ylab, range = c(0, max_y)),
+#         annotations = list(list(
+#           x = 0.5, y = 1.05, text = paste0(fishstock),
+#           xref = "paper", yref = "paper",
+#           xanchor = "center", yanchor = "bottom",
+#           showarrow = FALSE
+#         ))
+#       )
+
+#     subplots[[i]] <- p
+#   }
+
+#   fig <- plotly::subplot(
+#     subplots,
+#     nrows = n_rows, shareX = TRUE, shareY = FALSE,
+#     titleY = FALSE, titleX = FALSE, margin = 0.05
+#   )
+
+#   fig <- fig %>%
+#     plotly::layout(
+#       barmode = "group",
+#       showlegend = TRUE,
+#       legend = list(
+#         orientation = "h",
+#         x = 0, # left-align so wrapping behaves nicely
+#         xanchor = "left",
+#         y = 1.08, # move above the plot
+#         itemsizing = "constant",
+#         itemwidth = 130, # << try 100–160 until it looks right
+#         tracegroupgap = 30, # extra space between grouped items
+#         font = list(size = 12)
+#       ),
+#       margin = list(l = 80, b = 90, t = 150, r = 120),
+#       annotations = list(
+#         list(
+#           text = ylab,
+#           x = -0.05, y = 0.5,
+#           xref = "paper", yref = "paper",
+#           showarrow = FALSE,
+#           xanchor = "center", yanchor = "middle",
+#           textangle = -90, font = list(size = 16)
+#         ),
+#         list(
+#           text = xlab,
+#           x = 0.5, y = -0.15,
+#           xref = "paper", yref = "paper",
+#           showarrow = FALSE,
+#           xanchor = "middle", yanchor = "center",
+#           font = list(size = 16)
+#         )
+#       )
+#     )
+
+#   fig
+# }
+
 plot_catchScenStk_plotly <- function(data, adv, refTable,
                                      ofwhich = FALSE,
                                      xlab = "Scenarios",
                                      ylab = "Catch (tonnes)") {
-  stopifnot(all(c("stock","scenario","catch") %in% names(data)))
-  stopifnot(all(c("stock","advice") %in% names(adv)))
+  stopifnot(all(c("stock", "scenario", "catch") %in% names(data)))
+  stopifnot(all(c("stock", "advice") %in% names(adv)))
 
   if (!"upper" %in% names(adv)) adv$upper <- adv$advice
   if (!"lower" %in% names(adv)) adv$lower <- adv$advice
@@ -572,13 +778,10 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
   n_cols <- min(4, n_stocks)
   n_rows <- ceiling(n_stocks / n_cols)
 
-  # Global category order (shared x across subplots)
+  # Global scenario order + numeric x index (for edge-to-edge zones)
   global_x <- as.character(unique(data$scenario))
-  pad_left  <- "..pad_left.."
-  pad_right <- "..pad_right.."
-  while (pad_left %in% global_x)  pad_left  <- paste0(pad_left, "_")
-  while (pad_right %in% global_x) pad_right <- paste0(pad_right, "_")
-  cat_array <- c(pad_left, global_x, pad_right)
+  idx_map  <- setNames(seq_along(global_x), global_x)
+  n_cat    <- length(global_x)
 
   show_once <- function(stock, first_stock) identical(stock, first_stock)
   first_stock <- unique_stocks[1]
@@ -586,11 +789,14 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
   subplots <- vector("list", length(unique_stocks))
 
   for (i in seq_along(unique_stocks)) {
-    fishstock  <- unique_stocks[i]
+    fishstock <- unique_stocks[i]
     stock_data <- dplyr::filter(data, stock == fishstock)
-    stock_adv  <- dplyr::filter(adv,  stock == fishstock)[1, , drop = FALSE]
+    stock_adv  <- dplyr::filter(adv, stock == fishstock)[1, , drop = FALSE]
 
-    # Bars color
+    # Numeric positions for bars
+    stock_data$idx <- as.integer(idx_map[as.character(stock_data$scenario)])
+
+    # Bar color
     bar_color <- dplyr::filter(refTable, stock == fishstock)$col
     if (length(bar_color) == 0) bar_color <- "grey"
 
@@ -603,111 +809,107 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
     y_hi <- max(y_advice, y_upper, na.rm = TRUE)
     max_y <- max(c(stock_data$catch, y_upper, y_advice, y_lower), na.rm = TRUE) * 1.1
 
-    # We’ll span zones/lines across the padded x (pad_left, global_x..., pad_right)
-    x_zone <- cat_array
+    # X for zones/lines (reach edges)
+    x_zone <- c(0.5, seq_len(n_cat), n_cat + 0.5)
 
     p <- plotly::plot_ly()
 
-    # --- ZONES (as filled scatter, now extend to edges via pads) ---
+    # --- ZONES (legend shown once) ---
     p <- p %>%
-      # Green: 0 -> y_lo
       plotly::add_trace(
-        x = x_zone,
-        y = rep(y_lo, length(x_zone)),
+        x = x_zone, y = rep(y_lo, length(x_zone)),
         type = "scatter", mode = "lines",
         line = list(width = 0),
         fill = "tozeroy", fillcolor = "rgba(0,128,0,0.15)",
-        name = "Below advice (zone)",
+        name = "Below advice",
         legendgroup = "zone_green",
         showlegend = show_once(fishstock, first_stock),
-        hoverinfo = "none"
+        hoverinfo = "skip"
       ) %>%
-      # Yellow: y_lo -> y_hi
       plotly::add_trace(
-        x = x_zone,
-        y = rep(y_hi, length(x_zone)),
+        x = x_zone, y = rep(y_hi, length(x_zone)),
         type = "scatter", mode = "lines",
         line = list(width = 0),
         fill = "tonexty", fillcolor = "rgba(255,215,0,0.15)",
-        name = "Within range (zone)",
+        name = "Within advice range",
         legendgroup = "zone_yellow",
         showlegend = show_once(fishstock, first_stock),
-        hoverinfo = "none"
+        hoverinfo = "skip"
       ) %>%
-      # Red: y_hi -> max_y
       plotly::add_trace(
-        x = x_zone,
-        y = rep(max_y, length(x_zone)),
+        x = x_zone, y = rep(max_y, length(x_zone)),
         type = "scatter", mode = "lines",
         line = list(width = 0),
         fill = "tonexty", fillcolor = "rgba(255,0,0,0.15)",
-        name = "Above upper (zone)",
+        name = "Above advice",
         legendgroup = "zone_red",
         showlegend = show_once(fishstock, first_stock),
-        hoverinfo = "none"
+        hoverinfo = "skip"
       )
 
-    # --- BARS (catches) ---
+    # --- BARS (legend hidden) ---
     p <- p %>%
       plotly::add_trace(
         data = stock_data,
-        x = ~as.character(scenario),
-        y = ~catch,
+        x = ~idx, y = ~catch,
         type = "bar",
         marker = list(color = bar_color),
         name = "Catch bars",
         legendgroup = "bars",
-        showlegend = show_once(fishstock, first_stock),
+        showlegend = FALSE,  # << hidden as requested
         hovertemplate = paste0(
           "Stock: ", fishstock, "<br>",
-          "Scenario: %{x}<br>",
+          "Scenario: %{customdata}<br>",
           "Catches (tonnes): %{y:.0f}<extra></extra>"
-        )
+        ),
+        customdata = stock_data$scenario
       )
 
-    # --- HORIZONTAL LINES (extend across pads) ---
+    # --- HORIZONTAL LINES (legend shown once) ---
     p <- p %>%
       plotly::add_trace(
         x = x_zone, y = rep(y_advice, length(x_zone)),
         type = "scatter", mode = "lines",
-        line = list(color = "#6e6e6e", width = 1.5, dash = "solid"),
-        name = "Advice", legendgroup = "line_advice",
-        showlegend = show_once(fishstock, first_stock),
+        line = list(color = "#6e6e6e", width = 2, dash = "solid"),
+        name = "Advice",
+        legendgroup = "line_advice",
+        showlegend = show_once(fishstock, first_stock),  # << show in legend
         hovertemplate = "Advice (tonnes): %{y:.0f}<extra></extra>"
       ) %>%
       plotly::add_trace(
         x = x_zone, y = rep(y_upper, length(x_zone)),
         type = "scatter", mode = "lines",
-        line = list(color = "#6e6e6e", width = 1.5, dash = "dash"),
-        name = "Upper limit", legendgroup = "line_upper",
+        line = list(color = "#6e6e6e", width = 2, dash = "dash"),
+        name = "F<sub>MSY upper</sub>",
+        legendgroup = "line_upper",
         showlegend = show_once(fishstock, first_stock),
         hovertemplate = "Upper limit (tonnes): %{y:.0f}<extra></extra>"
       ) %>%
       plotly::add_trace(
         x = x_zone, y = rep(y_lower, length(x_zone)),
         type = "scatter", mode = "lines",
-        line = list(color = "#6e6e6e", width = 1.5, dash = "dot"),
-        name = "Lower limit", legendgroup = "line_lower",
+        line = list(color = "#6e6e6e", width = 2, dash = "dot"),
+        name = "F<sub>MSY lower</sub>",
+        legendgroup = "line_lower",
         showlegend = show_once(fishstock, first_stock),
         hovertemplate = "Lower limit (tonnes): %{y:.0f}<extra></extra>"
       )
 
-    # Axes & small title per panel; hide pad ticks
+    # Panel header & axes
     p <- p %>%
       plotly::layout(
         xaxis = list(
           title = "",
           tickangle = 45,
-          type = "category",
-          categoryorder = "array",
-          categoryarray = cat_array,
           tickmode = "array",
-          tickvals = global_x,   # show only real categories
-          ticktext = global_x
+          tickvals = seq_len(n_cat),
+          ticktext = global_x,
+          range = c(0.5, n_cat + 0.5)
         ),
-        yaxis = list(title = ylab, range = c(0, max_y)),
+        yaxis = list(title = "", range = c(0, max_y)),
+        bargap = 0.2,
         annotations = list(list(
-          x = 0.5, y = 1.05, text = paste0(fishstock),
+          x = 0.5, y = 1.02, text = paste0(fishstock),
           xref = "paper", yref = "paper",
           xanchor = "center", yanchor = "bottom",
           showarrow = FALSE
@@ -717,28 +919,27 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
     subplots[[i]] <- p
   }
 
+  legend_itemwidth <- 40  # shorter legend line samples (try 50–80)
+
   fig <- plotly::subplot(
     subplots,
     nrows = n_rows, shareX = TRUE, shareY = FALSE,
     titleY = FALSE, titleX = FALSE, margin = 0.05
-  )
-
-  ffig <- fig %>%
-  plotly::layout(
-    barmode = "group",
-    showlegend = TRUE,
-    legend = list(
-      orientation = "h",
-      x = 0,                # left-align so wrapping behaves nicely
-      xanchor = "left",
-      y = 1.08,             # move above the plot
-      itemsizing = "constant",
-      itemwidth = 130,      # << try 100–160 until it looks right
-      tracegroupgap = 30,   # extra space between grouped items
-      font = list(size = 12)
-    ),
-    margin = list(l = 80, b = 90, t = 150, r = 120),
-  
+  ) %>%
+    plotly::layout(
+      barmode = "group",
+      showlegend = TRUE,
+      legend = list(
+        orientation = "h",
+        x = 0, y = 1.12,            # top, left-aligned to avoid clipping
+        xanchor = "left", yanchor = "bottom",
+        itemsizing = "constant",
+        itemwidth = legend_itemwidth,  # << shorter line samples
+        tracegroupgap = 10,
+        font = list(size = 12),
+        bgcolor = "rgba(255,255,255,0.85)"
+      ),
+      margin = list(l = 80, b = 110, t = 130, r = 20),
       annotations = list(
         list(
           text = ylab,
@@ -750,10 +951,10 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
         ),
         list(
           text = xlab,
-          x = 0.5, y = -0.15,
+          x = 0.5, y = -0.12,
           xref = "paper", yref = "paper",
           showarrow = FALSE,
-          xanchor = "middle", yanchor = "center",
+          xanchor = "middle", yanchor = "top",
           font = list(size = 16)
         )
       )
@@ -761,6 +962,7 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
 
   fig
 }
+
 
 
 
