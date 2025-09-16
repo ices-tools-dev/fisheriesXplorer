@@ -919,3 +919,1703 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
+
+
+
+
+
+
+# app.R
+# Packages ----
+library(shiny)
+library(pins)
+library(dplyr)
+
+# -------------------------------------------------------------------
+# CONFIG — set these in your real app
+CODE_DOI <- "10.5281/zenodo.CODE_DOI_PLACEHOLDER"
+DATA_DOI <- "10.5281/zenodo.DATA_DOI_PLACEHOLDER"
+APP_TITLE <- "fisheriesXplorer (demo: versioned data & citation)"
+APP_AUTHORS <- "Santos da Costa, P., et al."
+APP_URL_BASE <- "http://localhost:xxxx"  # replaced by deployed URL on shinyapps.io
+# -------------------------------------------------------------------
+
+# Board setup ----
+# For production on shinyapps.io, replace with an external, persistent, versioned board, e.g.:
+# board <- pins::board_s3(
+#   bucket  = Sys.getenv("S3_BUCKET"),
+#   prefix  = "fisheriesxplorer",
+#   versioned = TRUE
+# )
+# Or Posit Connect: board_connect(server = ..., key = ..., versioned = TRUE)
+# For this demo we use a temporary (ephemeral) board and seed two months of data:
+board <- pins::board_temp(versioned = TRUE)
+
+# Seed demo datasets (two versions with different snapshot_dates) ----
+seed_demo_pins <- function(board) {
+  if (!("landings" %in% pins::pin_list(board))) {
+    # Landings (monthly updates)
+    land_aug <- data.frame(stock = c("COD", "HAD", "POK"),
+                           landings_t  = c(1200, 800, 450))
+    attr(land_aug, "snapshot_date") <- as.Date("2025-08-01")
+    pins::pin_write(board, land_aug, name = "landings", type = "rds", versioned = TRUE)
+
+    land_sep <- data.frame(stock = c("COD", "HAD", "POK"),
+                           landings_t  = c(1100, 870, 520))
+    attr(land_sep, "snapshot_date") <- as.Date("2025-09-01")
+    pins::pin_write(board, land_sep, name = "landings", type = "rds", versioned = TRUE)
+
+    # Stock status (annual updates)
+    ss_2024 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Healthy", "Cautious", "Healthy"))
+    attr(ss_2024, "snapshot_date") <- as.Date("2024-10-01")
+    pins::pin_write(board, ss_2024, name = "stock_status", type = "rds", versioned = TRUE)
+
+    ss_2025 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Cautious", "Cautious", "Healthy"))
+    attr(ss_2025, "snapshot_date") <- as.Date("2025-09-01")
+    pins::pin_write(board, ss_2025, name = "stock_status", type = "rds", versioned = TRUE)
+  }
+}
+seed_demo_pins(board)
+
+# Helpers: discover available snapshot dates by reading each version's embedded date ----
+available_snapshot_dates <- function(board, names) {
+  dates <- c()
+  for (nm in names) {
+    vers <- pins::pin_versions(board, nm)
+    for (v in vers$version) {
+      x <- pins::pin_read(board, nm, version = v)
+      sd <- attr(x, "snapshot_date")
+      if (!is.null(sd)) dates <- c(dates, sd)
+    }
+  }
+  sort(unique(as.Date(dates)))
+}
+
+# choose version by the embedded snapshot_date (<= as_of) ----
+choose_version_by_snapshot <- function(board, name, as_of_date) {
+  vers <- pins::pin_versions(board, name)
+  if (!nrow(vers)) stop("No versions found for pin: ", name)
+  # Inspect each version's embedded snapshot_date
+  candidates <- lapply(vers$version, function(v) {
+    x <- pins::pin_read(board, name, version = v)
+    sd <- attr(x, "snapshot_date")
+    if (is.null(sd)) return(NULL)
+    if (as.Date(sd) <= as.Date(as_of_date)) {
+      list(version = v, snapshot_date = as.Date(sd))
+    } else NULL
+  })
+  candidates <- Filter(Negate(is.null), candidates)
+  if (!length(candidates)) stop("No ", name, " snapshot available on/before ", as_of_date)
+  # Pick the most recent snapshot_date
+  o <- order(sapply(candidates, function(z) z$snapshot_date))
+  candidates[[tail(o, 1)]]
+}
+
+# read pin "as of" and return both data and version metadata ----
+read_pin_as_of <- function(board, name, as_of_date) {
+  sel <- choose_version_by_snapshot(board, name, as_of_date)
+  data <- pins::pin_read(board, name, version = sel$version)
+  list(data = data, version = sel$version, snapshot_date = sel$snapshot_date)
+}
+
+# UI ----
+ui <- function(request) {
+  shiny::navbarPage(
+    title = APP_TITLE,
+    id = "nav",
+    header = NULL,
+    footer = NULL,
+    inverse = FALSE,
+
+    # ---- Data view tab
+    tabPanel("Explore",
+      fluidPage(
+        fluidRow(
+          column(
+            width = 3,
+            wellPanel(
+              h4("View data as of"),
+              # Populate choices from available snapshots
+              uiOutput("as_of_ui"),
+              br(),
+              bookmarkButton(id = "share_btn", label = "Share this view"),
+              helpText("Creates a URL that reproduces this exact view.")
+            ),
+            wellPanel(
+              h4("Version & Citation"),
+              uiOutput("provenance_ui"),
+              tags$hr(),
+              h5("Suggested citation"),
+              verbatimTextOutput("citation_text", placeholder = TRUE),
+              h5("BibTeX"),
+              verbatimTextOutput("bibtex_text", placeholder = TRUE)
+            )
+          ),
+          column(
+            width = 9,
+            tabsetPanel(
+              tabPanel("Landings",
+                tableOutput("landings_tbl")
+              ),
+              tabPanel("Stock status",
+                tableOutput("status_tbl")
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+}
+
+# Server ----
+server <- function(input, output, session) {
+
+  # All snapshot dates available across pins in this app
+  all_dates <- available_snapshot_dates(board, c("landings", "stock_status"))
+
+  # Build "as of" selector (restrict to known snapshots to make behavior clear)
+  output$as_of_ui <- renderUI({
+    # honor ?as_of=YYYY-MM-DD in query string
+    qs <- shiny::parseQueryString(session$clientData$url_search)
+    default_date <- if (!is.null(qs$as_of)) as.Date(qs$as_of) else tail(all_dates, 1)
+    selectInput("as_of", "Snapshot date:", choices = all_dates, selected = default_date)
+  })
+
+  # Reactively read each dataset as of the chosen date
+  landings_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "landings", as.Date(input$as_of))
+  })
+
+  status_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "stock_status", as.Date(input$as_of))
+  })
+
+  # Tables
+  output$landings_tbl <- renderTable({
+    landings_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$status_tbl <- renderTable({
+    status_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Provenance / Version & Citation panel
+  output$provenance_ui <- renderUI({
+    req(input$as_of)
+    l <- landings_asof()
+    s <- status_asof()
+    tagList(
+      p(HTML(sprintf("<b>Code DOI:</b> %s<br/><b>Data DOI / manifest:</b> %s",
+                     CODE_DOI, DATA_DOI))),
+      p(HTML(sprintf("<b>View date:</b> %s", as.character(as.Date(input$as_of))))),
+      tags$details(
+        tags$summary("Pin versions used"),
+        tags$ul(
+          tags$li(HTML(sprintf("<b>landings</b>: version <code>%s</code> (snapshot %s)",
+                               l$version, as.character(l$snapshot_date)))),
+          tags$li(HTML(sprintf("<b>stock_status</b>: version <code>%s</code> (snapshot %s)",
+                               s$version, as.character(s$snapshot_date))))
+        )
+      ),
+      p(HTML("<i>These version IDs allow exact re-loading of the same data bytes.</i>"))
+    )
+  })
+
+  # Citation strings
+  build_citation <- function(as_of, url) {
+    sprintf("%s (Snapshot %s). *%s* [Shiny app]. Code: %s; Data: %s. %s",
+            APP_AUTHORS, as.character(as_of), APP_TITLE, CODE_DOI, DATA_DOI, url)
+  }
+
+  build_bibtex <- function(as_of, url) {
+    yy <- format(as_of, "%Y"); mm <- as.integer(format(as_of, "%m"))
+    sprintf("@software{fisheriesxplorer_%s_%02d,\n  author  = {%s},\n  title   = {%s},\n  year    = {%s},\n  month   = {%d},\n  version = {%s},\n  doi     = {%s},\n  url     = {%s}\n}",
+            yy, mm, APP_AUTHORS, APP_TITLE, yy, mm,
+            paste0(format(as_of, "%Y"), ".", format(as_of, "%m")),
+            DATA_DOI, url)
+  }
+
+  # Produce a bookmark URL that also includes ?as_of=...
+  observeEvent(input$share_btn, {
+    # Ensure the as_of param is in the query string before bookmarking
+    qs <- paste0("?as_of=", as.character(as.Date(input$as_of)))
+    shiny::updateQueryString(qs, mode = "replace", session = session)
+    session$doBookmark()
+  })
+
+  onBookmarked(function(url) {
+    showModal(modalDialog(
+      title = "Shareable link",
+      easyClose = TRUE,
+      footer = NULL,
+      p("Anyone opening this link will see exactly this view:"),
+      tags$code(url),
+      tags$hr(),
+      p("Copy the citation below into your manuscript or email:"),
+      tags$pre(build_citation(as.Date(input$as_of), url))
+    ))
+  })
+
+  output$citation_text <- renderText({
+    # Build a live URL reflecting current ?as_of param (when local, fall back to query string)
+    qs <- paste0("?as_of=", as.character(as.Date(input$as_of)))
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_citation(as.Date(input$as_of), curr_url)
+  })
+
+  output$bibtex_text <- renderText({
+    qs <- paste0("?as_of=", as.character(as.Date(input$as_of)))
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_bibtex(as.Date(input$as_of), curr_url)
+  })
+
+}
+
+# Bookmarking (URL) ----
+enableBookmarking("url")
+
+# Run ----
+shinyApp(ui, server)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+library(shiny)
+library(pins)
+library(dplyr)
+
+# -------------------------------------------------------------------
+# CONFIG — set these in your real app
+CODE_DOI <- "10.5281/zenodo.CODE_DOI_PLACEHOLDER"
+DATA_DOI <- "10.5281/zenodo.DATA_DOI_PLACEHOLDER"
+APP_TITLE <- "fisheriesXplorer (demo: versioned data & citation)"
+APP_AUTHORS <- "Santos da Costa, P., et al."
+APP_URL_BASE <- "http://localhost:xxxx"  # replaced by deployed URL on shinyapps.io
+# -------------------------------------------------------------------
+
+# (helpers just for pretty labels in the citation)
+tab_label <- function(val) switch(val,
+  landings = "Landings",
+  stock_status = "Stock status",
+  val
+)
+subtab_label <- function(val) switch(val,
+  landings_overview = "Overview",
+  landings_details  = "Details",
+  status_overview   = "Overview",
+  status_details    = "Details",
+  val
+)
+
+# Board setup ----
+board <- pins::board_temp(versioned = TRUE)
+
+# Seed demo datasets (two versions with different snapshot_dates) ----
+seed_demo_pins <- function(board) {
+  if (!("landings" %in% pins::pin_list(board))) {
+    # Landings (monthly updates)
+    land_aug <- data.frame(stock = c("COD", "HAD", "POK"),
+                           landings_t  = c(1200, 800, 450))
+    attr(land_aug, "snapshot_date") <- as.Date("2025-08-01")
+    pins::pin_write(board, land_aug, name = "landings", type = "rds", versioned = TRUE)
+
+    land_sep <- data.frame(stock = c("COD", "HAD", "POK"),
+                           landings_t  = c(1100, 870, 520))
+    attr(land_sep, "snapshot_date") <- as.Date("2025-09-01")
+    pins::pin_write(board, land_sep, name = "landings", type = "rds", versioned = TRUE)
+
+    # Stock status (annual updates)
+    ss_2024 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Healthy", "Cautious", "Healthy"))
+    attr(ss_2024, "snapshot_date") <- as.Date("2024-10-01")
+    pins::pin_write(board, ss_2024, name = "stock_status", type = "rds", versioned = TRUE)
+
+    ss_2025 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Cautious", "Cautious", "Healthy"))
+    attr(ss_2025, "snapshot_date") <- as.Date("2025-09-01")
+    pins::pin_write(board, ss_2025, name = "stock_status", type = "rds", versioned = TRUE)
+  }
+}
+seed_demo_pins(board)
+
+# Helpers: discover available snapshot dates by reading each version's embedded date ----
+available_snapshot_dates <- function(board, names) {
+  dates <- c()
+  for (nm in names) {
+    vers <- pins::pin_versions(board, nm)
+    for (v in vers$version) {
+      x <- pins::pin_read(board, nm, version = v)
+      sd <- attr(x, "snapshot_date")
+      if (!is.null(sd)) dates <- c(dates, sd)
+    }
+  }
+  sort(unique(as.Date(dates)))
+}
+
+# choose version by the embedded snapshot_date (<= as_of) ----
+choose_version_by_snapshot <- function(board, name, as_of_date) {
+  vers <- pins::pin_versions(board, name)
+  if (!nrow(vers)) stop("No versions found for pin: ", name)
+  # Inspect each version's embedded snapshot_date
+  candidates <- lapply(vers$version, function(v) {
+    x <- pins::pin_read(board, name, version = v)
+    sd <- attr(x, "snapshot_date")
+    if (is.null(sd)) return(NULL)
+    if (as.Date(sd) <= as.Date(as_of_date)) {
+      list(version = v, snapshot_date = as.Date(sd))
+    } else NULL
+  })
+  candidates <- Filter(Negate(is.null), candidates)
+  if (!length(candidates)) stop("No ", name, " snapshot available on/before ", as_of_date)
+  # Pick the most recent snapshot_date
+  o <- order(sapply(candidates, function(z) z$snapshot_date))
+  candidates[[tail(o, 1)]]
+}
+
+# read pin "as of" and return both data and version metadata ----
+read_pin_as_of <- function(board, name, as_of_date) {
+  sel <- choose_version_by_snapshot(board, name, as_of_date)
+  data <- pins::pin_read(board, name, version = sel$version)
+  list(data = data, version = sel$version, snapshot_date = sel$snapshot_date)
+}
+
+# UI ----
+ui <- function(request) {
+  shiny::navbarPage(
+    title = APP_TITLE,
+    id = "nav",
+
+    # ---- Data view tab
+    tabPanel("Explore",
+      fluidPage(
+        fluidRow(
+          column(
+            width = 3,
+            wellPanel(
+              h4("View data as of"),
+              # Populate choices from available snapshots
+              uiOutput("as_of_ui"),
+              br(),
+              bookmarkButton(id = "share_btn", label = "Share this view"),
+              helpText("Creates a URL that reproduces this exact view.")
+            ),
+            wellPanel(
+              h4("Version & Citation"),
+              uiOutput("provenance_ui"),
+              tags$hr(),
+              h5("Suggested citation"),
+              verbatimTextOutput("citation_text", placeholder = TRUE),
+              h5("BibTeX"),
+              verbatimTextOutput("bibtex_text", placeholder = TRUE)
+            )
+          ),
+          column(
+            width = 9,
+            # Give the tabset an id and stable values so we can permalink the active tab
+            tabsetPanel(id = "tabs",
+              tabPanel(title = "Landings", value = "landings",
+                # (optional) a sub-tabset so we can also permalink a sub-view
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "landings_overview",
+                           tableOutput("landings_tbl")),
+                  tabPanel(title = "Details",  value = "landings_details",
+                           tableOutput("landings_tbl_details"))
+                )
+              ),
+              tabPanel(title = "Stock status", value = "stock_status",
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "status_overview",
+                           tableOutput("status_overview_tbl")),
+                  tabPanel(title = "Details",  value = "status_details",
+                           tableOutput("status_tbl"))
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+}
+
+# Server ----
+server <- function(input, output, session) {
+
+  # All snapshot dates available across pins in this app
+  all_dates <- available_snapshot_dates(board, c("landings", "stock_status"))
+
+  # Build "as of" selector (restrict to known snapshots to make behavior clear)
+  output$as_of_ui <- renderUI({
+    # honor ?as_of=YYYY-MM-DD in the query string
+    qs <- shiny::parseQueryString(session$clientData$url_search)
+    default_date <- if (!is.null(qs$as_of)) as.Date(qs$as_of) else tail(all_dates, 1)
+
+    # also honor ?tab= and ?subtab= on first load
+    if (!is.null(qs$tab))    updateTabsetPanel(session, "tabs",    selected = qs$tab)
+    if (!is.null(qs$subtab)) updateTabsetPanel(session, "subtabs", selected = qs$subtab)
+
+    selectInput("as_of", "Snapshot date:", choices = all_dates, selected = default_date)
+  })
+
+  # Reactively read each dataset as of the chosen date
+  landings_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "landings", as.Date(input$as_of))
+  })
+  status_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "stock_status", as.Date(input$as_of))
+  })
+
+  # Tables
+  output$landings_tbl <- renderTable({
+    landings_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # (same data in the Details subtab, just to show the mechanism)
+  output$landings_tbl_details <- renderTable({
+    landings_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$status_tbl <- renderTable({
+    status_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Simple overview table for status (count by status)
+  output$status_overview_tbl <- renderTable({
+    status_asof()$data %>% count(status, name = "n")
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Provenance / Version & Citation panel
+  output$provenance_ui <- renderUI({
+    req(input$as_of)
+    l <- landings_asof()
+    s <- status_asof()
+    tagList(
+      p(HTML(sprintf("<b>Code DOI:</b> %s<br/><b>Data DOI / manifest:</b> %s",
+                     CODE_DOI, DATA_DOI))),
+      p(HTML(sprintf("<b>View date:</b> %s", as.character(as.Date(input$as_of))))),
+      p(HTML(sprintf("<b>View:</b> %s — %s",
+                     tab_label(input$tabs), subtab_label(input$subtabs)))),
+      tags$details(
+        tags$summary("Pin versions used"),
+        tags$ul(
+          tags$li(HTML(sprintf("<b>landings</b>: version <code>%s</code> (snapshot %s)",
+                               l$version, as.character(l$snapshot_date)))),
+          tags$li(HTML(sprintf("<b>stock_status</b>: version <code>%s</code> (snapshot %s)",
+                               s$version, as.character(s$snapshot_date))))
+        )
+      ),
+      p(HTML("<i>These version IDs allow exact re-loading of the same data bytes.</i>"))
+    )
+  })
+
+  # Citation strings (now include tab + subtab in the URL)
+  build_citation <- function(as_of, url, tabs, subtabs) {
+    sprintf("%s (Snapshot %s). *%s* [Shiny app]. Code: %s; Data: %s. View: %s — %s. %s",
+            APP_AUTHORS, as.character(as_of), APP_TITLE, CODE_DOI, DATA_DOI,
+            tab_label(tabs), subtab_label(subtabs), url)
+  }
+
+  build_bibtex <- function(as_of, url, tabs, subtabs) {
+    yy <- format(as_of, "%Y"); mm <- as.integer(format(as_of, "%m"))
+    note <- paste0("View: ", tab_label(tabs), " — ", subtab_label(subtabs))
+    sprintf("@software{fisheriesxplorer_%s_%02d,\n  author  = {%s},\n  title   = {%s},\n  year    = {%s},\n  month   = {%d},\n  version = {%s},\n  doi     = {%s},\n  url     = {%s},\n  note    = {%s}\n}",
+            yy, mm, APP_AUTHORS, APP_TITLE, yy, mm,
+            paste0(format(as_of, "%Y"), ".", format(as_of, "%m")),
+            DATA_DOI, url, note)
+  }
+
+  # Produce a bookmark URL that also includes ?as_of=...&tab=...&subtab=...
+  observeEvent(input$share_btn, {
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    shiny::updateQueryString(qs, mode = "replace", session = session)
+    session$doBookmark()
+  })
+
+  onBookmarked(function(url) {
+    showModal(modalDialog(
+      title = "Shareable link",
+      easyClose = TRUE,
+      footer = NULL,
+      p("Anyone opening this link will see exactly this view:"),
+      tags$code(url),
+      tags$hr(),
+      p("Copy the citation below into your manuscript or email:"),
+      tags$pre(build_citation(as.Date(input$as_of), url, input$tabs, input$subtabs))
+    ))
+  })
+
+  output$citation_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_citation(as.Date(input$as_of), curr_url, input$tabs, input$subtabs)
+  })
+
+  output$bibtex_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_bibtex(as.Date(input$as_of), curr_url, input$tabs, input$subtabs)
+  })
+
+}
+
+# Bookmarking (URL) ----
+enableBookmarking("url")
+
+# Run ----
+shinyApp(ui, server)
+
+###############azure v
+library(shiny)
+library(pins)
+library(dplyr)
+library(AzureStor)   # <-- NEW
+
+# -------------------------------------------------------------------
+# CONFIG — set these in your real app
+CODE_DOI <- "10.5281/zenodo.CODE_DOI_PLACEHOLDER"
+DATA_DOI <- "10.5281/zenodo.DATA_DOI_PLACEHOLDER"
+APP_TITLE <- "fisheriesXplorer (demo: versioned data & citation)"
+APP_AUTHORS <- "Santos da Costa, P., et al."
+APP_URL_BASE <- "http://localhost:xxxx"  # replaced by deployed URL on shinyapps.io
+PINS_PATH <- "fisheriesxplorer/pins"     # <-- Azure “prefix” inside the container
+# -------------------------------------------------------------------
+
+# (helpers just for pretty labels in the citation)
+tab_label <- function(val) switch(val,
+  landings = "Landings",
+  stock_status = "Stock status",
+  val
+)
+subtab_label <- function(val) switch(val,
+  landings_overview = "Overview",
+  landings_details  = "Details",
+  status_overview   = "Overview",
+  status_details    = "Details",
+  val
+)
+
+# -----------------------
+# Board setup (Azure or fallback)
+# -----------------------
+use_azure <- nzchar(Sys.getenv("AZURE_CONTAINER_URL")) && nzchar(Sys.getenv("AZURE_SAS_RO"))
+
+if (use_azure) {
+  # Azure read-only connection (SAS)
+  container <- AzureStor::storage_container(
+    endpoint = Sys.getenv("AZURE_CONTAINER_URL"),  # e.g. https://acct.dfs.core.windows.net/container
+    sas      = Sys.getenv("AZURE_SAS_RO")          # SAS with sp=r
+  )
+  board <- pins::board_azure(container = container, path = PINS_PATH, versioned = TRUE)
+  SEED_DEMO <- FALSE
+} else {
+  # Fallback: local temp board (seed demo data so the app runs out of the box)
+  board <- pins::board_temp(versioned = TRUE)
+  SEED_DEMO <- TRUE
+}
+
+# Seed demo datasets (only used in fallback mode) ----
+seed_demo_pins <- function(board) {
+  if (!("landings" %in% pins::pin_list(board))) {
+    # Landings (monthly updates)
+    land_aug <- data.frame(stock = c("COD", "HAD", "POK"),
+                           landings_t  = c(1200, 800, 450))
+    attr(land_aug, "snapshot_date") <- as.Date("2025-08-01")
+    pins::pin_write(board, land_aug, name = "landings", type = "rds", versioned = TRUE)
+
+    land_sep <- data.frame(stock = c("COD", "HAD", "POK"),
+                           landings_t  = c(1100, 870, 520))
+    attr(land_sep, "snapshot_date") <- as.Date("2025-09-01")
+    pins::pin_write(board, land_sep, name = "landings", type = "rds", versioned = TRUE)
+
+    # Stock status (annual updates)
+    ss_2024 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Healthy", "Cautious", "Healthy"))
+    attr(ss_2024, "snapshot_date") <- as.Date("2024-10-01")
+    pins::pin_write(board, ss_2024, name = "stock_status", type = "rds", versioned = TRUE)
+
+    ss_2025 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Cautious", "Cautious", "Healthy"))
+    attr(ss_2025, "snapshot_date") <- as.Date("2025-09-01")
+    pins::pin_write(board, ss_2025, name = "stock_status", type = "rds", versioned = TRUE)
+  }
+}
+if (SEED_DEMO) seed_demo_pins(board)
+
+# Helpers: discover available snapshot dates by reading each version's embedded date ----
+available_snapshot_dates <- function(board, names) {
+  dates <- c()
+  for (nm in names) {
+    vers <- pins::pin_versions(board, nm)
+    for (v in vers$version) {
+      x <- pins::pin_read(board, nm, version = v)
+      sd <- attr(x, "snapshot_date")
+      if (!is.null(sd)) dates <- c(dates, sd)
+    }
+  }
+  sort(unique(as.Date(dates)))
+}
+
+# choose version by the embedded snapshot_date (<= as_of) ----
+choose_version_by_snapshot <- function(board, name, as_of_date) {
+  vers <- pins::pin_versions(board, name)
+  if (!nrow(vers)) stop("No versions found for pin: ", name)
+  # Inspect each version's embedded snapshot_date
+  candidates <- lapply(vers$version, function(v) {
+    x <- pins::pin_read(board, name, version = v)
+    sd <- attr(x, "snapshot_date")
+    if (is.null(sd)) return(NULL)
+    if (as.Date(sd) <= as.Date(as_of_date)) {
+      list(version = v, snapshot_date = as.Date(sd))
+    } else NULL
+  })
+  candidates <- Filter(Negate(is.null), candidates)
+  if (!length(candidates)) stop("No ", name, " snapshot available on/before ", as_of_date)
+  # Pick the most recent snapshot_date
+  o <- order(sapply(candidates, function(z) z$snapshot_date))
+  candidates[[tail(o, 1)]]
+}
+
+# read pin "as of" and return both data and version metadata ----
+read_pin_as_of <- function(board, name, as_of_date) {
+  sel <- choose_version_by_snapshot(board, name, as_of_date)
+  data <- pins::pin_read(board, name, version = sel$version)
+  list(data = data, version = sel$version, snapshot_date = sel$snapshot_date)
+}
+
+# UI ----
+ui <- function(request) {
+  shiny::navbarPage(
+    title = APP_TITLE,
+    id = "nav",
+
+    # ---- Data view tab
+    tabPanel("Explore",
+      fluidPage(
+        fluidRow(
+          column(
+            width = 3,
+            wellPanel(
+              h4("View data as of"),
+              # Populate choices from available snapshots
+              uiOutput("as_of_ui"),
+              br(),
+              bookmarkButton(id = "share_btn", label = "Share this view"),
+              helpText("Creates a URL that reproduces this exact view.")
+            ),
+            wellPanel(
+              h4("Version & Citation"),
+              uiOutput("provenance_ui"),
+              tags$hr(),
+              h5("Suggested citation"),
+              verbatimTextOutput("citation_text", placeholder = TRUE),
+              h5("BibTeX"),
+              verbatimTextOutput("bibtex_text", placeholder = TRUE)
+            )
+          ),
+          column(
+            width = 9,
+            # Give the tabset an id and stable values so we can permalink the active tab
+            tabsetPanel(id = "tabs",
+              tabPanel(title = "Landings", value = "landings",
+                # (optional) a sub-tabset so we can also permalink a sub-view
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "landings_overview",
+                           tableOutput("landings_tbl")),
+                  tabPanel(title = "Details",  value = "landings_details",
+                           tableOutput("landings_tbl_details"))
+                )
+              ),
+              tabPanel(title = "Stock status", value = "stock_status",
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "status_overview",
+                           tableOutput("status_overview_tbl")),
+                  tabPanel(title = "Details",  value = "status_details",
+                           tableOutput("status_tbl"))
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+}
+
+# Server ----
+server <- function(input, output, session) {
+
+  # All snapshot dates available across pins in this app
+  all_dates <- available_snapshot_dates(board, c("landings", "stock_status"))
+
+  # Build "as of" selector (restrict to known snapshots to make behavior clear)
+  output$as_of_ui <- renderUI({
+    # honor ?as_of=YYYY-MM-DD in the query string
+    qs <- shiny::parseQueryString(session$clientData$url_search)
+    default_date <- if (!is.null(qs$as_of)) as.Date(qs$as_of) else tail(all_dates, 1)
+
+    # also honor ?tab= and ?subtab= on first load
+    if (!is.null(qs$tab))    updateTabsetPanel(session, "tabs",    selected = qs$tab)
+    if (!is.null(qs$subtab)) updateTabsetPanel(session, "subtabs", selected = qs$subtab)
+
+    selectInput("as_of", "Snapshot date:", choices = all_dates, selected = default_date)
+  })
+
+  # Reactively read each dataset as of the chosen date
+  landings_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "landings", as.Date(input$as_of))
+  })
+  status_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "stock_status", as.Date(input$as_of))
+  })
+
+  # Tables
+  output$landings_tbl <- renderTable({
+    landings_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # (same data in the Details subtab, just to show the mechanism)
+  output$landings_tbl_details <- renderTable({
+    landings_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$status_tbl <- renderTable({
+    status_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Simple overview table for status (count by status)
+  output$status_overview_tbl <- renderTable({
+    status_asof()$data %>% count(status, name = "n")
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Provenance / Version & Citation panel
+  output$provenance_ui <- renderUI({
+    req(input$as_of)
+    l <- landings_asof()
+    s <- status_asof()
+    storage_str <- if (use_azure) {
+      paste0("<b>Storage:</b> Azure container (", htmltools::htmlEscape(Sys.getenv("AZURE_CONTAINER_URL")),
+             "), path <code>", PINS_PATH, "</code>")
+    } else {
+      "<b>Storage:</b> local temporary board (demo fallback)"
+    }
+    tagList(
+      p(HTML(storage_str)),
+      p(HTML(sprintf("<b>Code DOI:</b> %s<br/><b>Data DOI / manifest:</b> %s",
+                     CODE_DOI, DATA_DOI))),
+      p(HTML(sprintf("<b>View date:</b> %s", as.character(as.Date(input$as_of))))),
+      p(HTML(sprintf("<b>View:</b> %s — %s",
+                     tab_label(input$tabs), subtab_label(input$subtabs)))),
+      tags$details(
+        tags$summary("Pin versions used"),
+        tags$ul(
+          tags$li(HTML(sprintf("<b>landings</b>: version <code>%s</code> (snapshot %s)",
+                               l$version, as.character(l$snapshot_date)))),
+          tags$li(HTML(sprintf("<b>stock_status</b>: version <code>%s</code> (snapshot %s)",
+                               s$version, as.character(s$snapshot_date))))
+        )
+      ),
+      p(HTML("<i>These version IDs allow exact re-loading of the same data bytes.</i>"))
+    )
+  })
+
+  # Citation strings (include tab + subtab in the URL)
+  build_citation <- function(as_of, url, tabs, subtabs) {
+    sprintf("%s (Snapshot %s). *%s* [Shiny app]. Code: %s; Data: %s. View: %s — %s. %s",
+            APP_AUTHORS, as.character(as_of), APP_TITLE, CODE_DOI, DATA_DOI,
+            tab_label(tabs), subtab_label(subtabs), url)
+  }
+
+  build_bibtex <- function(as_of, url, tabs, subtabs) {
+    yy <- format(as_of, "%Y"); mm <- as.integer(format(as_of, "%m"))
+    note <- paste0("View: ", tab_label(tabs), " — ", subtab_label(subtabs))
+    sprintf("@software{fisheriesxplorer_%s_%02d,\n  author  = {%s},\n  title   = {%s},\n  year    = {%s},\n  month   = {%d},\n  version = {%s},\n  doi     = {%s},\n  url     = {%s},\n  note    = {%s}\n}",
+            yy, mm, APP_AUTHORS, APP_TITLE, yy, mm,
+            paste0(format(as_of, "%Y"), ".", format(as_of, "%m")),
+            DATA_DOI, url, note)
+  }
+
+  # Produce a bookmark URL that also includes ?as_of=...&tab=...&subtab=...
+  observeEvent(input$share_btn, {
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of))),
+      # add active tab + subtab
+    qs <- paste0(
+      qs,
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    shiny::updateQueryString(qs, mode = "replace", session = session)
+    session$doBookmark()
+  })
+
+  onBookmarked(function(url) {
+    showModal(modalDialog(
+      title = "Shareable link",
+      easyClose = TRUE,
+      footer = NULL,
+      p("Anyone opening this link will see exactly this view:"),
+      tags$code(url),
+      tags$hr(),
+      p("Copy the citation below into your manuscript or email:"),
+      tags$pre(build_citation(as.Date(input$as_of), url, input$tabs, input$subtabs))
+    ))
+  })
+
+  output$citation_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_citation(as.Date(input$as_of), curr_url, input$tabs, input$subtabs)
+  })
+
+  output$bibtex_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_bibtex(as.Date(input$as_of), curr_url, input$tabs, input$subtabs)
+  })
+
+}
+
+# Bookmarking (URL) ----
+enableBookmarking("url")
+
+# Run ----
+shinyApp(ui, server)
+# -------------------------------------------------------------------
+
+
+
+
+
+
+########### asyncronous data updating
+library(shiny)
+library(pins)
+library(dplyr)
+library(AzureStor)   # Azure support
+
+# -------------------------------------------------------------------
+# CONFIG — set these in your real app
+CODE_DOI <- "10.5281/zenodo.CODE_DOI_PLACEHOLDER"
+DATA_DOI <- "10.5281/zenodo.DATA_DOI_PLACEHOLDER"
+APP_TITLE <- "fisheriesXplorer (demo: versioned data & citation)"
+APP_AUTHORS <- "Santos da Costa, P., et al."
+APP_URL_BASE <- "http://localhost:xxxx"  # replaced by deployed URL on shinyapps.io
+PINS_PATH <- "fisheriesxplorer/pins"     # Azure “prefix” inside the container
+# -------------------------------------------------------------------
+
+# Cadence registry (used for UI + citation)
+DATASETS <- list(
+  landings     = list(label = "Landings",     cadence = "annual"),
+  stock_status = list(label = "Stock status", cadence = "daily")
+)
+
+# (helpers just for pretty labels in the citation)
+tab_label <- function(val) switch(val,
+  landings = "Landings",
+  stock_status = "Stock status",
+  val
+)
+subtab_label <- function(val) switch(val,
+  landings_overview = "Overview",
+  landings_details  = "Details",
+  status_overview   = "Overview",
+  status_details    = "Details",
+  val
+)
+
+# -----------------------
+# Board setup (Azure or fallback)
+# -----------------------
+use_azure <- nzchar(Sys.getenv("AZURE_CONTAINER_URL")) && nzchar(Sys.getenv("AZURE_SAS_RO"))
+
+if (use_azure) {
+  container <- AzureStor::storage_container(
+    endpoint = Sys.getenv("AZURE_CONTAINER_URL"),  # e.g. https://acct.dfs.core.windows.net/container
+    sas      = Sys.getenv("AZURE_SAS_RO")          # SAS with sp=r
+  )
+  board <- pins::board_azure(container = container, path = PINS_PATH, versioned = TRUE)
+  SEED_DEMO <- FALSE
+} else {
+  # Fallback: local temp board (seed demo data so the app runs out of the box)
+  board <- pins::board_temp(versioned = TRUE)
+  SEED_DEMO <- TRUE
+}
+
+# Seed demo datasets (only used in fallback mode) ----
+# IMPORTANT: reflect cadences
+# - status => daily snapshots (two different days)
+# - landings => annual snapshots (Jan 01 for each year)
+seed_demo_pins <- function(board) {
+  if (!("landings" %in% pins::pin_list(board))) {
+    # Landings (ANNUAL updates → snapshot_date on Jan 01)
+    land_2024 <- data.frame(stock = c("COD", "HAD", "POK"),
+                            landings_t  = c(1250, 820, 480))
+    attr(land_2024, "snapshot_date") <- as.Date("2024-01-01")
+    pins::pin_write(board, land_2024, name = "landings", type = "rds", versioned = TRUE)
+
+    land_2025 <- data.frame(stock = c("COD", "HAD", "POK"),
+                            landings_t  = c(1100, 900, 530))
+    attr(land_2025, "snapshot_date") <- as.Date("2025-01-01")
+    pins::pin_write(board, land_2025, name = "landings", type = "rds", versioned = TRUE)
+
+    # Stock status (DAILY updates → snapshot_date for specific days)
+    ss_0914 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Healthy", "Cautious", "Healthy"))
+    attr(ss_0914, "snapshot_date") <- as.Date("2025-09-14")
+    pins::pin_write(board, ss_0914, name = "stock_status", type = "rds", versioned = TRUE)
+
+    ss_0915 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Cautious", "Cautious", "Healthy"))
+    attr(ss_0915, "snapshot_date") <- as.Date("2025-09-15")
+    pins::pin_write(board, ss_0915, name = "stock_status", type = "rds", versioned = TRUE)
+  }
+}
+if (SEED_DEMO) seed_demo_pins(board)
+
+# Helpers: discover available snapshot dates by reading each version's embedded date ----
+available_snapshot_dates <- function(board, names) {
+  dates <- c()
+  for (nm in names) {
+    vers <- pins::pin_versions(board, nm)
+    for (v in vers$version) {
+      x <- pins::pin_read(board, nm, version = v)
+      sd <- attr(x, "snapshot_date")
+      if (!is.null(sd)) dates <- c(dates, sd)
+    }
+  }
+  sort(unique(as.Date(dates)))
+}
+
+# choose version by the embedded snapshot_date (<= as_of) ----
+choose_version_by_snapshot <- function(board, name, as_of_date) {
+  vers <- pins::pin_versions(board, name)
+  if (!nrow(vers)) stop("No versions found for pin: ", name)
+  # Inspect each version's embedded snapshot_date
+  candidates <- lapply(vers$version, function(v) {
+    x <- pins::pin_read(board, name, version = v)
+    sd <- attr(x, "snapshot_date")
+    if (is.null(sd)) return(NULL)
+    if (as.Date(sd) <= as.Date(as_of_date)) {
+      list(version = v, snapshot_date = as.Date(sd))
+    } else NULL
+  })
+  candidates <- Filter(Negate(is.null), candidates)
+  if (!length(candidates)) stop("No ", name, " snapshot available on/before ", as_of_date)
+  # Pick the most recent snapshot_date
+  o <- order(sapply(candidates, function(z) z$snapshot_date))
+  candidates[[tail(o, 1)]]
+}
+
+# read pin "as of" and return both data and version metadata ----
+read_pin_as_of <- function(board, name, as_of_date) {
+  sel <- choose_version_by_snapshot(board, name, as_of_date)
+  data <- pins::pin_read(board, name, version = sel$version)
+  list(data = data, version = sel$version, snapshot_date = sel$snapshot_date)
+}
+
+# UI ----
+ui <- function(request) {
+  shiny::navbarPage(
+    title = APP_TITLE,
+    id = "nav",
+
+    # ---- Data view tab
+    tabPanel("Explore",
+      fluidPage(
+        fluidRow(
+          column(
+            width = 8,
+            wellPanel(
+              h4("View data as of"),
+              # Populate choices from available snapshots
+              uiOutput("as_of_ui"),
+              br(),
+              bookmarkButton(id = "share_btn", label = "Share this view"),
+              helpText("Creates a URL that reproduces this exact view.")
+            ),
+            wellPanel(
+              h4("Version & Citation"),
+              uiOutput("provenance_ui"),
+              tags$hr(),
+              h5("Suggested citation"),
+              verbatimTextOutput("citation_text", placeholder = TRUE),
+              h5("BibTeX"),
+              verbatimTextOutput("bibtex_text", placeholder = TRUE)
+            )
+          ),
+          column(
+            width = 4,
+            # Give the tabset an id and stable values so we can permalink the active tab
+            tabsetPanel(id = "tabs",
+              tabPanel(title = "Landings", value = "landings",
+                # (optional) a sub-tabset so we can also permalink a sub-view
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "landings_overview",
+                           tableOutput("landings_tbl")),
+                  tabPanel(title = "Details",  value = "landings_details",
+                           tableOutput("landings_tbl_details"))
+                )
+              ),
+              tabPanel(title = "Stock status", value = "stock_status",
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "status_overview",
+                           tableOutput("status_overview_tbl")),
+                  tabPanel(title = "Details",  value = "status_details",
+                           tableOutput("status_tbl"))
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+}
+
+# Server ----
+server <- function(input, output, session) {
+
+  # All snapshot dates available across pins in this app
+  all_dates <- available_snapshot_dates(board, c("landings", "stock_status"))
+
+  # Build "as of" selector (restrict to known snapshots to make behavior clear)
+  output$as_of_ui <- renderUI({
+    # honor ?as_of=YYYY-MM-DD in the query string
+    qs <- shiny::parseQueryString(session$clientData$url_search)
+    default_date <- if (!is.null(qs$as_of)) as.Date(qs$as_of) else tail(all_dates, 1)
+
+    # also honor ?tab= and ?subtab= on first load
+    if (!is.null(qs$tab))    updateTabsetPanel(session, "tabs",    selected = qs$tab)
+    if (!is.null(qs$subtab)) updateTabsetPanel(session, "subtabs", selected = qs$subtab)
+
+    selectInput("as_of", "Snapshot date:", choices = all_dates, selected = default_date)
+  })
+
+  # Reactively read each dataset as of the chosen date
+  landings_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "landings", as.Date(input$as_of))
+  })
+  status_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "stock_status", as.Date(input$as_of))
+  })
+
+  # Tables
+  output$landings_tbl <- renderTable({
+    landings_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # (same data in the Details subtab, just to show the mechanism)
+  output$landings_tbl_details <- renderTable({
+    landings_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$status_tbl <- renderTable({
+    status_asof()$data
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Simple overview table for status (count by status)
+  output$status_overview_tbl <- renderTable({
+    status_asof()$data %>% count(status, name = "n")
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Provenance / Version & Citation panel (now shows cadence per dataset)
+  output$provenance_ui <- renderUI({
+    req(input$as_of)
+    l <- landings_asof()
+    s <- status_asof()
+    storage_str <- if (use_azure) {
+      paste0("<b>Storage:</b> Azure container (", htmltools::htmlEscape(Sys.getenv("AZURE_CONTAINER_URL")),
+             "), path <code>", PINS_PATH, "</code>")
+    } else {
+      "<b>Storage:</b> local temporary board (demo fallback)"
+    }
+    tagList(
+      p(HTML(storage_str)),
+      p(HTML(sprintf("<b>Code DOI:</b> %s<br/><b>Data DOI / manifest:</b> %s",
+                     CODE_DOI, DATA_DOI))),
+      p(HTML(sprintf("<b>View date:</b> %s", as.character(as.Date(input$as_of))))),
+      p(HTML(sprintf("<b>View:</b> %s — %s",
+                     tab_label(input$tabs), subtab_label(input$subtabs)))),
+      tags$details(
+        tags$summary("Data currency by dataset"),
+        tags$ul(
+          tags$li(HTML(sprintf("<b>%s</b> — cadence: %s; snapshot: %s; pin version: <code>%s</code>",
+                               DATASETS$landings$label, DATASETS$landings$cadence,
+                               as.character(l$snapshot_date), l$version))),
+          tags$li(HTML(sprintf("<b>%s</b> — cadence: %s; snapshot: %s; pin version: <code>%s</code>",
+                               DATASETS$stock_status$label, DATASETS$stock_status$cadence,
+                               as.character(s$snapshot_date), s$version)))
+        )
+      ),
+      p(HTML("<i>These version IDs allow exact re-loading of the same data bytes.</i>"))
+    )
+  })
+
+  # Citation strings (include tab + subtab + per-dataset cadence & snapshot)
+  build_citation <- function(as_of, url, tabs, subtabs, land_obj, status_obj) {
+    sprintf(
+      paste0("%s (view as of %s). *%s* [Shiny app]. ",
+             "Code: %s; Data: %s. View: %s — %s. ",
+             "Snapshots — %s (%s): %s [pin %s]; %s (%s): %s [pin %s]. %s"),
+      APP_AUTHORS, as.character(as.Date(as_of)), APP_TITLE,
+      CODE_DOI, DATA_DOI, tab_label(tabs), subtab_label(subtabs),
+      DATASETS$landings$label, DATASETS$landings$cadence,
+      as.character(land_obj$snapshot_date), land_obj$version,
+      DATASETS$stock_status$label, DATASETS$stock_status$cadence,
+      as.character(status_obj$snapshot_date), status_obj$version,
+      url
+    )
+  }
+
+  build_bibtex <- function(as_of, url, tabs, subtabs, land_obj, status_obj) {
+    yy <- format(as_of, "%Y"); mm <- as.integer(format(as_of, "%m"))
+    note <- paste0("View: ", tab_label(tabs), " — ", subtab_label(subtabs),
+                   "; Snapshots — ",
+                   DATASETS$landings$label, " (", DATASETS$landings$cadence, "): ",
+                   as.character(land_obj$snapshot_date), " [pin ", land_obj$version, "]; ",
+                   DATASETS$stock_status$label, " (", DATASETS$stock_status$cadence, "): ",
+                   as.character(status_obj$snapshot_date), " [pin ", status_obj$version, "]")
+    sprintf("@software{fisheriesxplorer_%s_%02d,\n  author  = {%s},\n  title   = {%s},\n  year    = {%s},\n  month   = {%d},\n  version = {%s},\n  doi     = {%s},\n  url     = {%s},\n  note    = {%s}\n}",
+            yy, mm, APP_AUTHORS, APP_TITLE, yy, mm,
+            paste0(format(as_of, "%Y"), ".", format(as_of, "%m")),
+            DATA_DOI, url, note)
+  }
+
+  # Produce a bookmark URL that also includes ?as_of=...&tab=...&subtab=...
+  observeEvent(input$share_btn, {
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    shiny::updateQueryString(qs, mode = "replace", session = session)
+    session$doBookmark()
+  })
+
+  onBookmarked(function(url) {
+    showModal(modalDialog(
+      title = "Shareable link",
+      easyClose = TRUE,
+      footer = NULL,
+      p("Anyone opening this link will see exactly this view:"),
+      tags$code(url),
+      tags$hr(),
+      p("Copy the citation below into your manuscript or email:"),
+      tags$pre(build_citation(as.Date(input$as_of), url, input$tabs, input$subtabs,
+                              landings_asof(), status_asof()))
+    ))
+  })
+
+  output$citation_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_citation(as.Date(input$as_of), curr_url, input$tabs, input$subtabs,
+                   landings_asof(), status_asof())
+  })
+
+  output$bibtex_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_bibtex(as.Date(input$as_of), curr_url, input$tabs, input$subtabs,
+                 landings_asof(), status_asof())
+  })
+
+}
+
+# Bookmarking (URL) ----
+enableBookmarking("url")
+
+# Run ----
+shinyApp(ui, server)
+
+
+
+
+
+
+
+######################################################
+# app.R — fisheriesXplorer demo: Azure + versioned pins + time-travel + Figshare DOIs
+# Run locally: shiny::runApp()
+# Deploy: set AZURE_CONTAINER_URL, AZURE_SAS_RO (read-only SAS)
+#         and (optional) CODE_DOI_BASE, CODE_DOI_VER, DATA_DOI_BASE, DATA_DOI_VER
+
+library(shiny)
+library(pins)
+library(dplyr)
+library(AzureStor)   # install.packages("AzureStor")
+library(htmltools)
+
+# -------------------------------------------------------------------
+# APP CONFIG
+APP_TITLE    <- "fisheriesXplorer (demo: versioned data & citation)"
+APP_AUTHORS  <- "ICES (International Council for the Exploration of the Sea)"
+APP_URL_BASE <- "http://localhost:xxxx"     # replaced by deployed URL on shinyapps.io
+PINS_PATH    <- "fisheriesxplorer/pins"     # Azure “prefix” (like a folder)
+# Back-compat defaults (used if Figshare env vars are not set)
+CODE_DOI     <- "10.5281/zenodo.CODE_DOI_PLACEHOLDER"
+DATA_DOI     <- "10.5281/zenodo.DATA_DOI_PLACEHOLDER"
+# -------------------------------------------------------------------
+
+# ---- Figshare DOI support (env-driven; falls back to defaults) ----
+# Set these in deployment if you use Figshare:
+#   CODE_DOI_BASE=10.6084/m9.figshare.1234567
+#   CODE_DOI_VER=7
+#   DATA_DOI_BASE=10.6084/m9.figshare.7654321
+#   DATA_DOI_VER=52
+CODE_DOI_BASE <- Sys.getenv("CODE_DOI_BASE", unset = CODE_DOI)
+CODE_DOI_VER  <- Sys.getenv("CODE_DOI_VER",  unset = "")
+DATA_DOI_BASE <- Sys.getenv("DATA_DOI_BASE", unset = DATA_DOI)
+DATA_DOI_VER  <- Sys.getenv("DATA_DOI_VER",  unset = "")
+
+compose_versioned_doi <- function(base, ver) {
+  if (!nzchar(base) || !nzchar(ver)) return(NA_character_)
+  ver <- sub("^v", "", ver)  # accept "7" or "v7"
+  paste0(base, ".v", ver)
+}
+link_doi <- function(doi) {
+  if (!nzchar(doi)) return("")
+  sprintf("<a href='https://doi.org/%s' target='_blank' rel='noopener'>%s</a>", doi, doi)
+}
+
+CODE_DOI_VERSIONED <- compose_versioned_doi(CODE_DOI_BASE, CODE_DOI_VER)
+DATA_DOI_VERSIONED <- compose_versioned_doi(DATA_DOI_BASE, DATA_DOI_VER)
+
+# Prefer versioned DOIs in citations when available
+CODE_DOI_CITE <- if (!is.na(CODE_DOI_VERSIONED)) CODE_DOI_VERSIONED else CODE_DOI_BASE
+DATA_DOI_CITE <- if (!is.na(DATA_DOI_VERSIONED)) DATA_DOI_VERSIONED else DATA_DOI_BASE
+
+# ---- Dataset cadences (shown in UI & citations) ----
+DATASETS <- list(
+  landings     = list(label = "Landings",     cadence = "annual"),
+  stock_status = list(label = "Stock status", cadence = "daily")
+)
+
+# (helpers for pretty labels in the citation)
+tab_label <- function(val) switch(val,
+  landings = "Landings",
+  stock_status = "Stock status",
+  val
+)
+subtab_label <- function(val) switch(val,
+  landings_overview = "Overview",
+  landings_details  = "Details",
+  status_overview   = "Overview",
+  status_details    = "Details",
+  val
+)
+
+# -----------------------
+# Board setup (Azure or fallback)
+# -----------------------
+use_azure <- nzchar(Sys.getenv("AZURE_CONTAINER_URL")) && nzchar(Sys.getenv("AZURE_SAS_RO"))
+
+if (use_azure) {
+  container <- AzureStor::storage_container(
+    endpoint = Sys.getenv("AZURE_CONTAINER_URL"),  # e.g. https://acct.dfs.core.windows.net/container
+    sas      = Sys.getenv("AZURE_SAS_RO")          # SAS with sp=r
+  )
+  board <- pins::board_azure(container = container, path = PINS_PATH, versioned = TRUE)
+  SEED_DEMO <- FALSE
+} else {
+  # Fallback: local temp board (seed demo data so the app runs out of the box)
+  board <- pins::board_temp(versioned = TRUE)
+  SEED_DEMO <- TRUE
+}
+
+# Seed demo datasets (only used in fallback mode) ----
+# Cadences reflected in snapshot_date values:
+# - landings => annual snapshots on Jan 01
+# - stock_status => daily snapshots on specific dates
+seed_demo_pins <- function(board) {
+  if (!("landings" %in% pins::pin_list(board))) {
+    # Landings (ANNUAL)
+    land_2024 <- data.frame(stock = c("COD", "HAD", "POK"),
+                            landings_t  = c(1250, 820, 480))
+    attr(land_2024, "snapshot_date") <- as.Date("2024-01-01")
+    pins::pin_write(board, land_2024, name = "landings", type = "rds", versioned = TRUE)
+
+    land_2025 <- data.frame(stock = c("COD", "HAD", "POK"),
+                            landings_t  = c(1100, 900, 530))
+    attr(land_2025, "snapshot_date") <- as.Date("2025-01-01")
+    pins::pin_write(board, land_2025, name = "landings", type = "rds", versioned = TRUE)
+
+    # Stock status (DAILY)
+    ss_0914 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Healthy", "Cautious", "Healthy"))
+    attr(ss_0914, "snapshot_date") <- as.Date("2025-09-14")
+    pins::pin_write(board, ss_0914, name = "stock_status", type = "rds", versioned = TRUE)
+
+    ss_0915 <- data.frame(stock = c("COD", "HAD", "POK"),
+                          status = c("Cautious", "Cautious", "Healthy"))
+    attr(ss_0915, "snapshot_date") <- as.Date("2025-09-15")
+    pins::pin_write(board, ss_0915, name = "stock_status", type = "rds", versioned = TRUE)
+  }
+}
+if (SEED_DEMO) seed_demo_pins(board)
+
+# -----------------------
+# Helpers: discover & resolve snapshots
+# -----------------------
+available_snapshot_dates <- function(board, names) {
+  dates <- c()
+  for (nm in names) {
+    vers <- pins::pin_versions(board, nm)
+    for (v in vers$version) {
+      x <- pins::pin_read(board, nm, version = v)
+      sd <- attr(x, "snapshot_date")
+      if (!is.null(sd)) dates <- c(dates, sd)
+    }
+  }
+  sort(unique(as.Date(dates)))
+}
+
+choose_version_by_snapshot <- function(board, name, as_of_date) {
+  vers <- pins::pin_versions(board, name)
+  if (!nrow(vers)) stop("No versions found for pin: ", name)
+  candidates <- lapply(vers$version, function(v) {
+    x <- pins::pin_read(board, name, version = v)
+    sd <- attr(x, "snapshot_date")
+    if (is.null(sd)) return(NULL)
+    if (as.Date(sd) <= as.Date(as_of_date)) {
+      list(version = v, snapshot_date = as.Date(sd))
+    } else NULL
+  })
+  candidates <- Filter(Negate(is.null), candidates)
+  if (!length(candidates)) stop("No ", name, " snapshot available on/before ", as_of_date)
+  o <- order(sapply(candidates, function(z) z$snapshot_date))
+  candidates[[tail(o, 1)]]
+}
+
+read_pin_as_of <- function(board, name, as_of_date) {
+  sel  <- choose_version_by_snapshot(board, name, as_of_date)
+  data <- pins::pin_read(board, name, version = sel$version)
+  list(data = data, version = sel$version, snapshot_date = sel$snapshot_date)
+}
+
+# -----------------------
+# UI
+# -----------------------
+ui <- function(request) {
+  shiny::navbarPage(
+    title = APP_TITLE,
+    id = "nav",
+
+    tabPanel("Explore",
+      fluidPage(
+        fluidRow(
+          column(
+            width = 8,
+            wellPanel(
+              h4("View data as of"),
+              uiOutput("as_of_ui"),
+              br(),
+              bookmarkButton(id = "share_btn", label = "Share this view"),
+              helpText("Creates a URL that reproduces this exact view.")
+            ),
+            wellPanel(
+              h4("Version & Citation"),
+              uiOutput("provenance_ui"),
+              tags$hr(),
+              h5("Suggested citation"),
+              verbatimTextOutput("citation_text", placeholder = TRUE),
+              h5("BibTeX"),
+              verbatimTextOutput("bibtex_text", placeholder = TRUE)
+            )
+          ),
+          column(
+            width = 4,
+            # tabs & subtabs so we can permalink an exact view
+            tabsetPanel(id = "tabs",
+              tabPanel(title = "Landings", value = "landings",
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "landings_overview",
+                           tableOutput("landings_tbl")),
+                  tabPanel(title = "Details",  value = "landings_details",
+                           tableOutput("landings_tbl_details"))
+                )
+              ),
+              tabPanel(title = "Stock status", value = "stock_status",
+                tabsetPanel(id = "subtabs",
+                  tabPanel(title = "Overview", value = "status_overview",
+                           tableOutput("status_overview_tbl")),
+                  tabPanel(title = "Details",  value = "status_details",
+                           tableOutput("status_tbl"))
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+}
+
+# -----------------------
+# Server
+# -----------------------
+server <- function(input, output, session) {
+
+  # Collect all snapshot dates across pins
+  all_dates <- available_snapshot_dates(board, c("landings", "stock_status"))
+
+  # As-of selector + honor ?tab= & ?subtab= on first load
+  output$as_of_ui <- renderUI({
+    qs <- shiny::parseQueryString(session$clientData$url_search)
+    default_date <- if (!is.null(qs$as_of)) as.Date(qs$as_of) else tail(all_dates, 1)
+    if (!is.null(qs$tab))    updateTabsetPanel(session, "tabs",    selected = qs$tab)
+    if (!is.null(qs$subtab)) updateTabsetPanel(session, "subtabs", selected = qs$subtab)
+    selectInput("as_of", "Snapshot date:", choices = all_dates, selected = default_date)
+  })
+
+  # Dataset reads (as of selected date)
+  landings_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "landings", as.Date(input$as_of))
+  })
+  status_asof <- reactive({
+    req(input$as_of)
+    read_pin_as_of(board, "stock_status", as.Date(input$as_of))
+  })
+
+  # Tables
+  output$landings_tbl <- renderTable({ landings_asof()$data }, striped = TRUE, bordered = TRUE, spacing = "s")
+  output$landings_tbl_details <- renderTable({ landings_asof()$data }, striped = TRUE, bordered = TRUE, spacing = "s")
+  output$status_tbl   <- renderTable({ status_asof()$data   }, striped = TRUE, bordered = TRUE, spacing = "s")
+  output$status_overview_tbl <- renderTable({
+    status_asof()$data %>% count(status, name = "n")
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # Provenance / Version & Citation panel (with Azure + Figshare DOIs + cadences)
+  output$provenance_ui <- renderUI({
+    req(input$as_of)
+    l <- landings_asof()
+    s <- status_asof()
+    storage_str <- if (use_azure) {
+      paste0("<b>Storage:</b> Azure container (", htmltools::htmlEscape(Sys.getenv("AZURE_CONTAINER_URL")),
+             "), path <code>", PINS_PATH, "</code>")
+    } else {
+      "<b>Storage:</b> local temporary board (demo fallback)"
+    }
+    tagList(
+      p(HTML(storage_str)),
+      p(HTML(sprintf(
+        paste0(
+          "<b>Code DOI (base):</b> %s",
+          if (!is.na(CODE_DOI_VERSIONED)) paste0("<br/><b>Code DOI (this version):</b> ", link_doi(CODE_DOI_VERSIONED)) else "",
+          "<br/><b>Data DOI (base):</b> %s",
+          if (!is.na(DATA_DOI_VERSIONED)) paste0("<br/><b>Data DOI (this version):</b> ", link_doi(DATA_DOI_VERSIONED)) else ""
+        ),
+        link_doi(CODE_DOI_BASE),
+        link_doi(DATA_DOI_BASE)
+      ))),
+      p(HTML(sprintf("<b>View date:</b> %s", as.character(as.Date(input$as_of))))),
+      p(HTML(sprintf("<b>View:</b> %s — %s", tab_label(input$tabs), subtab_label(input$subtabs)))),
+      tags$details(
+        tags$summary("Data currency by dataset"),
+        tags$ul(
+          tags$li(HTML(sprintf("<b>%s</b> — cadence: %s; snapshot: %s; pin version: <code>%s</code>",
+                               DATASETS$landings$label, DATASETS$landings$cadence,
+                               as.character(l$snapshot_date), l$version))),
+          tags$li(HTML(sprintf("<b>%s</b> — cadence: %s; snapshot: %s; pin version: <code>%s</code>",
+                               DATASETS$stock_status$label, DATASETS$stock_status$cadence,
+                               as.character(s$snapshot_date), s$version)))
+        )
+      ),
+      p(HTML("<i>These version IDs allow exact re-loading of the same data bytes.</i>"))
+    )
+  })
+
+  # Citation & BibTeX (prefer versioned DOIs if provided via env)
+  build_citation <- function(as_of, url, tabs, subtabs, land_obj, status_obj) {
+    sprintf(
+      paste0("%s (view as of %s). *%s* [Shiny app]. ",
+             "Code DOI: %s; Data DOI: %s. View: %s — %s. ",
+             "Snapshots — Landings (annual): %s [pin %s]; Stock status (daily): %s [pin %s]. %s"),
+      APP_AUTHORS, as.character(as.Date(as_of)), APP_TITLE,
+      CODE_DOI_CITE, DATA_DOI_CITE, tab_label(tabs), subtab_label(subtabs),
+      as.character(land_obj$snapshot_date), land_obj$version,
+      as.character(status_obj$snapshot_date), status_obj$version,
+      url
+    )
+  }
+
+  build_bibtex <- function(as_of, url, tabs, subtabs, land_obj, status_obj) {
+    yy <- format(as_of, "%Y"); mm <- as.integer(format(as_of, "%m"))
+    note <- paste0("View: ", tab_label(tabs), " — ", subtab_label(subtabs),
+                   "; Snapshots — Landings (annual): ", as.character(land_obj$snapshot_date),
+                   " [pin ", land_obj$version, "]; Stock status (daily): ",
+                   as.character(status_obj$snapshot_date), " [pin ", status_obj$version, "]")
+    sprintf("@software{fisheriesxplorer_%s_%02d,\n  author  = {%s},\n  title   = {%s},\n  year    = {%s},\n  month   = {%d},\n  version = {%s},\n  doi     = {%s},\n  url     = {%s},\n  note    = {%s}\n}",
+            yy, mm, APP_AUTHORS, APP_TITLE, yy, mm,
+            paste0(format(as_of, "%Y"), ".", format(as_of, "%m")),
+            DATA_DOI_CITE, url, note)
+  }
+
+  # Bookmark URL includes ?as_of=&tab=&subtab=
+  observeEvent(input$share_btn, {
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    shiny::updateQueryString(qs, mode = "replace", session = session)
+    session$doBookmark()
+  })
+
+  onBookmarked(function(url) {
+    showModal(modalDialog(
+      title = "Shareable link",
+      easyClose = TRUE,
+      footer = NULL,
+      p("Anyone opening this link will see exactly this view:"),
+      tags$code(url),
+      tags$hr(),
+      p("Copy the citation below into your manuscript or email:"),
+      tags$pre(build_citation(as.Date(input$as_of), url, input$tabs, input$subtabs,
+                              landings_asof(), status_asof()))
+    ))
+  })
+
+  # Live citation + BibTeX (reflecting current state)
+  output$citation_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_citation(as.Date(input$as_of), curr_url, input$tabs, input$subtabs,
+                   landings_asof(), status_asof())
+  })
+
+  output$bibtex_text <- renderText({
+    qs <- paste0(
+      "?as_of=", as.character(as.Date(input$as_of)),
+      "&tab=", input$tabs,
+      if (!is.null(input$subtabs)) paste0("&subtab=", input$subtabs) else ""
+    )
+    curr_url <- paste0(ifelse(nzchar(session$clientData$url_hostname),
+                              paste0(session$clientData$url_protocol, "//",
+                                     session$clientData$url_hostname,
+                                     ifelse(nchar(session$clientData$url_port), paste0(":", session$clientData$url_port), ""),
+                                     session$clientData$url_pathname),
+                              APP_URL_BASE),
+                       qs)
+    build_bibtex(as.Date(input$as_of), curr_url, input$tabs, input$subtabs,
+                 landings_asof(), status_asof())
+  })
+}
+
+# Bookmarking (URL)
+enableBookmarking("url")
+
+# Run app
+shinyApp(ui, server)
