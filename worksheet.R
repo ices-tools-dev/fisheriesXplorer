@@ -676,3 +676,115 @@ save(NrS_catchRange, file = "D:/GitHub_2023/fisheriesXplorer/data/NrS_catchRange
 
 
 devtools::load_all(); run_app()
+
+
+
+
+### recover cat 3
+
+     unique(c(refptsAll %>% distinct(CustomRefPointName1) %>% pull,
+           refptsAll %>% distinct(CustomRefPointName2)%>% pull,
+           refptsAll %>% distinct(CustomRefPointName3)%>% pull,
+           refptsAll %>% distinct(CustomRefPointName4)%>% pull,
+           refptsAll %>% distinct(CustomRefPointName5)%>% pull))
+
+     ### when MSYBtrigger is na and Itrigger in custom then set MSYBtrigger to Itrigger
+     itrgigger <- c("I (trigger)", "I_{trigger}", "Itrigger",
+"I_(trigger)",
+                 "I trigger", "MP B_{trigger}", "MGT B_{trigger}",
+"MGTB_{trigger}",
+                 "B_{MGT}", "MSY Btrigger", "I_{Btrigger}")
+
+     refptsAll <- refptsAll %>% mutate(CustomRefPointValue1 =
+as.numeric(CustomRefPointValue1),
+                                     CustomRefPointValue2 =
+as.numeric(CustomRefPointValue2),
+                                     CustomRefPointValue3 =
+as.numeric(CustomRefPointValue3),
+                                     CustomRefPointValue4 =
+as.numeric(CustomRefPointValue4),
+                                     CustomRefPointValue5 =
+as.numeric(CustomRefPointValue5))
+     refptsAll2 <- refptsAll
+
+     refptsAll2 <- refptsAll2 %>%
+         mutate(MSYBtrigger = case_when(
+             (MSYBtrigger == "" | is.na(MSYBtrigger)) &
+CustomRefPointName1 %in% itrgigger ~ CustomRefPointValue1,
+             (MSYBtrigger == "" | is.na(MSYBtrigger)) &
+CustomRefPointName2 %in% itrgigger ~ CustomRefPointValue2,
+             (MSYBtrigger == "" | is.na(MSYBtrigger)) &
+CustomRefPointName3 %in% itrgigger ~ CustomRefPointValue3,
+             (MSYBtrigger == "" | is.na(MSYBtrigger)) &
+CustomRefPointName4 %in% itrgigger ~ CustomRefPointValue4,
+             (MSYBtrigger == "" | is.na(MSYBtrigger)) &
+CustomRefPointName5 %in% itrgigger ~ CustomRefPointValue5,
+             TRUE ~ MSYBtrigger))
+
+     ### when FMSY is na and Fmsy proxy in custom then set FMSY to Fmsy proxy
+     fmsyproxy <- c("HR_{MSY proxy}", "F_{MSYproxy}", "FMSY proxy",
+"F_{MSY proxy}",
+         "Relative FMSY", "HR_{MSY proxy}", "Fmsy proxy", "F_(msy
+proxy)",
+         "F_(MSY proxy)", "F_{MSY proxy}", "FMSY proxy",
+         "F_{MSY proxy}", "Fmsy proxy", "F_{MSYproxy}",
+         "F_{MGT}", "Rel FMSY", "F_{MP}", "F/F_{MSY}" , "HR_{MGT}",
+          "F MSY proxy" ,"F MSY proxy", "LBI"
+          #"HRmsy proxy", "HRMSY proxy", "HR_{MSY}", "HRMSY proxy",
+"F_(MSY proxy)", "HR MSY proxy", "HRmsy",
+
+          )
+
+     refptsAll2 <- refptsAll2 %>%
+         mutate(FMSY = case_when(
+             (FMSY == "" | is.na(FMSY)) & CustomRefPointName1 %in%
+fmsyproxy ~ CustomRefPointValue1,
+             (FMSY == "" | is.na(FMSY)) & CustomRefPointName2 %in%
+fmsyproxy ~ CustomRefPointValue2,
+             (FMSY == "" | is.na(FMSY)) & CustomRefPointName3 %in%
+fmsyproxy ~ CustomRefPointValue3,
+             (FMSY == "" | is.na(FMSY)) & CustomRefPointName3 %in%
+fmsyproxy ~ CustomRefPointValue4,
+             (FMSY == "" | is.na(FMSY)) & CustomRefPointName3 %in%
+fmsyproxy ~ CustomRefPointValue5,
+             TRUE ~ FMSY))
+
+
+# Fix
+unique(refptsAll2$FMGT_lower)
+unique(refptsAll2$FMGTRange_low)
+
+refptsAll2 <- refptsAll2 %>%
+     mutate(FMGT_lower = case_when(
+         (FMGT_lower == "" | is.na(FMGT_lower)) &   (FMGTRange_low != ""
+| !is.na(FMGTRange_low)) ~ FMGTRange_low,
+         TRUE ~ FMGT_lower))
+
+unique(refptsAll2$FMGT_upper)
+unique(refptsAll2$FMGTRange_high)
+
+refptsAll2 <- refptsAll2 %>%
+     mutate(FMGT_lower = case_when(
+         (FMGT_upper == "" | is.na(FMGT_upper)) &   (FMGTRange_high != ""
+| !is.na(FMGTRange_high)) ~ FMGTRange_high,
+         TRUE ~ FMGT_upper))
+
+
+
+
+#### code to scale plot text size for ggplotly
+output$myPlot <- renderPlotly({
+  w <- session$clientData$output_myPlot_width
+  size <- max(8, min(16, round(w / 50)))
+  
+  p <- ggplot(df, aes(x, y)) +
+    geom_point() +
+    theme(
+      axis.title = element_text(size = size),
+      axis.text  = element_text(size = size - 2),
+      legend.text = element_text(size = size - 2),
+      legend.title = element_text(size = size)
+    )
+  
+  ggplotly(p)
+})

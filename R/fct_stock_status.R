@@ -982,8 +982,8 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                         plotly::layout(
                                 yaxis = list(
                                         title = yaxis_title,
-                                        titlefont = list(size = 20),
-                                        tickfont = list(size = 18),
+                                        titlefont = list(size = 16),
+                                        tickfont = list(size = 14),
                                         zeroline = TRUE,
                                         zerolinecolor = "black",
                                         zerolinewidth = 2
@@ -1021,16 +1021,38 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         # --- Combine panels and enable cross-highlighting
         final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
                 plotly::layout(
-                        title = guild,
+                        # title = list(
+                        #         text = guild,
+                        #         x = 0,                # far left (0 = left, 0.5 = center, 1 = right)
+                        #         xanchor = "left",     # anchor text to the left
+                        #         y = 1,             # keep near the top
+                        #         yanchor = "bottom",
+                        #         font = list(size = 16)
+                        #         ),
+                        # annotations = list(
+                        #                 list(
+                        #                         text = guild,
+                        #                         x = 0.01, y = 0.98,        # relative to plotting area (0–1, left–right / bottom–top)
+                        #                         xref = "paper", yref = "paper",
+                        #                         showarrow = FALSE,
+                        #                         xanchor = "left",
+                        #                         yanchor = "top",
+                        #                         font = list(size = 18, color = "black")
+                        #                 )
+                        #                 ),
                         xaxis = list(
                                 title = "Year",
-                                titlefont = list(size = 20),
-                                tickfont = list(size = 18)
+                                titlefont = list(size = 16),
+                                tickfont = list(size = 14)
                         ),
-                        margin = list(b = 100),
+                        margin = list(b = 100, r = 50),
                         legend = list(
-                                title = list(text = "Stock name", font = list(size = 18)),
-                                font = list(size = 18)
+                                title = list(text = "Stock name", font = list(size = 16)),
+                                orientation = "h",
+                                x = 0.5, y = 1.05, # center above the plot
+                                xanchor = "center",
+                                yanchor = "bottom",
+                                font = list(size = 16)
                         ),
                         annotations = list(
                                 list(
@@ -1041,6 +1063,15 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                                         showarrow = FALSE,
                                         xanchor = "right",
                                         yanchor = "bottom"
+                                ),
+                                list(
+                                        text = guild,
+                                        x = 0.01, y = 0.99, # relative to plotting area (0–1, left–right / bottom–top)
+                                        xref = "paper", yref = "paper",
+                                        showarrow = FALSE,
+                                        xanchor = "left",
+                                        yanchor = "top",
+                                        font = list(size = 18, color = "black")
                                 )
                         )
                 ) %>%
