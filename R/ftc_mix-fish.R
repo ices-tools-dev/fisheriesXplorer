@@ -904,6 +904,7 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
           tickmode = "array",
           tickvals = seq_len(n_cat),
           ticktext = global_x,
+          tickfont = list(size = 12),
           range = c(0.5, n_cat + 0.5)
         ),
         yaxis = list(title = "", range = c(0, max_y)),
@@ -931,15 +932,14 @@ plot_catchScenStk_plotly <- function(data, adv, refTable,
       showlegend = TRUE,
       legend = list(
         orientation = "h",
-        x = 0, y = 1.12,            # top, left-aligned to avoid clipping
-        xanchor = "left", yanchor = "bottom",
-        itemsizing = "constant",
-        itemwidth = legend_itemwidth,  # << shorter line samples
-        tracegroupgap = 10,
-        font = list(size = 12),
-        bgcolor = "rgba(255,255,255,0.85)"
+        x = 0.5, y = 1.05,            # top, left-aligned to avoid clipping
+        xanchor = "center", yanchor = "bottom"        # itemsizing = "constant",
+        # itemwidth = legend_itemwidth  # << shorter line samples
+        # tracegroupgap = 10,
+        # font = list(size = 10),
+        # bgcolor = "rgba(255,255,255,0.85)"
       ),
-      margin = list(l = 80, b = 110, t = 130, r = 20),
+      margin = list(l = 80, b = 110, t = 20, r = 20),
       annotations = list(
         list(
           text = ylab,
