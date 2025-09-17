@@ -148,7 +148,9 @@ app_server <- function(input, output, session) {
 
   mod_overview_server(
     "overview_1",
-    selected_ecoregion = selected_ecoregion
+    selected_ecoregion = selected_ecoregion,
+    bookmark_qs        = initial_qs, 
+    set_subtab         = set_subtab
   )
 
   # Landings module
@@ -174,7 +176,9 @@ app_server <- function(input, output, session) {
   # Mixed fisheries (selection + display)
   sel_mixfish <- mod_mixfish_plot_selection_server(
     "mixfish_selection_1",
-    selected_ecoregion = selected_ecoregion
+    selected_ecoregion = selected_ecoregion,
+    bookmark_qs        = initial_qs, # reactive(parseQueryString(...))
+    set_subtab         = set_subtab # parent’s setter for ?subtab=
   )
   mod_mixfish_plot_display_server(
     "mixfish_viz_1",
