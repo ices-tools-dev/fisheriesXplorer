@@ -37,7 +37,7 @@ app_server <- function(input, output, session) {
   set_subtab <- function(val) current_subtab(val)
 
   # Tabs that do NOT have module-level subtabs
-  no_subtab_tabs <- c("home", "overview", "vms", "bycatch") # adjust to your values
+  no_subtab_tabs <- c("home", "mixed_fisheries", "vms", "bycatch") # adjust to your values
 
   # If the user switches to a no-subtab tab, clear any previously set subtab
   observeEvent(input$`nav-page`,
@@ -176,9 +176,9 @@ app_server <- function(input, output, session) {
   # Mixed fisheries (selection + display)
   sel_mixfish <- mod_mixfish_plot_selection_server(
     "mixfish_selection_1",
-    selected_ecoregion = selected_ecoregion,
-    bookmark_qs        = initial_qs, # reactive(parseQueryString(...))
-    set_subtab         = set_subtab # parent’s setter for ?subtab=
+    selected_ecoregion = selected_ecoregion
+    # bookmark_qs        = initial_qs, # reactive(parseQueryString(...))
+    # set_subtab         = set_subtab # parent’s setter for ?subtab=
   )
   mod_mixfish_plot_display_server(
     "mixfish_viz_1",
