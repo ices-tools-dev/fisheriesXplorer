@@ -439,3 +439,46 @@ caption {
   /* .js-plotly-plot .g-xtitle text,  
   .js-plotly-plot .g-ytitle text,  
   .js-plotly-plot .annotation text { */
+
+.image-button-wrap {
+    position: relative;
+    display: inline-block;
+  }
+
+  .image-button-link {
+    display: block;
+    width: 140px;
+    height: 140px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    outline: 0;
+    text-decoration: none;
+  }
+
+  .image-button-wrap .fx-tooltip {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    bottom: -6px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    white-space: normal;
+    width: 240px;
+    max-width: 260px;
+    font-size: 1rem;
+    line-height: 1.25;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease, transform .15s ease;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+  }
+
+  .image-button-wrap:hover .fx-tooltip,
+  .image-button-wrap:focus-within .fx-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
