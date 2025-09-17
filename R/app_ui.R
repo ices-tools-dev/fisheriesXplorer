@@ -42,44 +42,30 @@ app_ui <- function(request) {
       fluid = TRUE,
       windowTitle = "fisheriesXplorer",
       id = "nav-page",
-      tabPanel("Home",
-        value = "home",
-        mod_navigation_page_ui("navigation_page_1")
-      ),
-      tabPanel(
-        "Overview",
-        mod_overview_ui("overview_1")
-      ),
-      tabPanel(
-        "Landings",
-        mod_landings_ui("landings_1")
-      ),
-      tabPanel(
-        "Stock Status",
-        mod_stock_status_ui("stock_status_1")
-      ),
-      tabPanel(
-        "Mixed Fisheries",
+      tabPanel("Home", value = "home", mod_navigation_page_ui("navigation_page_1")),
+      tabPanel("Overview", value = "overview", mod_overview_ui("overview_1")),
+      tabPanel("Landings", value = "landings", mod_landings_ui("landings_1")),
+      tabPanel("Stock Status", value = "stock_status", mod_stock_status_ui("stock_status_1")),
+      tabPanel("Mixed Fisheries",
+        value = "mixed_fisheries",
         layout_sidebar(
-          sidebar = sidebar(
-            mod_mixfish_plot_selection_ui("mixfish_selection_1"),
-            width = "20vw"
-          ),
-          mod_mixfish_plot_display_ui("mixfish_viz_1"),
+          sidebar = sidebar(mod_mixfish_plot_selection_ui("mixfish_selection_1"), width = "20vw"),
+          mod_mixfish_plot_display_ui("mixfish_viz_1")
         )
       ),
-      tabPanel(
-        "VMS",
-        mod_vms_ui("vms_1")
-      ),
-      tabPanel(
-        "Bycatch",
-        mod_bycatch_ui("bycatch_1")
-      ),
+      tabPanel("VMS", value = "vms", mod_vms_ui("vms_1")),
+      tabPanel("Bycatch", value = "bycatch", mod_bycatch_ui("bycatch_1")),
 
-      ## ------------------ NEW: Resources dropdown (right-aligned) ------------------
-      bslib::nav_spacer(),  # pushes everything that follows to the right (BS5)
-      navbarMenu("Resources", align = "right", #id = "resources_menu"
+      # push right
+      bslib::nav_spacer(),
+
+      # NEW: Share button in navbar (works with bookmarking)
+      bslib::nav_item(
+        bookmarkButton("share_btn", label = "Share", icon = icon("link"))
+      ),
+      
+      navbarMenu("Resources",
+        align = "right", # id = "resources_menu"
         tabPanel(
           tagList(icon("envelope"), "Contact & Feedback"),
           fluidPage(
