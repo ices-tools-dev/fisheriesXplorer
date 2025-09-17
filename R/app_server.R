@@ -8,7 +8,6 @@
 # app_server.R
 
 app_server <- function(input, output, session) {
-
   # ------------------------------------------------------------
   # Welcome modal (unchanged)
   # ------------------------------------------------------------
@@ -21,7 +20,7 @@ app_server <- function(input, output, session) {
   # Basic date bits used by some modules (unchanged, but base R)
   # ------------------------------------------------------------
   app_date <- strsplit(date(), " ")[[1]]
-  cap_year  <- app_date[5]
+  cap_year <- app_date[5]
   cap_month <- app_date[2]
 
   # ------------------------------------------------------------
@@ -33,41 +32,51 @@ app_server <- function(input, output, session) {
   # Will hold the *current* module subtab value (reported by active module)
   current_subtab <- reactiveVal(NULL)
 
+
   # Helper a module can call to publish its active subtab to the parent
   set_subtab <- function(val) current_subtab(val)
 
   # Tabs that do NOT have module-level subtabs
-  no_subtab_tabs <- c("home", "overview", "vms", "bycatch")  # adjust to your values
+  no_subtab_tabs <- c("home", "overview", "vms", "bycatch") # adjust to your values
 
-# If the user switches to a no-subtab tab, clear any previously set subtab
-  observeEvent(input$`nav-page`, {
-    if (isTRUE(input$`nav-page` %in% no_subtab_tabs)) {
-      current_subtab(NULL)
-    }
-  }, ignoreInit = FALSE)
+  # If the user switches to a no-subtab tab, clear any previously set subtab
+  observeEvent(input$`nav-page`,
+    {
+      if (isTRUE(input$`nav-page` %in% no_subtab_tabs)) {
+        current_subtab(NULL)
+      }
+    },
+    ignoreInit = FALSE
+  )
 
   # ------------------------------------------------------------
   # Shared state
   # ------------------------------------------------------------
   selected_ecoregion <- reactiveVal(NULL)
+  share_url <- reactiveVal(NULL)
 
   # Restore ecoregion + top tab from URL once (modules will restore their own subtabs)
-  observeEvent(initial_qs(), {
-    qs <- initial_qs()
+  observeEvent(initial_qs(),
+    {
+      qs <- initial_qs()
 
-    # Restore ecoregion from ?eco=
-    if (!is.null(qs$eco) && nzchar(qs$eco)) {
-      selected_ecoregion(qs$eco)
-      # NOTE: if you also want the ecoregion dropdown in your navigation module to
-      # reflect this on first load, add a small restore handler inside that module.
-    }
 
-    # Restore top-level navbar tab from ?tab=
-    if (!is.null(qs$tab) && nzchar(qs$tab)) {
-      updateNavbarPage(session, "nav-page", selected = qs$tab)
-    }
-    # Subtabs are restored by the modules themselves (see comments below).
-  }, once = TRUE, ignoreInit = TRUE)
+      # Restore ecoregion from ?eco=
+      if (!is.null(qs$eco) && nzchar(qs$eco)) {
+        selected_ecoregion(qs$eco)
+        # NOTE: if you also want the ecoregion dropdown in your navigation module to
+        # reflect this on first load, add a small restore handler inside that module.
+      }
+
+      # Restore top-level navbar tab from ?tab=
+      if (!is.null(qs$tab) && nzchar(qs$tab)) {
+        updateNavbarPage(session, "nav-page", selected = qs$tab)
+      }
+      # Subtabs are restored by the modules themselves (see comments below).
+    },
+    once = TRUE,
+    ignoreInit = TRUE
+  )
 
   # ------------------------------------------------------------
   # Navigation module (sets selected_ecoregion during normal use)
@@ -89,7 +98,6 @@ app_server <- function(input, output, session) {
 
   fetchData <- reactive({
     withProgress(message = paste0("Fetching data for ", selected_ecoregion(), "..."), value = 0, {
-
       incProgress(0.2, detail = "Getting SID...")
       sid <- tryCatch(
         getSID(
@@ -121,7 +129,7 @@ app_server <- function(input, output, session) {
 
       list(SID = sid, SAG = sag, clean_status = status)
     })
-  }) %>% bindCache(selected_ecoregion())   # cache by ecoregion
+  }) %>% bindCache(selected_ecoregion()) # cache by ecoregion
 
   observe({
     data <- fetchData()
@@ -148,9 +156,9 @@ app_server <- function(input, output, session) {
     "landings_1",
     cap_year, cap_month,
     selected_ecoregion = selected_ecoregion,
-    shared             = shared,
-    bookmark_qs       = initial_qs, 
-    set_subtab        = set_subtab
+    shared = shared,
+    bookmark_qs = initial_qs,
+    set_subtab = set_subtab
   )
 
   # Stock status module
@@ -158,9 +166,9 @@ app_server <- function(input, output, session) {
     "stock_status_1",
     cap_year, cap_month,
     selected_ecoregion = selected_ecoregion,
-    shared             = shared, 
-    bookmark_qs       = initial_qs, 
-    set_subtab        = set_subtab
+    shared = shared,
+    bookmark_qs = initial_qs,
+    set_subtab = set_subtab
   )
 
   # Mixed fisheries (selection + display)
@@ -176,7 +184,7 @@ app_server <- function(input, output, session) {
     # If this module has its own subtabs, pass bookmark_qs + set_subtab similarly
   )
 
-  mod_vms_server("vms_1",         selected_ecoregion = selected_ecoregion)
+  mod_vms_server("vms_1", selected_ecoregion = selected_ecoregion)
   mod_bycatch_server("bycatch_1", selected_ecoregion = selected_ecoregion)
 
   # ------------------------------------------------------------
@@ -192,20 +200,81 @@ app_server <- function(input, output, session) {
       "&tab=", utils::URLencode(input$`nav-page`, reserved = TRUE),
       if (!is.null(current_subtab()) && nzchar(current_subtab())) {
         paste0("&subtab=", utils::URLencode(current_subtab(), reserved = TRUE))
-      } else ""
+      } else {
+        ""
+      }
     )
 
     updateQueryString(qs, mode = "replace", session = session)
     session$doBookmark()
   })
 
+  # --- refined modal after bookmarking completes ---
   onBookmarked(function(url) {
+    share_url(url)
+
     showModal(modalDialog(
-      title = "Shareable link",
-      easyClose = TRUE, footer = NULL,
-      p("Anyone opening this link will see exactly this view:"),
-      tags$code(url)
+      title = "Share this view",
+      easyClose = TRUE,
+      footer = tagList(
+        modalButton("Close"),
+        actionButton("copy_share_link", "Copy link", icon = icon("copy"), class = "btn btn-primary btn-sm")
+      ),
+      # Body
+      tags$p("This link reproduces this exact view:"),
+      # Pretty monospace box with wrapping
+      tags$div(
+        id = "share_url_box",
+        style = paste(
+          "font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;",
+          "font-size: 0.9em;",
+          "background: #f6f8fa;",
+          "border: 1px solid #e1e4e8;",
+          "border-radius: 6px;",
+          "padding: 8px 10px;",
+          "white-space: normal;", # allow wrapping
+          "overflow-wrap: anywhere;", # wrap long words/URLs
+          "word-break: break-word;" # extra safety
+        ),
+        url
+      ),
+      tags$div(
+        style = "margin-top: 8px;",
+        tags$a(href = url, target = "_blank", rel = "noopener", "Open in new tab")
+      ),
+      size = "m"
     ))
+  })
+
+  # --- Copy button handler (uses Clipboard API) ---
+  observeEvent(input$copy_share_link, {
+    # Safely JSON-encode the URL for JS
+    js_text <- jsonlite::toJSON(share_url() %||% "", auto_unbox = TRUE)
+    shinyjs::runjs(sprintf("
+    (function(txt){
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(txt)
+          .then(function(){ Shiny.setInputValue('share_copy_success', Math.random()); })
+          .catch(function(err){ Shiny.setInputValue('share_copy_error', String(err)); });
+      } else {
+        // Fallback: temporary textarea
+        var ta = document.createElement('textarea');
+        ta.value = txt; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy');
+          Shiny.setInputValue('share_copy_success', Math.random());
+        } catch(e){ Shiny.setInputValue('share_copy_error', String(e)); }
+        document.body.removeChild(ta);
+      }
+    })(%s);
+  ", js_text))
+  })
+
+  # Optional toast notifications
+  observeEvent(input$share_copy_success, {
+    showNotification("Link copied to clipboard", type = "message")
+  })
+  observeEvent(input$share_copy_error, {
+    showNotification(paste("Copy failed:", input$share_copy_error), type = "error")
   })
 }
 
