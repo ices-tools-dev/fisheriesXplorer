@@ -17,10 +17,12 @@ app_ui <- function(request) {
         height = "50px"
       )
     ),
-    options(spinner.type = 5, 
-        spinner.color = "#00B6F1",
-        spinner.size = 0.7),
-    
+    options(
+      spinner.type = 5,
+      spinner.color = "#00B6F1",
+      spinner.size = 0.7
+    ),
+
     # Add js to support fullscreen display of images
     tags$script(HTML("
       function toggleFullScreen(elem) {
@@ -33,7 +35,6 @@ app_ui <- function(request) {
         }
       }
     ")),
-    
     navbarPage(
       title = title_html,
       position = "static-top",
@@ -42,7 +43,7 @@ app_ui <- function(request) {
       windowTitle = "fisheriesXplorer",
       id = "nav-page",
       tabPanel("Home",
-        id = "home",
+        value = "home",
         mod_navigation_page_ui("navigation_page_1")
       ),
       tabPanel(
@@ -57,16 +58,16 @@ app_ui <- function(request) {
         "Stock Status",
         mod_stock_status_ui("stock_status_1")
       ),
-      tabPanel("Mixed Fisheries",
-              #  mod_mixfish_ui("mixfish_1")
-              layout_sidebar(
-                sidebar = sidebar(
-                  mod_mixfish_plot_selection_ui("mixfish_selection_1"),
-                  width = "20vw"
-                ),
-                mod_mixfish_plot_display_ui("mixfish_viz_1"),
-              )
-               ),
+      tabPanel(
+        "Mixed Fisheries",
+        layout_sidebar(
+          sidebar = sidebar(
+            mod_mixfish_plot_selection_ui("mixfish_selection_1"),
+            width = "20vw"
+          ),
+          mod_mixfish_plot_display_ui("mixfish_viz_1"),
+        )
+      ),
       tabPanel(
         "VMS",
         mod_vms_ui("vms_1")
@@ -74,7 +75,68 @@ app_ui <- function(request) {
       tabPanel(
         "Bycatch",
         mod_bycatch_ui("bycatch_1")
+      ),
+
+      ## ------------------ NEW: Resources dropdown (right-aligned) ------------------
+      bslib::nav_spacer(),  # pushes everything that follows to the right (BS5)
+      navbarMenu("Resources", align = "right", #id = "resources_menu"
+        tabPanel(
+          tagList(icon("envelope"), "Contact & Feedback"),
+          fluidPage(
+            h3("Contact & Feedback"),
+            p("We’d love to hear from you. For questions, bug reports, or suggestions:"),
+            tags$ul(
+              tags$li(HTML("Email: <a href='mailto:your-team@example.org'>your-team@example.org</a>")),
+              tags$li(HTML("Issue tracker (optional): <a href='#'>link to GitHub/issue tracker</a>"))
+            ),
+            p(em("Please include the ecoregion and a screenshot/permalink if reporting an issue."))
+          )
+        ),
+        tabPanel(
+          tagList(icon("database"), "Data Sources"),
+          fluidPage(
+            h3("Data Sources"),
+            p("This application integrates multiple ICES data services and related sources."),
+            tags$ul(
+              tags$li(HTML("<b>SID</b> — Stock Information Database (used to resolve stock metadata).")),
+              tags$li(HTML("<b>SAG</b> — Stock Assessment Graphs service (assessment outputs and indicators).")),
+              tags$li(HTML("<b>Status service</b> — current stock status summaries.")),
+              tags$li(HTML("<b>Landings</b> — compiled landings by stock/ecoregion.")),
+              tags$li(HTML("<b>VMS</b> and <b>Bycatch</b> — specialised components drawing on internal/external services."))
+            ),
+            p(em("Exact endpoints and refresh cadences are documented in the code repository / deployment manifest."))
+          )
+        ),
+        tabPanel(
+          tagList(icon("exclamation-triangle"), "Data disclaimer & policy"),
+          fluidPage(
+            h3("Data disclaimer & policy"),
+            p(HTML("This is a <b>development</b> deployment. Contents are indicative and should not be quoted or used elsewhere.")),
+            p("Data are subject to change as assessments and monthly updates are released."),
+            tags$ul(
+              tags$li("Stock status updates: daily cadence (when upstream services publish)."),
+              tags$li("Landings updates: annual cadence."),
+              tags$li("Historical views can be reproduced via the app’s “Share this view” permalink once bookmarking is enabled.")
+            ),
+            p("Please consult ICES data policies for redistribution and citation guidance.")
+          )
+        ),
+        tabPanel(
+          tagList(icon("quote-right"), "Citation"),
+          fluidPage(
+            h3("Citation"),
+            p("Suggested wording (adapt to your needs):"),
+            tags$pre(
+              "ICES (YEAR).
+              fisheriesXplorer [Shiny application].
+              URL: https://ices-tools-dev.shinyapps.io/fisheriesXplorer/
+              Accessed: YYYY-MM-DD."
+            ),
+            p("When you share a specific view (with bookmarking enabled), include the permalink and, where available, the code/data DOIs and snapshot information.")
+          )
+        )
       )
+      ## ---------------- end Resources dropdown ------------------------------------
     )
   )
 }
