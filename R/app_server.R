@@ -8,7 +8,7 @@
 # app_server.R
 
 # =========================
-# SERVER (ECO-PIN + FORCE-SELECT with once=TRUE + SAFE STOP)
+# SERVER (simplified: single restore + single writer)
 # =========================
 app_server <- function(input, output, session) {
 
@@ -34,20 +34,38 @@ app_server <- function(input, output, session) {
     else list()
   }
 
-  .current_subtab_for <- function(tab, input) {
-    id <- switch(tab,
-      "overview"     = "overview_1-tabs_overview",
-      "landings"     = "landings_1-main_tabset",
-      "stock_status" = "stock_status_1-main_tabset",
-      NULL
+  # Map subtab input ids (read) & selectors (write)
+  SUBTAB_INPUTS <- list(
+    overview     = "overview_1-tabs_overview",
+    landings     = "landings_1-main_tabset",
+    stock_status = "stock_status_1-main_tabset"
+  )
+
+  get_current_subtab <- function(tab, input) {
+    id <- SUBTAB_INPUTS[[tab]]
+    if (is.null(id)) "" else as.character(input[[id]] %||% "")
+  }
+
+  select_subtab <- function(tab, value) {
+    if (!nzchar(value)) return(invisible(NULL))
+    if (tab == "stock_status" && requireNamespace("bslib", quietly = TRUE) &&
+        utils::packageVersion("bslib") >= "0.5.0") {
+      bslib::nav_select(id = SUBTAB_INPUTS[[tab]], selected = value, session = session)
+    } else {
+      updateTabsetPanel(session, SUBTAB_INPUTS[[tab]], selected = value)
+    }
+  }
+
+  write_hash <- function(eco, tab, sub) {
+    paste0(
+      "#eco=", utils::URLencode(eco %||% "", reserved = TRUE),
+      "&tab=", utils::URLencode(tab %||% "", reserved = TRUE),
+      if (nzchar(sub %||% "")) paste0("&subtab=", utils::URLencode(sub, reserved = TRUE)) else ""
     )
-    if (is.null(id)) return("")
-    val <- input[[id]]
-    if (is.null(val) || !nzchar(val)) "" else as.character(val)
   }
 
   # ------------------------
-  # Welcome modal (unchanged)
+  # Welcome (unchanged)
   # ------------------------
   showModal(modalDialog(
     title = "Important message",
@@ -55,158 +73,92 @@ app_server <- function(input, output, session) {
   ))
 
   # ------------------------
-  # Date bits
+  # Date bits (unchanged)
   # ------------------------
   app_date  <- strsplit(date(), " ")[[1]]
   cap_year  <- app_date[5]
   cap_month <- app_date[2]
 
   # ------------------------
-  # Shared state
+  # Shared app state
   # ------------------------
   selected_ecoregion <- reactiveVal(NULL)
-  share_url          <- reactiveVal(NULL)
 
-  subtab_for <- reactiveValues(overview = NULL, landings = NULL, stock_status = NULL)
-  set_subtab_for <- function(top_tab_key, value) subtab_for[[top_tab_key]] <- value
+  # Track whether we're restoring from URL (suspends writer)
+  is_restoring <- reactiveVal(TRUE)
 
-  # ------------------------
-  # Parse URL and stage desired location
-  # ------------------------
-  nav_params_rv  <- reactiveVal(list())
-  is_restoring   <- reactiveVal(TRUE)
-  want_tab_rv    <- reactiveVal(NULL)
-  want_subtab_rv <- reactiveVal(NULL)
+  # One-time desired state from URL
+  desired <- reactiveVal(NULL)
 
+  # Read URL once
   observeEvent(session$clientData$url_hash, {
     hash   <- isolate(session$clientData$url_hash)   %||% ""
     search <- isolate(session$clientData$url_search) %||% ""
     p <- parse_nav(hash, search)
-    nav_params_rv(p)
-
-    if (!is.null(p$eco) && nzchar(p$eco)) selected_ecoregion(p$eco)
-    if (!is.null(p$tab) && nzchar(p$tab)) updateNavbarPage(session, "nav-page", selected = p$tab)
-
-    want_tab_rv(p$tab %||% NULL)
-    want_subtab_rv(p$subtab %||% NULL)
-
-    if (!is.null(p$tab) && nzchar(p$tab) && !is.null(p$subtab) && nzchar(p$subtab)) {
-      if (p$tab %in% c("overview", "landings", "stock_status")) {
-        subtab_for[[p$tab]] <- p$subtab
-      }
-    }
+    # Stage desired state
+    desired(list(
+      eco    = p$eco    %||% "",
+      tab    = p$tab    %||% "",
+      subtab = p$subtab %||% ""
+    ))
+    is_restoring(TRUE)
   }, once = TRUE, ignoreInit = FALSE)
 
-  # Enforce eco during restore (prevents fallback)
+  # Single restore path (bounded retry while inputs bind)
   observe({
+    d <- desired()
+    if (is.null(d)) return()
     if (!isTRUE(is_restoring())) return()
-    want_eco <- (nav_params_rv()$eco %||% "")
-    if (!nzchar(want_eco)) return()
-    if (!identical(selected_ecoregion() %||% "", want_eco)) {
-      selected_ecoregion(want_eco)
+
+    # 1) eco immediately
+    if (nzchar(d$eco)) selected_ecoregion(d$eco)
+
+    # 2) top tab immediately
+    if (nzchar(d$tab)) updateNavbarPage(session, "nav-page", selected = d$tab)
+
+    # 3) subtab after controls bind; retry briefly until it sticks or no subtab requested
+    if (nzchar(d$subtab) && d$tab %in% names(SUBTAB_INPUTS)) {
+      # if mismatch, try selecting; we run this observe block repeatedly while restoring
+      cur <- get_current_subtab(d$tab, input)
+      if (!identical(cur, d$subtab)) select_subtab(d$tab, d$subtab)
     }
-  })
 
-  # One-time parent selection (don’t rely on module observers)
-  did_parent_restore <- reactiveVal(FALSE)
-  observe({
-    if (isTRUE(did_parent_restore())) return()
-    want_tab    <- want_tab_rv()
-    want_subtab <- want_subtab_rv()
-    if (is.null(want_tab) || !nzchar(want_tab) ||
-        is.null(want_subtab) || !nzchar(want_subtab)) return()
-    if ((input$`nav-page` %||% "") != want_tab) return()
-
-    try({
-      if (identical(want_tab, "overview")) {
-        updateTabsetPanel(session, "overview_1-tabs_overview", selected = want_subtab)
-      } else if (identical(want_tab, "landings")) {
-        updateTabsetPanel(session, "landings_1-main_tabset", selected = want_subtab)
-      } else if (identical(want_tab, "stock_status")) {
-        if (requireNamespace("bslib", quietly = TRUE) &&
-            utils::packageVersion("bslib") >= "0.5.0") {
-          bslib::nav_select(id = "stock_status_1-main_tabset", selected = want_subtab, session = session)
-        } else {
-          updateTabsetPanel(session, "stock_status_1-main_tabset", selected = want_subtab)
-        }
-      }
-    }, silent = TRUE)
-
-    did_parent_restore(TRUE)
-  })
-
-  # FORCE-SELECT UNTIL MATCH, but with once=TRUE (no permanent hook)
-  observe({
-    if (!isTRUE(is_restoring())) return()
-
-    want_tab    <- want_tab_rv()    %||% ""
-    want_subtab <- want_subtab_rv() %||% ""
-    if (!nzchar(want_tab) || !nzchar(want_subtab)) return()
-    if ((input$`nav-page` %||% "") != want_tab) return()
-
-    if (identical(.current_subtab_for(want_tab, input), want_subtab)) return()
-
-    session$onFlushed(function() {
-      if (identical(want_tab, "overview")) {
-        updateTabsetPanel(session, "overview_1-tabs_overview",  selected = want_subtab)
-      } else if (identical(want_tab, "landings")) {
-        updateTabsetPanel(session, "landings_1-main_tabset",    selected = want_subtab)
-      } else if (identical(want_tab, "stock_status")) {
-        if (requireNamespace("bslib", quietly = TRUE) &&
-            utils::packageVersion("bslib") >= "0.5.0") {
-          bslib::nav_select(id = "stock_status_1-main_tabset", selected = want_subtab, session = session)
-        } else {
-          updateTabsetPanel(session, "stock_status_1-main_tabset", selected = want_subtab)
-        }
-      }
-    }, once = TRUE)  # <-- key change
-  })
-
-  # Don’t finish restoring until eco + tab + subtab match
-  observe({
-    if (!isTRUE(is_restoring())) return()
-
-    want_tab    <- want_tab_rv()
-    want_subtab <- want_subtab_rv()
-    want_eco    <- (nav_params_rv()$eco %||% "")
-
-    if (nzchar(want_eco) && !identical(selected_ecoregion() %||% "", want_eco)) return()
-
-    if (is.null(want_tab) || !nzchar(want_tab)) {
-      cur_tab <- input$`nav-page` %||% ""
-      if (!nzchar(cur_tab)) return()
-      cur_sub <- .current_subtab_for(cur_tab, input)
-      if (cur_sub == "" && cur_tab %in% c("overview","landings","stock_status")) return()
+    # Stop restoring only when current live state matches desired (or no subtab requested)
+    cur_tab <- input$`nav-page` %||% ""
+    cur_sub <- get_current_subtab(d$tab, input)
+    if (identical(selected_ecoregion() %||% "", d$eco %||% "") &&
+        (!nzchar(d$tab) || identical(cur_tab, d$tab)) &&
+        (!nzchar(d$subtab) || identical(cur_sub, d$subtab))) {
       is_restoring(FALSE)
       return()
     }
 
-    if ((input$`nav-page` %||% "") != want_tab) return()
-
-    if (!is.null(want_subtab) && nzchar(want_subtab) && want_tab %in% c("overview","landings","stock_status")) {
-      if (!identical(.current_subtab_for(want_tab, input), want_subtab)) return()
-    }
-
-    is_restoring(FALSE)
+    # Re-check soon while restoring (short, bounded loop without onFlushed churn)
+    if (isTRUE(is_restoring())) invalidateLater(80, session)
   })
 
   # ------------------------
-  # Modules
+  # Data fetch (unchanged)
   # ------------------------
-  mod_navigation_page_server("navigation_page_1", parent_session = session, selected_ecoregion = selected_ecoregion)
-
   shared <- reactiveValues(SID = NULL, SAG = NULL, clean_status = NULL)
+
   fetchData <- reactive({
     withProgress(message = paste0("Fetching data for ", selected_ecoregion(), "..."), value = 0, {
       incProgress(0.2, detail = "Getting SID...")
-      sid <- tryCatch(getSID(year = as.integer(format(Sys.Date(), "%Y")), EcoR = selected_ecoregion()),
-                      error = function(e) paste("Error fetching SID:", e$message))
+      sid <- tryCatch(
+        getSID(year = as.integer(format(Sys.Date(), "%Y")), EcoR = selected_ecoregion()),
+        error = function(e) paste("Error fetching SID:", e$message)
+      )
       incProgress(0.5, detail = "Getting SAG...")
-      sag <- tryCatch(getSAG_ecoregion_new(selected_ecoregion()),
-                      error = function(e) paste("Error fetching SAG:", e$message))
+      sag <- tryCatch(
+        getSAG_ecoregion_new(selected_ecoregion()),
+        error = function(e) paste("Error fetching SAG:", e$message)
+      )
       incProgress(0.9, detail = "Getting SAG status...")
-      status <- tryCatch(format_sag_status_new(getStatusWebService(selected_ecoregion(), sid)),
-                         error = function(e) paste("Error fetching SAG status:", e$message))
+      status <- tryCatch(
+        format_sag_status_new(getStatusWebService(selected_ecoregion(), sid)),
+        error = function(e) paste("Error fetching SAG status:", e$message)
+      )
       list(SID = sid, SAG = sag, clean_status = status)
     })
   }) %>% bindCache(selected_ecoregion())
@@ -218,34 +170,32 @@ app_server <- function(input, output, session) {
     shared$clean_status <- data$clean_status
   })
 
+  # ------------------------
+  # Feature modules (unchanged; parent handles bookmarking)
+  # ------------------------
+  mod_navigation_page_server("navigation_page_1", parent_session = session, selected_ecoregion = selected_ecoregion)
+
   mod_overview_server(
     "overview_1",
     selected_ecoregion = selected_ecoregion,
-    bookmark_qs        = reactive(nav_params_rv()),
-    set_subtab         = function(val) set_subtab_for("overview", val)
+    bookmark_qs        = reactive(list()),     # parent restores
+    set_subtab         = function(...) {}      # no-op
   )
-
   mod_landings_server(
-    "landings_1",
-    cap_year, cap_month,
-    selected_ecoregion = selected_ecoregion,
-    shared             = shared,
-    bookmark_qs        = reactive(nav_params_rv()),
-    set_subtab         = function(val) set_subtab_for("landings", val)
+    "landings_1", cap_year, cap_month,
+    selected_ecoregion = selected_ecoregion, shared = shared,
+    bookmark_qs        = reactive(list()),     # parent restores
+    set_subtab         = function(...) {}
   )
-
   mod_stock_status_server(
-    "stock_status_1",
-    cap_year, cap_month,
-    selected_ecoregion = selected_ecoregion,
-    shared             = shared,
-    bookmark_qs        = reactive(nav_params_rv()),
-    set_subtab         = function(val) set_subtab_for("stock_status", val)
+    "stock_status_1", cap_year, cap_month,
+    selected_ecoregion = selected_ecoregion, shared = shared,
+    bookmark_qs        = reactive(list()),     # parent restores
+    set_subtab         = function(...) {}
   )
-
   sel_mixfish <- mod_mixfish_plot_selection_server("mixfish_selection_1", selected_ecoregion = selected_ecoregion)
   mod_mixfish_plot_display_server("mixfish_viz_1",
-    plot_name = sel_mixfish$plot_choice,
+    plot_name          = sel_mixfish$plot_choice,
     selected_ecoregion = selected_ecoregion,
     selected_subRegion = sel_mixfish$sub_region
   )
@@ -253,22 +203,45 @@ app_server <- function(input, output, session) {
   mod_bycatch_server("bycatch_1", selected_ecoregion = selected_ecoregion)
 
   # ------------------------
-  # Share link
+  # Single writer: keep URL hash in sync (debounced), except during restore
   # ------------------------
-  observeEvent(input$share_btn, {
-    eco <- tryCatch(as.character(selected_ecoregion()), error = function(e) "") %||% ""
-    tab <- input$`nav-page` %||% ""
-    sub <- .current_subtab_for(tab, input)
-
-    hash <- paste0(
-      "#eco=", utils::URLencode(eco, reserved = TRUE),
-      "&tab=", utils::URLencode(tab, reserved = TRUE),
-      if (nzchar(sub)) paste0("&subtab=", utils::URLencode(sub, reserved = TRUE)) else ""
+  current_state <- reactive({
+    list(
+      eco    = selected_ecoregion() %||% "",
+      tab    = input$`nav-page`     %||% "",
+      subtab = {
+        t <- input$`nav-page` %||% ""
+        get_current_subtab(t, input)
+      }
     )
+  })
+  current_state_deb <- debounce(current_state, millis = 150)
 
-    final <- paste0(.base_url(session), hash)
+  observeEvent(current_state_deb(), {
+    if (isTRUE(is_restoring())) return()
+    st <- current_state_deb()
+    shinyjs::runjs(sprintf("location.hash = %s;",
+      jsonlite::toJSON(write_hash(st$eco, st$tab, st$subtab), auto_unbox = TRUE)
+    ))
+  }, ignoreInit = TRUE)
+
+  # When restore completes, write once immediately
+  observeEvent(is_restoring(), {
+    if (isTRUE(is_restoring())) return()
+    st <- current_state()
+    shinyjs::runjs(sprintf("location.hash = %s;",
+      jsonlite::toJSON(write_hash(st$eco, st$tab, st$subtab), auto_unbox = TRUE)
+    ))
+  }, ignoreInit = TRUE)
+
+  # ------------------------
+  # Share button (uses the same writer)
+  # ------------------------
+  share_url <- reactiveVal(NULL)
+  observeEvent(input$share_btn, {
+    st <- current_state()
+    final <- paste0(.base_url(session), write_hash(st$eco, st$tab, st$subtab))
     share_url(final)
-
     showModal(modalDialog(
       title = "Share this view",
       easyClose = TRUE,
@@ -292,6 +265,7 @@ app_server <- function(input, output, session) {
     ))
   })
 
+  # Clipboard handler (unchanged)
   observeEvent(input$copy_share_link, {
     js_text <- jsonlite::toJSON(share_url() %||% "", auto_unbox = TRUE)
     shinyjs::runjs(sprintf("
@@ -313,54 +287,4 @@ app_server <- function(input, output, session) {
   })
   observeEvent(input$share_copy_success, { showNotification("Link copied to clipboard", type = "message") })
   observeEvent(input$share_copy_error,   { showNotification(paste("Copy failed:", input$share_copy_error), type = "error") })
-
-  # ------------------------
-  # Keep address bar hash in sync (not during restore)
-  # ------------------------
-  write_hash_now <- function() {
-    eco <- selected_ecoregion() %||% ""
-    tab <- input$`nav-page`    %||% ""
-    sub <- .current_subtab_for(tab, input)
-    paste0(
-      "#eco=", utils::URLencode(eco, reserved = TRUE),
-      "&tab=", utils::URLencode(tab, reserved = TRUE),
-      if (nzchar(sub)) paste0("&subtab=", utils::URLencode(sub, reserved = TRUE)) else ""
-    )
-  }
-
-  observeEvent(input$`nav-page`, {
-    if (isTRUE(is_restoring())) return(invisible(NULL))
-    shinyjs::runjs(sprintf("location.hash = %s;", jsonlite::toJSON(write_hash_now(), auto_unbox = TRUE)))
-  }, ignoreInit = TRUE)
-
-  observeEvent(
-    list(
-      input$`overview_1-tabs_overview`,
-      input$`landings_1-main_tabset`,
-      input$`stock_status_1-main_tabset`
-    ),
-    {
-      if (isTRUE(is_restoring())) return(invisible(NULL))
-      shinyjs::runjs(sprintf("location.hash = %s;", jsonlite::toJSON(write_hash_now(), auto_unbox = TRUE)))
-    },
-    ignoreInit = FALSE
-  )
-
-  # When restoring finishes, write once and clear desired targets
-  observeEvent(is_restoring(), {
-    if (isTRUE(is_restoring())) return()
-    shinyjs::runjs(sprintf("location.hash = %s;", jsonlite::toJSON(write_hash_now(), auto_unbox = TRUE)))
-    want_tab_rv(NULL); want_subtab_rv(NULL)   # <-- prevent any stale enforcement
-  }, ignoreInit = TRUE)
-
-  # Optional: still react to module-reported signals
-  observe({
-    if (isTRUE(is_restoring())) return(invisible(NULL))
-    dummy <- list(subtab_for$overview, subtab_for$landings, subtab_for$stock_status)
-    shinyjs::runjs(sprintf("location.hash = %s;", jsonlite::toJSON(write_hash_now(), auto_unbox = TRUE)))
-  })
 }
-
-
-
-
