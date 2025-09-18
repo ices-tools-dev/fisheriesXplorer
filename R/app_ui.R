@@ -5,10 +5,14 @@
 #' @import shiny
 #' @importFrom desc desc_get_version
 #' @noRd
+# =========================
+# UI
+# =========================
 app_ui <- function(request) {
   tagList(
-    # Leave this function for adding external resources
+    # External resources
     golem_add_external_resources(),
+
     title_html <- tags$a(
       href = "https://ices-tools-dev.shinyapps.io/fisheriesXplorer/",
       tags$img(
@@ -17,13 +21,15 @@ app_ui <- function(request) {
         height = "50px"
       )
     ),
+
+    # {shinycssloaders} options (if you use them)
     options(
       spinner.type = 5,
       spinner.color = "#00B6F1",
       spinner.size = 0.7
     ),
 
-    # Add js to support fullscreen display of images
+    # Fullscreen helper
     tags$script(HTML("
       function toggleFullScreen(elem) {
         if (!document.fullscreenElement) {
@@ -35,6 +41,7 @@ app_ui <- function(request) {
         }
       }
     ")),
+
     navbarPage(
       title = title_html,
       position = "static-top",
@@ -42,30 +49,32 @@ app_ui <- function(request) {
       fluid = TRUE,
       windowTitle = "fisheriesXplorer",
       id = "nav-page",
-      tabPanel("Home", value = "home", mod_navigation_page_ui("navigation_page_1")),
-      tabPanel("Overview", value = "overview", mod_overview_ui("overview_1")),
-      tabPanel("Landings", value = "landings", mod_landings_ui("landings_1")),
+
+      tabPanel("Home",         value = "home",         mod_navigation_page_ui("navigation_page_1")),
+      tabPanel("Overview",     value = "overview",     mod_overview_ui("overview_1")),
+      tabPanel("Landings",     value = "landings",     mod_landings_ui("landings_1")),
       tabPanel("Stock Status", value = "stock_status", mod_stock_status_ui("stock_status_1")),
-      tabPanel("Mixed Fisheries",
+      tabPanel(
+        "Mixed Fisheries",
         value = "mixed_fisheries",
         layout_sidebar(
           sidebar = sidebar(mod_mixfish_plot_selection_ui("mixfish_selection_1"), width = "20vw"),
           mod_mixfish_plot_display_ui("mixfish_viz_1")
         )
       ),
-      tabPanel("VMS", value = "vms", mod_vms_ui("vms_1")),
+      tabPanel("VMS",     value = "vms",     mod_vms_ui("vms_1")),
       tabPanel("Bycatch", value = "bycatch", mod_bycatch_ui("bycatch_1")),
 
       # push right
       bslib::nav_spacer(),
 
-      # NEW: Share button in navbar (works with bookmarking)
+      # Share button: use actionButton (NOT bookmarkButton)
       bslib::nav_item(
-        bookmarkButton("share_btn", label = "Share", icon = icon("link"))
+        actionButton("share_btn", label = "Share", icon = icon("link"), class = "btn btn-default")
       ),
-      
+
       navbarMenu("Resources",
-        align = "right", # id = "resources_menu"
+        align = "right",
         tabPanel(
           tagList(icon("envelope"), "Contact & Feedback"),
           fluidPage(
@@ -98,13 +107,7 @@ app_ui <- function(request) {
           fluidPage(
             h3("Data disclaimer & policy"),
             p(HTML("This is a <b>development</b> deployment. Contents are indicative and should not be quoted or used elsewhere.")),
-            p("Data are subject to change as assessments and monthly updates are released."),
-            tags$ul(
-              tags$li("Stock status updates: daily cadence (when upstream services publish)."),
-              tags$li("Landings updates: annual cadence."),
-              tags$li("Historical views can be reproduced via the app’s “Share this view” permalink once bookmarking is enabled.")
-            ),
-            p("Please consult ICES data policies for redistribution and citation guidance.")
+            p("Data are subject to change as assessments and monthly updates are released.")
           )
         ),
         tabPanel(
@@ -117,42 +120,22 @@ app_ui <- function(request) {
               fisheriesXplorer [Shiny application].
               URL: https://ices-tools-dev.shinyapps.io/fisheriesXplorer/
               Accessed: YYYY-MM-DD."
-            ),
-            p("When you share a specific view (with bookmarking enabled), include the permalink and, where available, the code/data DOIs and snapshot information.")
+            )
           )
         )
       )
-      ## ---------------- end Resources dropdown ------------------------------------
     )
   )
 }
 
-#' Add external Resources to the Application
-#'
-#' This function is internally used to add external
-#' resources inside the Shiny application.
-#'
-#' @import shiny
-#' @importFrom golem add_resource_path activate_js favicon bundle_resources
-#' @importFrom shinyjs useShinyjs
-#' @noRd
+# Resources (same as your version)
 golem_add_external_resources <- function() {
-  add_resource_path(
-    "www",
-    app_sys("app/www")
-  )
-
+  add_resource_path("www", app_sys("app/www"))
   tags$head(
     tags$link(rel = "shortcut icon", href = "www/fishriesXplorer_PNG.png"),
     includeHTML(("R/google-analytics.html")),
-    bundle_resources(
-      path = app_sys("app/www"),
-      app_title = "fisheriesXplorer"
-    ),
-    tags$style(HTML("
-    #custom_slider .shiny-input-container {
-      margin-top: 0px !important;  /* Remove top margin */
-    }")),
+    bundle_resources(path = app_sys("app/www"), app_title = "fisheriesXplorer"),
+    tags$style(HTML("#custom_slider .shiny-input-container { margin-top: 0px !important; }")),
     tags$script(HTML("
       document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.collapse-toggle').forEach(btn => {
@@ -165,8 +148,8 @@ golem_add_external_resources <- function() {
     tags$script(src = "https://kit.fontawesome.com/ac71e9cf8e.js"),
     tags$style("body {font-family: 'Gothic A1', sans-serif;}"),
     tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")),
-
-    # Add here other external resources
-    useShinyjs()
+    shinyjs::useShinyjs()
   )
 }
+
+

@@ -86,24 +86,30 @@ mod_landings_ui <- function(id) {
 #' @noRd 
 mod_landings_server <- function(
   id, cap_year, cap_month, selected_ecoregion, shared,
-  bookmark_qs = reactive(NULL),         # <-- NEW (parent passes parseQueryString)
-  set_subtab   = function(...) {}       # <-- NEW (parent provides a setter)
+  bookmark_qs = reactive(NULL),
+  set_subtab   = function(...) {}
 ) {
   moduleServer(id, function(input, output, session){
     ns <- session$ns
 
-    # --- RESTORE subtab from ?subtab= on first load (if present)
-    observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
-      qs <- bookmark_qs()
-      if (!is.null(qs$subtab) && nzchar(qs$subtab)) {
-        updateTabsetPanel(session, "main_tabset", selected = qs$subtab)
-      }
-    })
+    # RESTORE once, defer until after first flush, then push up
+observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+  qs <- bookmark_qs()
+  wanted <- qs$subtab
+  valid  <- c("landings", "discards")
+  if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+    session$onFlushed(function() {
+      updateTabsetPanel(session, "main_tabset", selected = wanted)
+      isolate(set_subtab(wanted))
+    }, once = TRUE)
+  }
+})
 
-    # --- REPORT subtab upward whenever it changes (initial + subsequent)
-    observeEvent(input$main_tabset, {
-      set_subtab(input$main_tabset)   # will be "landings" or "discards"
-    }, ignoreInit = FALSE)
+# REPORT on user changes, skip initial default
+observeEvent(input$main_tabset, {
+  set_subtab(input$main_tabset)
+}, ignoreInit = TRUE)
+
 
     output$ecoregion_label <- renderText({
       req(selected_ecoregion())

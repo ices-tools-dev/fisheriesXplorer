@@ -52,33 +52,36 @@ mod_overview_ui <- function(id) {
 mod_overview_server <- function(
   id,
   selected_ecoregion,
-  bookmark_qs = reactive(NULL),   # <-- NEW
-  set_subtab   = function(...) {} # <-- NEW
+  bookmark_qs = reactive(NULL),
+  set_subtab   = function(...) {}
 ){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
 
-    # --- Restore subtab from URL (once)
-    observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
-      qs <- bookmark_qs()
-      if (!is.null(qs$subtab) && nzchar(qs$subtab)) {
-        updateTabsetPanel(session, "tabs_overview", selected = qs$subtab)
-      }
-    })
+    # RESTORE once, defer until after first flush, then push up
+observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+  qs <- bookmark_qs()
+  wanted <- qs$subtab
+  valid  <- c("exec_summary", "introduction", "who_is_fishing")
+  if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+    session$onFlushed(function() {
+      updateTabsetPanel(session, "tabs_overview", selected = wanted)
+      isolate(set_subtab(wanted))   # one-arg setter
+    }, once = TRUE)
+  }
+})
 
-    # --- Report subtab upward (initial + on change)
-    observeEvent(input$tabs_overview, {
-      set_subtab(input$tabs_overview)   # "exec_summary" | "introduction" | "who_is_fishing"
-    }, ignoreInit = FALSE)
+# REPORT on user changes, skip initial default
+observeEvent(input$tabs_overview, {
+  set_subtab(input$tabs_overview)   # one arg only
+}, ignoreInit = TRUE)
+
 
     output$ecoregion_label <- renderText({
-      req(selected_ecoregion())
-      paste("Ecoregion:", selected_ecoregion())
+      req(selected_ecoregion()); paste("Ecoregion:", selected_ecoregion())
     })
 
-    output$current_date <- renderText({
-      "Last update: December 05, 2024"
-    })
+    output$current_date <- renderText({ "Last update: December 05, 2024" })
 
     output$staticMap1 <- renderUI({
       ecoregion <- get_ecoregion_acronym(selected_ecoregion())
