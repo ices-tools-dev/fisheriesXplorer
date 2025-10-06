@@ -98,8 +98,10 @@ CLD_trends <- function(x){
 plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fisheries guild"),
                                      line_count = 10,
                                      plot_type = c("line", "area"),
-                                     official_catches_year = NULL,
-                                     return_data = FALSE, session = NULL) {
+                                    #  official_catches_year = NULL,
+                                    dataUpdated = NULL,
+                                     return_data = FALSE, 
+                                     session = NULL) {
 
   type <- match.arg(type)
   plot_type <- match.arg(plot_type)
@@ -121,12 +123,13 @@ plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fish
   # --- Data prep
   names(x) <- c("Year", "Country", "iso3", "Fisheries guild", "Ecoregion", "Species name", "Species code", "Common name", "Value")
 
-  if (!is.null(official_catches_year) && !is.na(official_catches_year)) {
-    capyear  <- official_catches_year - 1
-    cap_text <- sprintf("Historical Nominal Catches 1950–2006,\nOfficial Nominal Catches 2006–%s\nICES, Copenhagen.", capyear)
-  } else {
-    cap_text <- "Historical Nominal Catches 1950–2006,\nOfficial Nominal Catches 2006–present\nICES, Copenhagen."
-  }
+  # if (!is.null(official_catches_year) && !is.na(official_catches_year)) {
+  #   capyear  <- official_catches_year - 1
+    # cap_text <- sprintf("Historical Nominal Catches 1950–2006.\nOfficial Nominal Catches 2006–%s\nICES, Copenhagen.", capyear)
+  # } else {
+  #   cap_text <- "Historical Nominal Catches 1950–2006,\nOfficial Nominal Catches 2006–present\nICES, Copenhagen."
+  # }
+  cap_text <- paste0("Historical Nominal Catches 1950–2006.\nOfficial Nominal Catches 2006-2023.\n", dataUpdated, ", ICES, Copenhagen.")
 
   df <- dplyr::rename(x, type_var = dplyr::all_of(type))
 
