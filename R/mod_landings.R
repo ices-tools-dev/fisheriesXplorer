@@ -99,8 +99,8 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
     output$current_date <- renderText({
       tab <- input$main_tabset
       date_string <- switch(tab,
-        "Landings" = "Last update: December 05, 2024",
-        "Discards" = paste0("Last update: ", format(Sys.Date(), "%B %d, %Y"))
+        "Landings" = "Last data update: October, 2025",
+        "Discards" = paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
         # "Last update: December 05, 2024" # default
       )
 
@@ -134,7 +134,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
   # Load the corresponding .rda file
       rda_path <- paste0("./data/", acronym, ".rda")
       load(rda_path)
-      fig <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, official_catches_year = as.numeric(cap_year), session = session) #%>%
+      fig <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, dataUpdated = "October, 2025", session = session) #%>%
         #plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
       
       for (i in 1:length(fig$x$data)) {
@@ -157,7 +157,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
         write.csv(get(get_ecoregion_acronym(ecoregion)), file, row.names = FALSE)
       }
     )
-    year <- 2024
+    year <- 2025
     
     output$discard_trends <- renderPlotly({
       fig2 <- ggplotly(plot_discard_trends_app_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)), year, cap_year , cap_month, caption = F))
@@ -170,11 +170,11 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
     })
     output$recorded_discards <- renderPlotly({
       catch_trends2 <- CLD_trends(format_sag(shared$SAG, shared$SID)) %>% filter(Discards > 0)      
-      plot_discard_current_plotly(catch_trends2, year = year, position_letter = "Stocks with recorded discards (2024)", cap_year = cap_year, cap_month = cap_month)
+      plot_discard_current_plotly(catch_trends2, year = year, position_letter = "Stocks with recorded discards (2025)", cap_year = cap_year, cap_month = cap_month)
     })
 
     output$all_discards <- renderPlotly({      
-      plot_discard_current_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)), year = year, position_letter = "All Stocks (2024)", cap_year = cap_year, cap_month = cap_month)
+      plot_discard_current_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)), year = year, position_letter = "All Stocks (2025)", cap_year = cap_year, cap_month = cap_month)
     })
 
     # Download handler

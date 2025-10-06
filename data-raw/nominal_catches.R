@@ -56,7 +56,7 @@ load_asfis_species <- function() {
 
     # read the csv file
 #     species <- read.csv(filename, na.strings = "", stringsAsFactors = FALSE)
-    species <- read.csv("./data-raw/ASFIS_sp_2024.csv", na.strings = "", stringsAsFactors = FALSE)
+    species <- read.csv("./data-raw/ASFIS_sp_2025.csv", na.strings = "", stringsAsFactors = FALSE)
     species <- dplyr::select(species, English_name, Scientific_Name, Alpha3_Code)
     return(species)
 }
@@ -89,7 +89,7 @@ load_official_catches<- function(){
         #                      header = TRUE,
         #                      fill = TRUE)
         # out <- dplyr::filter(function(x)!all(is.na(x)), out)
-        official <- read.csv("./data-raw/ICES_2006_2022_catches.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
+        official <- read.csv("./data-raw/ICESCatchDataset2006-2023.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
 }
 
 
@@ -382,7 +382,7 @@ format_catches <- function(year, ecoregion, historical, official, preliminary = 
 
 
 ################### Getting data from ICES ###################
-sid <- icesSD::getSD(NULL, 2024)
+sid <- icesSD::getSD(NULL, 2025)
 
 fish_category <- dplyr::mutate(sid, X3A_CODE = substr(sid$StockKeyLabel, start = 1, stop = 3))
 fish_category <- dplyr::select(fish_category, X3A_CODE, FisheriesGuild)
@@ -411,7 +411,7 @@ for (ecoregion in ecoregions) {
   mkdir(paste0("./data-raw/", acronym))
         
     catch_dat <- 
-        format_catches(2024, ecoregion, 
+        format_catches(2025, ecoregion, 
                        hist, official, NULL, species_list, sid)
     
 
