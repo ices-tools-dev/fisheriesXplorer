@@ -160,12 +160,13 @@ plot_kobe_app <- function(x, guild, caption = FALSE, cap_year, cap_month, return
         if(guild == "All"){
                 df <-x
         }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
+        browser()
         xmax = max(df$F_FMSY, na.rm = TRUE)
         ifelse(xmax < 3, xmax2 <- 3, xmax2 <- (xmax + 0.5))
         ymax = max(df$SSB_MSYBtrigger, na.rm = TRUE)
         ifelse(ymax < 3, ymax2 <- 3, ymax2 <- (ymax + 0.5))
         kobe <- ggplot2::ggplot(df, ggplot2::aes(x = F_FMSY, y = SSB_MSYBtrigger,
-                                         data_id = StockKeyLabel)) +
+                                         data_id = StockKeyLabel_component)) +
                 ggplot2::coord_cartesian(xlim = c(0, xmax2), ylim = c(0, ymax2))+
                 ggplot2::geom_point(ggplot2::aes(color = Status), size = 15,
                            alpha = 0.7, na.rm = TRUE) +
@@ -200,21 +201,21 @@ plot_CLD_bar_app <- function(x, guild, caption = TRUE, cap_year, cap_month, retu
         if(guild == "All"){
                 df <-x
         }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
-      
-        df <- df %>% dplyr::group_by(StockKeyLabel)
+
+        df <- df %>% dplyr::group_by(StockKeyLabel_component)
         df <- dplyr::mutate(df,total = ifelse(all(is.na(Catches) & is.na(Landings)),
                                       NA,
                                       max(Catches, Landings, na.rm = TRUE))) 
         df <- dplyr::ungroup (df) %>% 
           dplyr::filter(!is.na(total))
         
-        df <- dplyr::mutate(df,StockKeyLabel = forcats::fct_reorder(StockKeyLabel, total))
+        df <- dplyr::mutate(df,StockKeyLabel = forcats::fct_reorder(StockKeyLabel_component, total))
         
-        plot <- ggplot2::ggplot(df, ggplot2::aes(x =StockKeyLabel, y = Catches/1000)) +
-               ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Catches/1000,
-                                 xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
-               ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Landings/1000,
-                                 xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+        plot <- ggplot2::ggplot(df, ggplot2::aes(x =StockKeyLabel_component, y = Catches/1000)) +
+               ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel_component, y = Catches/1000,
+                                 xend = StockKeyLabel_component, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+               ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel_component, y = Landings/1000,
+                                 xend = StockKeyLabel_component, yend = 0, color = Status), size = 2, na.rm = TRUE) +
                ggplot2::geom_point(stat = "identity", ggplot2::aes(y = Catches/1000,
                                                   fill = Status), color = "grey50",
                            shape = 24, size = 7, alpha = 0.8, na.rm = TRUE) +
@@ -242,11 +243,11 @@ plot_CLD_bar_app <- function(x, guild, caption = TRUE, cap_year, cap_month, retu
                 cap_lab <- ggplot2::labs(caption = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen",
                                                            cap_month,
                                                            cap_year))
-                plot <- ggplot2::ggplot(df, ggplot2::aes(x =StockKeyLabel, y = Catches/1000)) +
-                        ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Catches/1000,
-                                                           xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
-                        ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel, y = Landings/1000,
-                                                           xend = StockKeyLabel, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+                plot <- ggplot2::ggplot(df, ggplot2::aes(x =StockKeyLabel_component, y = Catches/1000)) +
+                        ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel_component, y = Catches/1000,
+                                                           xend = StockKeyLabel_component, yend = 0, color = Status), size = 2, na.rm = TRUE) +
+                        ggplot2::geom_segment(ggplot2::aes(x = StockKeyLabel_component, y = Landings/1000,
+                                                           xend = StockKeyLabel_component, yend = 0, color = Status), size = 2, na.rm = TRUE) +
                         ggplot2::geom_point(stat = "identity", ggplot2::aes(y = Catches/1000,
                                                                             fill = Status), color = "grey50",
                                             shape = 24, size = 7, alpha = 0.8, na.rm = TRUE) +
@@ -476,7 +477,7 @@ format_sag_status_new <- function(df) {
 
 
 plot_status_prop_pies <- function(df, cap_month = "November",
-                         cap_year = "2018",
+                         cap_year = "2025",
                          return_data = FALSE) {
 
 
@@ -654,9 +655,10 @@ format_sag <- function(sag,sid){
         out <- dplyr::anti_join(df1, check)
 }
 
-stockstatus_CLD_current <- function(x) {
+stockstatus_CLD_current <- function(x) {        
         df<- dplyr::select(x,Year,
                            StockKeyLabel,
+                           AssessmentComponent,
                            FisheriesGuild,
                            FishingPressure,
                            AssessmentYear,
@@ -675,13 +677,19 @@ stockstatus_CLD_current <- function(x) {
         df$Landings <- as.numeric(df$Landings)
         df$Discards <- as.numeric(df$Discards)
         df$Year <- as.numeric(df$Year)
+        # create a new variable that is equal to stockkeylabel if assessment component is NA or is equal to stockkeylabel_component is is not NA
+        # ifelse(is.na(AssessmentComponent), StockKeyLabel, StockKeyLabel_component)
+        df$StockKeyLabel_component <- ifelse(is.na(df$AssessmentComponent) |df$AssessmentComponent == "", df$StockKeyLabel, paste0(df$StockKeyLabel, "_", df$AssessmentComponent))   
 
-        df2 <- dplyr::group_by(df,StockKeyLabel)
+       
+    
+
+        df2 <- dplyr::group_by(df,StockKeyLabel_component)
         df2 <- dplyr::filter(df2,Year == AssessmentYear - 1)
         df2 <- dplyr::mutate(df2,F_FMSY =  ifelse(!is.na(FMSY),
                                                                 FishingPressure / FMSY,
                                                                 NA))
-        df2 <- dplyr::select(df2,StockKeyLabel,
+        df2 <- dplyr::select(df2,StockKeyLabel_component,
                                                FisheriesGuild,
                                                F_FMSY,
                                                Catches,
@@ -689,19 +697,19 @@ stockstatus_CLD_current <- function(x) {
                                                Discards,
                                                FMSY,
                                                FishingPressure)
-        df3 <- dplyr::group_by(df,StockKeyLabel)
+        df3 <- dplyr::group_by(df,StockKeyLabel_component)
         df3 <- dplyr::filter(df3, Year %in% c(AssessmentYear, (AssessmentYear - 1)))
         df3 <- dplyr::mutate(df3, SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger),
                                                                         StockSize / MSYBtrigger,
                                                                         NA))
-        df3 <- dplyr::select(df3, StockKeyLabel,Year,
+        df3 <- dplyr::select(df3, StockKeyLabel_component,Year,
                                                FisheriesGuild,
                                                SSB_MSYBtrigger,
                                                StockSize,
                                                MSYBtrigger)
-        check <- unique(df3[c("StockKeyLabel", "Year", "MSYBtrigger")])
+        check <- unique(df3[c("StockKeyLabel_component", "Year", "MSYBtrigger")])
         check <- check[order(-check$Year),]
-        check2 <- check[duplicated(check$StockKeyLabel),]
+        check2 <- check[duplicated(check$StockKeyLabel_component),]
         df3 <- dplyr::anti_join(df3,check2)
         df4 <- dplyr::full_join(df2, df3)
         df4 <- dplyr::mutate(df4, Status = ifelse(is.na(F_FMSY) | is.na(SSB_MSYBtrigger),
@@ -716,6 +724,7 @@ stockstatus_CLD_current <- function(x) {
 plot_GES_pies <- function(x, y, cap_month = "August",
                          cap_year = "2019",
                          return_data = FALSE) {
+        browser()
         df <- x
         cap_lab <- ggplot2::labs(title = "", x = "", y = "",
                         caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen",
