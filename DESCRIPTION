@@ -1,6 +1,6 @@
 Package: fisheriesXplorer
 Title: An interactive tool for viewing ICES Fishery Overviews
-Version: 0.0.0.9019
+Version: 0.0.0.9030
 Authors@R: c(person(given = "Neil", family = "Maginnis", role = c("aut", "cre"), email = "neil.maginnis@ices.dk"),
              person(given = "Luca", family = "Lamoni", role = c("aut"), email = "luca.lamoni@ices.dk"))
 Description: What the package does (one paragraph).
