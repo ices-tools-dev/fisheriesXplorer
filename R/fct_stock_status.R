@@ -413,8 +413,13 @@ getStatusWebService <- function(Ecoregion, sid) {
 }
 
 
-format_sag_status_new <- function(df) {
-     
+format_sag_status_new <- function(df, sag) {
+        browser()
+        head(df)
+        test <- df %>% dplyr::filter(StockKeyLabel == "cod.27.46a7d20")
+        df$StockKeyLabel_component <- ifelse(is.na(df$AssessmentComponent) |df$AssessmentComponent == "", df$StockKeyLabel, paste0(df$StockKeyLabel, "_", df$AssessmentComponent))
+        
+        
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "GREY",
                                                   status == 1 ~ "GREEN",
                                                   status == 2 ~ "GREEN", #qualitative green
@@ -807,50 +812,50 @@ plot_GES_pies <- function(x, y, cap_month = "August",
                 p1
         }
 }
-plot_GES_pies_interactive <- function(x, y, cap_month = "August",
-                                      cap_year = "2019",
-                                      return_data = FALSE) {
-    df <- x
-    colList <- c("GREEN" = "#00B26D",
-                 "GREY" = "#d3d3d3",
-                 "ORANGE" = "#ff7f00",
-                 "RED" = "#d93b1c",
-                 "qual_RED" = "#d93b5c",
-                 "qual_GREEN" = "#00B28F")
+# plot_GES_pies_interactive <- function(x, y, cap_month = "August",
+#                                       cap_year = "2019",
+#                                       return_data = FALSE) {
+#     df <- x
+#     colList <- c("GREEN" = "#00B26D",
+#                  "GREY" = "#d3d3d3",
+#                  "ORANGE" = "#ff7f00",
+#                  "RED" = "#d93b1c",
+#                  "qual_RED" = "#d93b5c",
+#                  "qual_GREEN" = "#00B28F")
 
-    df_stock <- dplyr::filter(df, lineDescription == "Maximum sustainable yield") %>%
-        dplyr::select(StockKeyLabel, FishingPressure, StockSize) %>%
-        tidyr::pivot_longer(cols = FishingPressure:StockSize, names_to = "Variable", values_to = "Colour")
+#     df_stock <- dplyr::filter(df, lineDescription == "Maximum sustainable yield") %>%
+#         dplyr::select(StockKeyLabel, FishingPressure, StockSize) %>%
+#         tidyr::pivot_longer(cols = FishingPressure:StockSize, names_to = "Variable", values_to = "Colour")
 
-    df3 <- dplyr::filter(y, StockKeyLabel %in% df_stock$StockKeyLabel) %>%
-        dplyr::mutate(CATCH = ifelse(is.na(Catches) & !is.na(Landings), Landings, Catches)) %>%
-        dplyr::select(StockKeyLabel, CATCH)
+#     df3 <- dplyr::filter(y, StockKeyLabel %in% df_stock$StockKeyLabel) %>%
+#         dplyr::mutate(CATCH = ifelse(is.na(Catches) & !is.na(Landings), Landings, Catches)) %>%
+#         dplyr::select(StockKeyLabel, CATCH)
 
-    df4 <- dplyr::left_join(df_stock, df3, by = "StockKeyLabel") %>%
-        replace(is.na(.), 0) %>%
-        dplyr::group_by(Variable, Colour) %>%
-        dplyr::summarise(CATCH = sum(CATCH), .groups = "drop") %>%
-        tidyr::pivot_wider(names_from = Colour, values_from = CATCH, values_fill = 0) %>%
-        tidyr::pivot_longer(cols = GREEN:RED, names_to = "Color", values_to = "Catch")
+#     df4 <- dplyr::left_join(df_stock, df3, by = "StockKeyLabel") %>%
+#         replace(is.na(.), 0) %>%
+#         dplyr::group_by(Variable, Colour) %>%
+#         dplyr::summarise(CATCH = sum(CATCH), .groups = "drop") %>%
+#         tidyr::pivot_wider(names_from = Colour, values_from = CATCH, values_fill = 0) %>%
+#         tidyr::pivot_longer(cols = GREEN:RED, names_to = "Color", values_to = "Catch")
 
-    df4$Metric <- "Proportion of catch (thousand tonnes)"
-    df4$fraction <- df4$Catch
-    df4$Value2 <- as.integer(df4$Catch / 1000)
-    df4$sum2 <- as.integer(sum(df4$Catch) / 1000)
+#     df4$Metric <- "Proportion of catch (thousand tonnes)"
+#     df4$fraction <- df4$Catch
+#     df4$Value2 <- as.integer(df4$Catch / 1000)
+#     df4$sum2 <- as.integer(sum(df4$Catch) / 1000)
 
-    if (return_data) {
-        return(df4)
-    }
+#     if (return_data) {
+#         return(df4)
+#     }
 
-    # Create interactive pie chart using plotly
-    p <- plotly::plot_ly(df4, labels = ~Color, values = ~fraction, type = "pie",
-                          textinfo = "label+percent", text = ~paste("Catch:", Value2, "kt"),
-                          hoverinfo = "text", marker = list(colors = colList)) %>%
-        plotly::layout(title = paste("ICES Stock Assessment Database,", cap_month, cap_year),
-                       showlegend = TRUE)
+#     # Create interactive pie chart using plotly
+#     p <- plotly::plot_ly(df4, labels = ~Color, values = ~fraction, type = "pie",
+#                           textinfo = "label+percent", text = ~paste("Catch:", Value2, "kt"),
+#                           hoverinfo = "text", marker = list(colors = colList)) %>%
+#         plotly::layout(title = paste("ICES Stock Assessment Database,", cap_month, cap_year),
+#                        showlegend = TRUE)
 
-    p
-}
+#     p
+# }
 
 
 stock_trends <- function(x){

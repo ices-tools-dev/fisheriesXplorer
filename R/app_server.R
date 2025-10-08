@@ -51,7 +51,7 @@ app_server <- function(input, output, session) {
       incProgress(0.9, detail = "Getting SAG status...")
       status <- tryCatch(
         format_sag_status_new(
-          getStatusWebService(selected_ecoregion(), sid)
+          getStatusWebService(selected_ecoregion(), sid), sag
         ),
         error = function(e) {
           paste("Error fetching SAG status:", e$message)
