@@ -433,8 +433,17 @@ catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Jack and horse mackerels n
 catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic horse mackerel")] <- "Jack and horse mackerels"
 catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "horse mackerel")] <- "Jack and horse mackerels"
 catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Atlantic mackerel")] <- "mackerel"
+#adg suggestions 2025
+catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Angler(=Monk)")] <- "anglerfish"
+catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Anglerfishes NEI")] <- "anglerfish"
+catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Blackbellied angler")] <- "anglerfish"
+catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Monkfishes NEI")] <- "anglerfish"
+catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Monkfishes nei")] <- "anglerfish"
+catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Megrims nei")] <- "megrim"
+catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Megrims NEI")] <- "megrim"
+
 catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Jack and horse mackerels")] <- "pelagic"
-catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Monkfishes nei")] <- "Anglerfishes nei"
+# catch_dat$COMMON_NAME[which(catch_dat$COMMON_NAME == "Monkfishes nei")] <- "Anglerfishes nei"
 catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Anglerfishes nei")] <- "benthic"
 catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Pelagic fishes nei")] <- "pelagic"
 catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Raja rays nei")] <- "elasmobranch"

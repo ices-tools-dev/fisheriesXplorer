@@ -245,7 +245,8 @@ plot_catch_trends_plotly <- function(
   dataUpdated = NULL,
   return_data = FALSE,
   session = NULL,
-  per_panel_height = 380
+  per_panel_height = 380,
+  ecoregion = NULL
 ) {
   type <- match.arg(type)
 
@@ -272,6 +273,10 @@ plot_catch_trends_plotly <- function(
     "Official Nominal Catches 2006–2023.\n",
     dataUpdated, ", ICES, Copenhagen."
   )
+
+  # --- Helpers
+  sanitize_stub <- function(s) gsub("[^A-Za-z0-9]+", "_", s)
+  date_stamp <- format(Sys.Date(), "%Y%m%d")
 
   df <- dplyr::rename(x, type_var = dplyr::all_of(type))
 
@@ -339,6 +344,8 @@ plot_catch_trends_plotly <- function(
         n_types_i <- length(levels(plot_i$type_var))
         pal_i <- palette_vec(n_types_i)
 
+        file_stub <- paste0(ecoregion, "_landings_", sanitize_stub(gname), "_", date_stamp)
+
         p_i <- plotly::plot_ly(
           plot_i, x = ~Year, y = ~typeTotal,
           color = ~type_var, colors = pal_i, showlegend = TRUE
@@ -348,31 +355,38 @@ plot_catch_trends_plotly <- function(
             height = per_panel_height,
             font = list(size = base_size),
             xaxis = list(
-              title = list(text = if (i == length(guilds)) "Year" else NULL,
-                           font = list(size = axis_title_size)),
+              title = list(text = "Year", font = list(size = axis_title_size)),
               tickfont = list(size = tick_size),
               range = x_rng,
               automargin = TRUE
             ),
             yaxis = list(
-              title = list(text = if (i == 1) "Landings (thousand tonnes)" else NULL,
+              title = list(text = "Landings (thousand tonnes)",
                            font = list(size = axis_title_size), standoff = 18),
               tickfont = list(size = tick_size),
               automargin = TRUE
             ),
-            margin = list(l = 80, r = 20, t = 110, b = 60),
+            margin = list(l = 80, r = 20, t = 110, b = 90),
             annotations = list(
               list(
-                text = paste0("Fisheries guild: ", gname),
+                text = paste0("Landings trends: ", gname),
                 x = 0.01, y = 0.98,
                 xref = "paper", yref = "paper",
                 showarrow = FALSE,
                 xanchor = "left", yanchor = "top",
                 font = list(size = title_annot_size, color = "black")
+              ),
+              list(
+                x = 1, y = -0.42,
+                text = cap_text,
+                showarrow = FALSE,
+                xref = "paper", yref = "paper",
+                xanchor = "right", yanchor = "bottom",
+                font = list(size = caption_size, color = "black")
               )
             ),
             legend = list(
-              title = list(text = "Common name", font = list(size = legend_title_size)),
+              title = list(text = "<b>Common name</b>", font = list(size = legend_title_size)),
               orientation = "h",
               y = 1.12, x = 0, xanchor = "left", yanchor = "bottom",
               font = list(size = legend_text_size),
@@ -385,18 +399,21 @@ plot_catch_trends_plotly <- function(
             off = "plotly_doubleclick",
             selected = plotly::attrs_selected(opacity = 0.7, line = list(width = 5))
           ) %>%
-          plotly::config(responsive = TRUE)
+          plotly::config(
+            responsive = TRUE,
+            toImageButtonOptions = list(
+              filename = file_stub,
+              format   = "png",
+              scale    = 3
+              # width  = 1600,
+              # height = 900
+            )
+          )
 
         plot_list[[i]] <- p_i
       }
 
-      return(htmltools::tagList(
-        plot_list,
-        htmltools::div(
-          style = "margin-top:10px; text-align:right; font-size: 0.9em;",
-          cap_text
-        )
-      ))
+      return(htmltools::tagList(plot_list))
     }
   }
 
@@ -420,6 +437,8 @@ plot_catch_trends_plotly <- function(
   n_types <- length(unique(plot_df$type_var))
   pal <- palette_vec(n_types)
 
+  file_stub <- paste0("landings_", sanitize_stub(type), "_", date_stamp)
+
   plotly::plot_ly(plot_df, x = ~Year, y = ~typeTotal, color = ~type_var, colors = pal) %>%
     plotly::add_trace(type = "scatter", mode = "lines", line = list(width = 3)) %>%
     plotly::layout(
@@ -438,7 +457,7 @@ plot_catch_trends_plotly <- function(
       margin = list(l = 80, r = 20, t = 60, b = 90),
       annotations = list(
         list(
-          x = 1, y = -0.22,
+          x = 1, y = -0.42,
           text = cap_text,
           showarrow = FALSE,
           xref = "paper", yref = "paper",
@@ -455,7 +474,7 @@ plot_catch_trends_plotly <- function(
         )
       ),
       legend = list(
-        title = list(text = type, font = list(size = legend_title_size)),
+        title = list(text = paste0("<b>", type, "</b>"), font = list(size = legend_title_size)),
         orientation = "h",
         x = 0.5, y = 1.08, xanchor = "center", yanchor = "bottom",
         font = list(size = legend_text_size),
@@ -468,8 +487,17 @@ plot_catch_trends_plotly <- function(
       off = "plotly_doubleclick",
       selected = plotly::attrs_selected(opacity = 0.7, line = list(width = 5))
     ) %>%
-    plotly::config(responsive = TRUE)
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = file_stub,
+        format   = "png",
+        scale    = 3
+      )
+    )
 }
+
+
 
 
 
