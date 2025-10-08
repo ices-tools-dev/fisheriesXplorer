@@ -45,7 +45,7 @@ mod_landings_ui <- function(id) {
             ),
             card_body(
               withSpinner(
-                plotlyOutput(ns("landings_layer"), height = "65vh")
+                uiOutput(ns("landings_layer"), height = "65vh")
               )
             )
           )
@@ -116,12 +116,12 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
       HTML(select_text(texts,"landings_discards","discards"))
     })
 
-    output$landings_layer <- renderPlotly({
+    output$landings_layer <- renderUI({
       req(!is.null(input$landings_layer_selector))
 
       plotting_params <- list()
       plotting_params$landings <- list(
-        "Common name" = list("n" = 8, type = "line"),
+        "Common name" = list("n" = 10, type = "line"),
         "Fisheries guild" = list("n" = 6, type = "line"),
         "Country" = list("n" = 8, type = "line")
       )
@@ -134,7 +134,7 @@ mod_landings_server <- function(id, cap_year, cap_month, selected_ecoregion, sha
   # Load the corresponding .rda file
       rda_path <- paste0("./data/", acronym, ".rda")
       load(rda_path)
-      fig <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, plot_type = params$type, dataUpdated = "October, 2025", session = session) #%>%
+      fig <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n,  dataUpdated = "October, 2025", session = session, ecoregion = acronym) #%>%
         #plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
       
       for (i in 1:length(fig$x$data)) {
