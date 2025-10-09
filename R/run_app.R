@@ -10,7 +10,6 @@
 run_app <- function(
   onStart = NULL,
   options = list(),
-  enableBookmarking = NULL,
   uiPattern = "/",
   ...
 ) {
@@ -20,7 +19,8 @@ run_app <- function(
       server = app_server,
       onStart = onStart,
       options = options,
-      enableBookmarking = enableBookmarking,
+      # enableBookmarking = "url",
+      # enableBookmarking = "server", 
       uiPattern = uiPattern
     ),
     golem_opts = list(...)
