@@ -95,38 +95,38 @@ mod_landings_server <- function(
     ns <- session$ns
 
     # RESTORE once, defer until after first flush, then push up
-observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
-  qs <- bookmark_qs()
-  wanted <- qs$subtab
-  valid  <- c("landings", "discards")
-  if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
-    session$onFlushed(function() {
-      updateTabsetPanel(session, "main_tabset", selected = wanted)
-      isolate(set_subtab(wanted))
-    }, once = TRUE)
-  }
-})
+  observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+    qs <- bookmark_qs()
+    wanted <- qs$subtab
+    valid  <- c("landings", "discards")
+    if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+      session$onFlushed(function() {
+        updateTabsetPanel(session, "main_tabset", selected = wanted)
+        isolate(set_subtab(wanted))
+      }, once = TRUE)
+    }
+  })
 
-# REPORT on user changes, skip initial default
-observeEvent(input$main_tabset, {
-  set_subtab(input$main_tabset)
-}, ignoreInit = TRUE)
+  # REPORT on user changes, skip initial default
+  observeEvent(input$main_tabset, {
+    set_subtab(input$main_tabset)
+  }, ignoreInit = TRUE)
 
 
-    output$ecoregion_label <- renderText({
-      req(selected_ecoregion())
-      paste("Ecoregion:", selected_ecoregion())
-    })
+  output$ecoregion_label <- renderText({
+    req(selected_ecoregion())
+    paste("Ecoregion:", selected_ecoregion())
+  })
 
-    output$current_date <- renderText({
-      tab <- input$main_tabset
-      date_string <- switch(tab,
-        "Landings" = "Last data update: October, 2025",
-        "Discards" = paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
-        # "Last update: December 05, 2024" # default
-      )
-      date_string
-    })
+  output$current_date <- renderText({
+    tab <- input$main_tabset
+    date_string <- switch(tab,
+      "landings" = "Last data update: October, 2025",
+      "discards" = paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
+      # "Last update: December 05, 2024" # default
+    )
+    date_string
+  })
 
     output$landings_text  <- renderUI({ HTML(select_text(texts,"landings_discards","landings")) })
     output$discards_text  <- renderUI({ HTML(select_text(texts,"landings_discards","discards")) })
