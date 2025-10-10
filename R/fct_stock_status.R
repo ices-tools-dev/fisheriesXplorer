@@ -993,9 +993,7 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         names(values) <- adj_names
         values <- c(values, c(MEAN = "black"))
         
-        # --- Remove any existing mean for the last year, suggestion of ADGFO 
-        # df <- df %>% filter(StockKeyLabel == "Mean" & Year == max(Year)) %>% mutate(Value = NA)
-
+        
         # --- Keep only the two metrics of interest and rename
         df <- df %>%
                 dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
