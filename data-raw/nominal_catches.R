@@ -89,7 +89,7 @@ load_official_catches<- function(){
         #                      header = TRUE,
         #                      fill = TRUE)
         # out <- dplyr::filter(function(x)!all(is.na(x)), out)
-        official <- read.csv("./data-raw/ICESCatchDataset2006-2023.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
+        official <- read.csv("./data-raw/ICESCatchDataset2006-2023_noConf.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
 }
 
 
@@ -406,7 +406,7 @@ official <- load_official_catches()
 
 ## Ceate folders using the acronyms of the ecoregions
 for (ecoregion in ecoregions) {
-
+        print(ecoregion)
   acronym <- get_ecoregion_acronym(ecoregion)
   mkdir(paste0("./data-raw/", acronym))
         
