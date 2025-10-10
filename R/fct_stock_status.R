@@ -887,18 +887,22 @@ stock_trends <- function(x){
     dplyr::filter(!is.na(Value)) %>%
     dplyr::select(FisheriesGuild, StockKeyLabel, Year, Metric, Value)
 
+
   df4 <- dplyr::bind_rows(df3, means) %>%
     dplyr::distinct(.keep_all = TRUE)
+        #check which stocks have max year = 2026
 
   return(df4)
 }
 
 
 
+
+
 plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
         # --- Filter for selected guild
         df <- dplyr::filter(x, FisheriesGuild == guild)
-
+        
         if (nrow(df) == 0) {
                 return(
                         plotly::plot_ly() %>%
@@ -925,6 +929,9 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         values <- grDevices::hcl.colors(length(adj_names), palette = "Temps")
         names(values) <- adj_names
         values <- c(values, c(MEAN = "black"))
+        
+        # --- Remove any existing mean for the last year, suggestion of ADGFO 
+        # df <- df %>% filter(StockKeyLabel == "Mean" & Year == max(Year)) %>% mutate(Value = NA)
 
         # --- Keep only the two metrics of interest and rename
         df <- df %>%
@@ -937,6 +944,15 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
 
         # --- Split mean vs stocks
         mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+        
+        # --- Remove any existing mean for the last year, suggestion of ADGFO 
+        last_year_FMSY <- max(mean_df$Year[mean_df$Metric == "F/F<sub>MSY</sub>"], na.rm = TRUE)
+        last_year_Btrigger <- max(mean_df$Year[mean_df$Metric == "SSB/MSY B<sub>trigger</sub>"], na.rm = TRUE)
+        idx_FMSY <- mean_df$Metric == "F/F<sub>MSY</sub>" & mean_df$Year == last_year_FMSY
+        idx_Btrigger <- mean_df$Metric == "SSB/MSY B<sub>trigger</sub>" & mean_df$Year == last_year_Btrigger        
+        mean_df$Value[idx_FMSY] <- NA_real_
+        mean_df$Value[idx_Btrigger] <- NA_real_
+
         df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
 
         # unique group ID per render (prevents stale highlights)
