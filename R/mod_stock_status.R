@@ -15,11 +15,14 @@
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
-   
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
+
+    # Give the navset an id; give each nav_panel a stable value
     navset_tab(
+      id = ns("main_tabset"),   # <-- NEW
+
       nav_panel(
-        "Status Summary",
+        "Status Summary", value = "status_summary",   # <-- NEW value
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -30,44 +33,43 @@ mod_stock_status_ui <- function(id) {
             column(
               6,
               card(
-                height = "85vh", full_screen = T,
+                height = "85vh", full_screen = TRUE,
                 card_header(
                   "MSY & Precautionary Approach",
-                  downloadLink(ns("download_clean_status_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                  downloadLink(ns("download_clean_status_data"),
+                    HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                  )
                 ),
                 card_body(
-                  fillable = T,
-                  withSpinner(
-                    plotOutput(ns("status_summary_ices"), height = "75vh"),
-                    caption = "Getting status data..."
-                  )
+                  fillable = TRUE,
+                  withSpinner(plotOutput(ns("status_summary_ices"), height = "75vh"),
+                              caption = "Getting status data...")
                 )
               )
             ),
             column(
               6,
               card(
-                height = "85vh", full_screen = T,
+                height = "85vh", full_screen = TRUE,
                 card_header(
-                  
                   "Good Environmental Status",
-                  downloadLink(ns("download_status_catch_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
-                
+                  downloadLink(ns("download_status_catch_data"),
+                    HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                  )
                 ),
                 card_body(
-                  fillable = T,
-                  withSpinner(
-                    plotOutput(ns("status_summary_ges"), height = "75vh"),
-                    caption = "Getting assessment data..."
-                  ) 
+                  fillable = TRUE,
+                  withSpinner(plotOutput(ns("status_summary_ges"), height = "75vh"),
+                              caption = "Getting assessment data...")
                 )
               )
             )
           )
         )
       ),
+
       nav_panel(
-        "Trends by group",
+        "Trends by group", value = "trends_by_group",   # <-- NEW value
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -77,71 +79,62 @@ mod_stock_status_ui <- function(id) {
           column(
             12,
             card(
-              height = "85vh", full_screen = T,
+              height = "85vh", full_screen = TRUE,
               card_header(
-                
-                  radioButtons(ns("status_trend_selector"), "Select group",
-                    inline = T,
-                    choices = c(
-                      "Elasmobranchs" = "elasmobranch",
-                      "Benthic" = "benthic",
-                      "Crustacean" = "crustacean",
-                      "Demersal" = "demersal",
-                      "Pelagic" = "pelagic"
-                    )
-                  ),
-                  downloadLink(ns("download_trends_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
-                
-              ),
-              card_body(
-                withSpinner(
-                  plotlyOutput(ns("status_trends"), height = "68vh")
+                radioButtons(ns("status_trend_selector"), "Select group",
+                  inline = TRUE,
+                  choices = c(
+                    "Elasmobranchs" = "elasmobranch",
+                    "Benthic"       = "benthic",
+                    "Crustacean"    = "crustacean",
+                    "Demersal"      = "demersal",
+                    "Pelagic"       = "pelagic"
+                  )
+                ),
+                downloadLink(ns("download_trends_data"),
+                  HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                 )
-              )
+              ),
+              card_body(withSpinner(plotlyOutput(ns("status_trends"), height = "68vh")))
             )
           )
         )
       ),
+
       nav_panel(
-        "Kobe-CLD",
+        "Kobe-CLD", value = "kobe_cld",   # <-- NEW value
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black", open = FALSE,
             uiOutput(ns("status_text3"))
-          ),          
+          ),
           card(
             card_header(
               column(
                 6,
                 div(
-                  style = "display: flex;
-                          justify-content: space-between;
-                          align-items: center;
-                          width: 100%;
-                          padding: 0 16px;   /* left/right padding inside header */",
-                radioButtons(ns("status_kobe_cld_selector"), "Select group",
-                  inline = T,
-                  choices = c(
-                    "Benthic" = "benthic",
-                    "Demersal" = "demersal",
-                    "Crustacean" = "crustacean",
-                    "Pelagic" = "pelagic",
-                    "All Stocks" = "All"
-                  ),
-                  selected = "All",
-                )
+                  style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
+                  radioButtons(ns("status_kobe_cld_selector"), "Select group",
+                    inline = TRUE,
+                    choices = c(
+                      "Benthic"   = "benthic",
+                      "Demersal"  = "demersal",
+                      "Crustacean"= "crustacean",
+                      "Pelagic"   = "pelagic",
+                      "All Stocks"= "All"
+                    ),
+                    selected = "All"
+                  )
                 )
               ),
               column(
                 6,
                 div(
-                  style = "display: flex;
-                          justify-content: space-between;
-                          align-items: center;
-                          width: 100%;
-                          padding: 0 16px;   /* left/right padding inside header */",
+                  style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
                   uiOutput(ns("kobe_cld_slider")),
-                  downloadLink(ns("download_CLD_data"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
+                  downloadLink(ns("download_CLD_data"),
+                    HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                  )
                 )
               )
             )
@@ -149,23 +142,20 @@ mod_stock_status_ui <- function(id) {
           fluidRow(
             column(
               6,
-              card(
-                fillable = T, height = "70vh", full_screen = T,
-                withSpinner(plotOutput(ns("status_cld"), height = "67vh")) # ,
-              )
+              card(fillable = TRUE, height = "70vh", full_screen = TRUE,
+                   withSpinner(plotOutput(ns("status_cld"),  height = "67vh")))
             ),
             column(
               6,
-              card(
-                fillable = T, height = "75vh", full_screen = T,
-                withSpinner(plotOutput(ns("status_kobe"), height = "67vh"))
-              )
+              card(fillable = TRUE, height = "75vh", full_screen = TRUE,
+                   withSpinner(plotOutput(ns("status_kobe"), height = "67vh")))
             )
           )
         )
       ),
+
       nav_panel(
-        "Stock status Lookup",
+        "Stock status Lookup", value = "status_lookup",   # <-- NEW value
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -175,40 +165,66 @@ mod_stock_status_ui <- function(id) {
           card(
             card_header(
               "Stock status table",
-              downloadLink(ns("download_status_table"), HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>")))
-           ),
-              card_body(
-                withSpinner(reactableOutput(ns("stock_status_table_reactable")))
+              downloadLink(ns("download_status_table"),
+                HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
               )
+            ),
+            card_body(withSpinner(reactableOutput(ns("stock_status_table_reactable"))))
           )
         )
       )
     )
   )
 }
+
         
     
 #' stock_status Server Functions
 #'
 #' @noRd 
-mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion, shared) {
+mod_stock_status_server <- function(
+  id, cap_year, cap_month, selected_ecoregion, shared,
+  bookmark_qs = reactive(NULL),
+  set_subtab   = function(...) {}
+) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    # RESTORE once, defer until after first flush, then push up
+observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+  qs <- bookmark_qs()
+  wanted <- qs$subtab
+  valid  <- c("status_summary", "trends_by_group", "kobe_cld", "status_lookup")
+  if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+    session$onFlushed(function() {
+      if (utils::packageVersion("bslib") >= "0.5.0") {
+        bslib::nav_select(id = "main_tabset", selected = wanted, session = session)
+      } else {
+        updateTabsetPanel(session, "main_tabset", selected = wanted)
+      }
+      isolate(set_subtab(wanted))
+    }, once = TRUE)
+  }
+})
+
+# REPORT on user changes, skip initial default
+observeEvent(input$main_tabset, {
+  set_subtab(input$main_tabset)
+}, ignoreInit = TRUE)
+
+
     output$ecoregion_label <- renderText({
-      req(selected_ecoregion())
-      paste("Ecoregion:", selected_ecoregion())
+      req(selected_ecoregion()); paste("Ecoregion:", selected_ecoregion())
     })
 
     output$current_date <- renderText({
-      paste0("Last update: ", format(Sys.Date(), "%B %d, %Y")) # e.g., "May 26, 2025"
+      paste0("Last update: ", format(Sys.Date(), "%B %d, %Y"))
     })
 
     output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       HTML(select_text(texts, "status", "sidebar"))
     })
 
-    
     catch_current <- reactive({
       stockstatus_CLD_current(format_sag(shared$SAG, shared$SID))
     })
@@ -217,33 +233,24 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
       plot_status_prop_pies(shared$clean_status, cap_month, cap_year)
     })
 
-    # Download handler
     output$download_clean_status_data <- downloadHandler(
-      filename = function() {
-        paste0("status_data_", Sys.Date(), ".csv")
-      },
-      content = function(file) {
-        write.csv(shared$clean_status, file, row.names = FALSE)
-      }
+      filename = function() { paste0("status_data_", Sys.Date(), ".csv") },
+      content = function(file) { write.csv(shared$clean_status, file, row.names = FALSE) }
     )
 
-    output$status_summary_ges <- renderPlot({      
+    output$status_summary_ges <- renderPlot({
       plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year)
     })
 
-    # Download handler
     output$download_status_catch_data <- downloadHandler(
-      filename = function() {
-        paste0("status_catch_data_", Sys.Date(), ".csv")
-      },
+      filename = function() { paste0("status_catch_data_", Sys.Date(), ".csv") },
       content = function(file) {
         write.csv(plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year, return_data = TRUE), file, row.names = FALSE)
       }
     )
 
-
     trends_data <- reactive({
-      stock_trends(format_sag(shared$SAG, shared$SID))     
+      stock_trends(format_sag(shared$SAG, shared$SID))
     })
 
     output$status_trends <- renderPlotly({
@@ -253,20 +260,13 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
       } else {
         guild <- input$status_trend_selector
       }
-      
-      plot_stock_trends(trends_data(), guild, cap_year, cap_month)
+      plot_stock_trends(trends_data(), guild, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
-    # Download handler
     output$download_trends_data <- downloadHandler(
-      filename = function() {
-        paste0("status_trends_data_", Sys.Date(), ".csv")
-      },
-      content = function(file) {
-        write.csv(trends_data(), file, row.names = FALSE)
-      }
+      filename = function() { paste0("status_trends_data_", Sys.Date(), ".csv") },
+      content = function(file) { write.csv(trends_data(), file, row.names = FALSE) }
     )
-
 
     output$kobe_cld_slider <- renderUI({
       slider_max <- nrow(kobe_cld_data())
@@ -281,91 +281,76 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
     kobe_cld_data <- reactive({
       if (input$status_kobe_cld_selector == "All") {
         guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
-        tmp <- catch_current() %>% filter(FisheriesGuild %in% guild)
+        tmp <- catch_current() %>% dplyr::filter(FisheriesGuild %in% guild)
         tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = TRUE)
       } else {
         guild <- input$status_kobe_cld_selector
-        tmp <- catch_current() %>% filter(FisheriesGuild %in% guild)
+        tmp <- catch_current() %>% dplyr::filter(FisheriesGuild %in% guild)
         tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = TRUE)
       }
     })
 
-
     output$status_kobe <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
       req(!is.null(input$n_selector))
-
-      plot_data <- kobe_cld_data() %>%
-        slice_max(order_by = total, n = input$n_selector)
+      plot_data <- kobe_cld_data() %>% dplyr::slice_max(order_by = total, n = input$n_selector)
       plot_kobe_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = FALSE)
     })
 
     output$status_cld <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
       req(!is.null(input$n_selector))
-      plot_data <- kobe_cld_data() %>%
-        slice_max(order_by = total, n = input$n_selector)
+      plot_data <- kobe_cld_data() %>% dplyr::slice_max(order_by = total, n = input$n_selector)
       plot_CLD_bar_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = FALSE)
     })
 
-    # Download handler
     output$download_CLD_data <- downloadHandler(
-      filename = function() {
-        paste0("status_CLD_data_", Sys.Date(), ".csv")
-      },
-      content = function(file) {
-        write.csv(kobe_cld_data(), file, row.names = FALSE)
-      }
+      filename = function() { paste0("status_CLD_data_", Sys.Date(), ".csv") },
+      content = function(file) { write.csv(kobe_cld_data(), file, row.names = FALSE) }
     )
 
     processed_data_reactable <- reactive({
       annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
 
       annex_data_cleaned <- annex_data %>%
-        mutate(
+        dplyr::mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),
           StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent,"' target='_blank'>", StockKeyLabel, ifelse(is.na(AssessmentComponent), "", paste0(" (", AssessmentComponent, ")")), "</a>")
         ) %>%
-        select(
+        dplyr::select(
           "Stock code (component)" = StockKeyLabel,
-          # "Stock component" = stockComponent,
-          "Stock Description" = StockKeyDescription,
           " " = icon,
+          "Stock Description" = StockKeyDescription,
           "Scientific Name" = SpeciesScientificName,
           "Common Name" = SpeciesCommonName,
           "Fisheries Guild" = FisheriesGuild,
           "Data Category" = DataCategory,
-          #  "Assessment Year" = AssessmentYear,
           "Assessment Year" = YearOfLastAssessment,
           "Advice Category" = AdviceCategory,
           "Approach" = lineDescription,
           "Fishing Pressure" = FishingPressure,
           "Stock Size" = StockSize
         ) %>%
-        mutate(Approach = tolower(Approach)) %>% # Ensure consistent case
+        dplyr::mutate(Approach = tolower(Approach)) %>%
         tidyr::pivot_wider(
           names_from = Approach,
           values_from = c(`Fishing Pressure`, `Stock Size`),
           names_glue = "{Approach}_{.value}"
         ) %>%
-        mutate(
+        dplyr::mutate(
           `MSY Fishing Pressure` = sapply(`maximum sustainable yield_Fishing Pressure`, icon_mapping),
           `MSY Stock Size` = sapply(`maximum sustainable yield_Stock Size`, icon_mapping),
           `PA Fishing Pressure` = sapply(`precautionary approach_Fishing Pressure`, icon_mapping),
           `PA Stock Size` = sapply(`precautionary approach_Stock Size`, icon_mapping)
         ) %>%
-        select(
+        dplyr::select(
           -`maximum sustainable yield_Fishing Pressure`, -`maximum sustainable yield_Stock Size`,
           -`precautionary approach_Fishing Pressure`, -`precautionary approach_Stock Size`
         )
     })
 
-
-    # Download handler
     output$download_status_table <- downloadHandler(
-      filename = function() {
-        paste0("status_table_data_", Sys.Date(), ".csv")
-      },
+      filename = function() { paste0("status_table_data_", Sys.Date(), ".csv") },
       content = function(file) {
         write.csv(format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG), file, row.names = FALSE)
       }
@@ -373,20 +358,19 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
 
     output$stock_status_table_reactable <- renderReactable({
       req(nrow(processed_data_reactable()) != 0)
-
-      reactable(processed_data_reactable(),
+      reactable::reactable(processed_data_reactable(),
         filterable = TRUE,
         defaultPageSize = 150,
         resizable = TRUE,
         wrap = TRUE,
         bordered = TRUE,
         columns = list(
-          "Stock code (component)" = colDef(html = T, filterable = T),
-          " " = colDef(html = T, filterable = F, style = list(textAlign = "center")),
-          "MSY Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
-          "MSY Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
-          "PA Fishing Pressure" = colDef(html = T, filterable = F, style = list(textAlign = "center")),
-          "PA Stock Size" = colDef(html = T, filterable = F, style = list(textAlign = "center"))
+          "Stock code (component)" = reactable::colDef(html = TRUE, filterable = TRUE),
+          " " = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
+          "MSY Fishing Pressure" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
+          "MSY Stock Size" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
+          "PA Fishing Pressure" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
+          "PA Stock Size" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center"))
         ),
         columnGroups = list(
           reactable::colGroup(name = "Maximum sustainable yield", columns = c("MSY Fishing Pressure", "MSY Stock Size")),
@@ -396,6 +380,7 @@ mod_stock_status_server <- function(id, cap_year, cap_month, selected_ecoregion,
     })
   })
 }
+
     
 ## To be copied in the UI
 # mod_stock_status_ui("stock_status_1")
