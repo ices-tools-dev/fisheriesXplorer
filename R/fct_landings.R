@@ -276,7 +276,7 @@ plot_catch_trends_plotly <- function(
 
   # --- Helpers
   sanitize_stub <- function(s) gsub("[^A-Za-z0-9]+", "_", s)
-  date_stamp <- format(Sys.Date(), "%Y%m%d")
+  date_stamp <- format(Sys.Date(), "%d-%b-%y")
 
   df <- dplyr::rename(x, type_var = dplyr::all_of(type))
 

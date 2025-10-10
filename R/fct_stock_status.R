@@ -887,18 +887,85 @@ stock_trends <- function(x){
     dplyr::filter(!is.na(Value)) %>%
     dplyr::select(FisheriesGuild, StockKeyLabel, Year, Metric, Value)
 
+
   df4 <- dplyr::bind_rows(df3, means) %>%
     dplyr::distinct(.keep_all = TRUE)
+        #check which stocks have max year = 2026
 
   return(df4)
 }
 
+# stock_trends <- function(x, coverage_thresh = 0.80){
+#   x$FishingPressure <- as.numeric(x$FishingPressure)
+#   x$StockSize       <- as.numeric(x$StockSize)
+#   x$FMSY            <- as.numeric(x$FMSY)
+#   x$MSYBtrigger     <- as.numeric(x$MSYBtrigger)
+#   x$Year            <- as.numeric(x$Year)
+
+#   df <- dplyr::mutate(x,
+#     FMEAN   = mean(FishingPressure, na.rm = TRUE),
+#     SSBMEAN = mean(StockSize,      na.rm = TRUE),
+#     FMEAN   = ifelse(!grepl("F|F(ages 3-6)", FishingPressureDescription), NA, FMEAN),
+#     SSBMEAN = ifelse(!grepl("StockSize",     StockSizeDescription),       NA, SSBMEAN)
+#   )
+
+#   df <- dplyr::mutate(df,
+#     F_FMSY          = ifelse(!is.na(FMSY),        FishingPressure / FMSY,        NA),
+#     SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger), StockSize       / MSYBtrigger, NA),
+#     F_FMEAN         = ifelse(!is.na(FMEAN),       FishingPressure / FMEAN,       NA),
+#     SSB_SSBMEAN     = ifelse(!is.na(SSBMEAN),     StockSize       / SSBMEAN,     NA)
+#   )
+
+#   df <- df %>%
+#     dplyr::select(Year, StockKeyLabel, FisheriesGuild, F_FMSY, SSB_MSYBtrigger, F_FMEAN, SSB_SSBMEAN)
+
+#   df2 <- tidyr::gather(df, Metric, Value, -Year, -StockKeyLabel, -FisheriesGuild) %>%
+#     dplyr::filter(!is.na(Year))
+
+#   df3 <- df2 %>%
+#     dplyr::group_by(StockKeyLabel, FisheriesGuild, Metric, Year) %>%
+#     dplyr::summarize(Value = mean(Value, na.rm = TRUE), .groups = "drop") %>%
+#     dplyr::filter(!is.na(Value))
+
+#   # ---- NEW: coverage rule for the across-stock yearly "Mean"
+#   # Denominator = distinct stocks that ever have data for this FisheriesGuild × Metric (across all years)
+#   denom <- df2 %>%
+#     dplyr::filter(!is.na(Value)) %>%
+#     dplyr::group_by(FisheriesGuild, Metric) %>%
+#     dplyr::summarise(total_stocks = dplyr::n_distinct(StockKeyLabel), .groups = "drop")
+
+#   # For each year: how many of those stocks have data, and what is that year's mean?
+#   year_stats <- df2 %>%
+#     dplyr::group_by(FisheriesGuild, Metric, Year) %>%
+#     dplyr::summarise(
+#       n_present = dplyr::n_distinct(StockKeyLabel[!is.na(Value)]),
+#       year_mean = mean(Value, na.rm = TRUE),
+#       .groups = "drop"
+#     )
+
+#   means <- year_stats %>%
+#     dplyr::inner_join(denom, by = c("FisheriesGuild","Metric")) %>%
+#     dplyr::mutate(
+#       coverage = ifelse(total_stocks > 0, n_present / total_stocks, NA_real_),
+#       Value    = dplyr::if_else(!is.na(coverage) & coverage >= coverage_thresh, year_mean, NA_real_),
+#       StockKeyLabel = "Mean"
+#     ) %>%
+#     dplyr::filter(!is.na(Value)) %>%
+#     dplyr::select(FisheriesGuild, StockKeyLabel, Year, Metric, Value)
+
+#   df4 <- dplyr::bind_rows(df3, means) %>%
+#     dplyr::distinct(.keep_all = TRUE)
+
+#   return(df4)
+# }
 
 
-plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE) {
+
+
+plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE, ecoregion = NULL) {
         # --- Filter for selected guild
         df <- dplyr::filter(x, FisheriesGuild == guild)
-
+        
         if (nrow(df) == 0) {
                 return(
                         plotly::plot_ly() %>%
@@ -925,6 +992,9 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
         values <- grDevices::hcl.colors(length(adj_names), palette = "Temps")
         names(values) <- adj_names
         values <- c(values, c(MEAN = "black"))
+        
+        # --- Remove any existing mean for the last year, suggestion of ADGFO 
+        # df <- df %>% filter(StockKeyLabel == "Mean" & Year == max(Year)) %>% mutate(Value = NA)
 
         # --- Keep only the two metrics of interest and rename
         df <- df %>%
@@ -937,6 +1007,15 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
 
         # --- Split mean vs stocks
         mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+        
+        # --- Remove any existing mean for the last year, suggestion of ADGFO 
+        last_year_FMSY <- max(mean_df$Year[mean_df$Metric == "F/F<sub>MSY</sub>"], na.rm = TRUE)
+        last_year_Btrigger <- max(mean_df$Year[mean_df$Metric == "SSB/MSY B<sub>trigger</sub>"], na.rm = TRUE)
+        idx_FMSY <- mean_df$Metric == "F/F<sub>MSY</sub>" & mean_df$Year == last_year_FMSY
+        idx_Btrigger <- mean_df$Metric == "SSB/MSY B<sub>trigger</sub>" & mean_df$Year == last_year_Btrigger        
+        mean_df$Value[idx_FMSY] <- NA_real_
+        mean_df$Value[idx_Btrigger] <- NA_real_
+
         df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
 
         # unique group ID per render (prevents stale highlights)
@@ -1080,6 +1159,16 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                         off = "plotly_doubleclick",
                         opacityDim = 0.2, # dims non-selected lines in both panels
                         selected = plotly::attrs_selected(line = list(width = 5))
+                ) %>% 
+                plotly::config(
+                        responsive = TRUE,
+                        toImageButtonOptions = list(
+                                filename = paste0(ecoregion, "_StatusTrends_", guild, "_", format(Sys.Date(), "%d-%b-%y")),
+                                format   = "png",
+                                scale    = 3
+                                # width  = 1600,
+                                # height = 900
+                        )
                 )
 
         if (return_data) {
