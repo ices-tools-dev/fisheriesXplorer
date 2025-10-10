@@ -260,7 +260,7 @@ observeEvent(input$main_tabset, {
       } else {
         guild <- input$status_trend_selector
       }
-      plot_stock_trends(trends_data(), guild, cap_year, cap_month)
+      plot_stock_trends(trends_data(), guild, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
     output$download_trends_data <- downloadHandler(
