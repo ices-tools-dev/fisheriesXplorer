@@ -213,7 +213,7 @@ input[type=radio]:checked {
   padding: 5px 0;
   transition: opacity 0.5s ease-in-out;
 
-  position: absolute;
+  position: left;
   z-index: 1;
   /*left: 0;
   top: 110%;*/
@@ -445,40 +445,87 @@ caption {
     display: inline-block;
   }
 
-  .image-button-link {
-    display: block;
-    width: 140px;
-    height: 140px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    cursor: pointer;
-    outline: 0;
-    text-decoration: none;
-  }
+.image-button-link {
+  display: block;
+  width: 140px;
+  height: 140px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  outline: 0;
+  text-decoration: none;
+}
 
-  .image-button-wrap .fx-tooltip {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%) translateY(6px);
-    bottom: -6px;
-    background: rgba(0, 0, 0, 0.85);
-    color: #fff;
-    padding: 8px 10px;
-    border-radius: 6px;
-    white-space: normal;
-    width: 240px;
-    max-width: 260px;
-    font-size: 1rem;
-    line-height: 1.25;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .15s ease, transform .15s ease;
-    z-index: 9999;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
-  }
+.image-button-wrap .fx-tooltip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  bottom: -6px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  width: 240px;
+  max-width: 260px;
+  font-size: 1rem;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+}
 
-  .image-button-wrap:hover .fx-tooltip,
-  .image-button-wrap:focus-within .fx-tooltip {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+.image-button-wrap:hover .fx-tooltip,
+.image-button-wrap:focus-within .fx-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* .hovertext {
+  position: relative;
+  cursor: pointer;
+}
+
+.hover-left::before {
+  content: attr(data-hover);
+  position: absolute;
+  right: 100%;
+  
+  top: 50%;
+  transform: translateY(-50%);
+  background: #111;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  margin-right: 8px;
+  z-index: 9999;
+  transition: opacity .15s ease-in-out;
+}
+
+.hover-left::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: auto;
+  right: 100%;
+  
+  transform: translate(6px, -50%);
+  
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent transparent #111;
+  
+  opacity: 0;
+  z-index: 10000;
+  transition: opacity .15s ease-in-out;
+}
+
+.hover-left:hover::before,
+.hover-left:hover::after {
+  opacity: 1;
+} */

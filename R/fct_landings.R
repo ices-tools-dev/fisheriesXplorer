@@ -505,8 +505,7 @@ plot_catch_trends_plotly <- function(
 
 
 
-plot_discard_trends_app_plotly <- function(x, year, caption = FALSE, cap_year, cap_month, return_data = FALSE) {
-  
+plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregion = NULL) {
   # Check for non-numeric Year values and warn if any NAs are introduced
   year_numeric <- suppressWarnings(as.numeric(x$Year))
   if (any(is.na(year_numeric) & !is.na(x$Year))) {
@@ -593,28 +592,36 @@ plot_discard_trends_app_plotly <- function(x, year, caption = FALSE, cap_year, c
       tickfont = list(size = 13)
     ),
     legend = list(title = list(text = "<b>Fisheries Guild</b>")),
-    margin = list(t = ifelse(caption, 80, 50)),
-    annotations = if (caption) {
-      list(
+    margin = list(b = 100),
+    annotations = list(
         list(
-          xref = "paper", yref = "paper",
-          x = 0, y = 1.1, showarrow = FALSE,
-          text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
+          xref = "paper", 
+          yref = "paper",
+          xanchor = "right", 
+          yanchor = "bottom",
+          x = 1, y = -0.2, 
+          showarrow = FALSE,
+          text = paste0("ICES Stock Assessment Database,", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
           font = list(size = 12)
         )
+      )    
+  ) %>%
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = paste0(ecoregion, "_DiscardTrends_", format(Sys.Date(), "%d-%b-%y")),
+        format   = "png",
+        scale    = 3
+        # width  = 1600,
+        # height = 900
       )
-    } else {
-      NULL
-    }
-  )
+    )
 
   return(p)
 }
 
 
-plot_discard_current_plotly <- function(x, year, position_letter = NULL,
-                                        caption = FALSE, cap_year, cap_month,
-                                        return_data = FALSE, order_df = NULL) {
+plot_discard_current_plotly <- function(x, year, position_letter = NULL, return_data = FALSE, order_df = NULL, ecoregion = NULL) {
   df <- x %>% dplyr::mutate(Year = as.numeric(Year),
                             FMSY = as.numeric(FMSY),
                             MSYBtrigger = as.numeric(MSYBtrigger)) %>% dplyr::filter(Year %in% seq(year - 5, year - 1))
@@ -694,19 +701,33 @@ plot_discard_current_plotly <- function(x, year, position_letter = NULL,
         title = "Discards and Landings (thousand tonnes)", 
         font = list(size = 14),
         tickfont = list(size = 13)), 
-      yaxis = list(title = "", 
+      yaxis = list(title = "Fisheries Guild", 
         # font = list(size = 13),
         tickfont = list(size = 13)),
       showlegend = TRUE,
-      margin = list(l = 100),
-      annotations = if (caption) list(
+      margin = list(l = 20, r = 20, t = 50, b = 120),
+      annotations = list(
         list(
-          text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
-          xref = "paper", yref = "paper",
-          x = 0, y = -0.1, showarrow = FALSE,
-          font = list(size = 10), align = "left"
+          xref = "paper", 
+          yref = "paper",
+          xanchor = "right", 
+          yanchor = "bottom",
+          x = 1, y = -0.4, 
+          showarrow = FALSE,
+          text = paste0("ICES Stock Assessment Database,", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
+          font = list(size = 12)
         )
-      ) else NULL
+      )  
+    ) %>% 
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = paste0(ecoregion, "_CurrentDiscards_", position_letter, "_", format(Sys.Date(), "%d-%b-%y")),
+        format   = "png",
+        scale    = 3
+        # width  = 1600,
+        # height = 900
+      )
     )
 
   return(plot)

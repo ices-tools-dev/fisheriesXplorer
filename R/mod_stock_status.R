@@ -37,7 +37,7 @@ mod_stock_status_ui <- function(id) {
                 card_header(
                   "MSY & Precautionary Approach",
                   downloadLink(ns("download_clean_status_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Data + image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
@@ -52,9 +52,9 @@ mod_stock_status_ui <- function(id) {
               card(
                 height = "85vh", full_screen = TRUE,
                 card_header(
-                  "Good Environmental Status",
+                  "Landings in relation to MSY status",
                   downloadLink(ns("download_status_catch_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Download stock status (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Data + image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
