@@ -52,7 +52,7 @@ mod_stock_status_ui <- function(id) {
               card(
                 height = "85vh", full_screen = TRUE,
                 card_header(
-                  "Landings in relation to MSY status",
+                  "Catches in relation to MSY status",
                   downloadLink(ns("download_status_catch_data"),
                     HTML(paste0("<span class='hovertext' data-hover='Data + image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
@@ -235,7 +235,11 @@ mod_stock_status_server <- function(
     })
 
     output$status_summary_ices <- renderPlot({
-      plot_status_prop_pies(shared$clean_status, return_data = FALSE)
+      key <- "output_stock_status_1-status_summary_ices_width"
+      req(!is.null(session$clientData[[key]]), session$clientData[[key]] > 0)
+      w <- session$clientData[[key]]
+      # plot_status_prop_pies(shared$clean_status, return_data = FALSE)
+      plot_status_prop_pies(shared$clean_status, width_px = w, return_data = FALSE)
     })
 
     # output$download_clean_status_data <- downloadHandler(
@@ -344,6 +348,10 @@ mod_stock_status_server <- function(
 
 
     output$status_summary_ges <- renderPlot({
+      key <- "output_stock_status_1-status_summary_ges_width"  # adjust if different
+      req(!is.null(session$clientData[[key]]), session$clientData[[key]] > 0)
+      w <- session$clientData[[key]]
+
       plot_GES_pies(shared$clean_status, catch_current(), return_data = FALSE)
     })
 
