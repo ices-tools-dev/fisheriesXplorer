@@ -183,72 +183,274 @@ mod_stock_status_ui <- function(id) {
 #'
 #' @noRd 
 mod_stock_status_server <- function(
-  id, cap_year, cap_month, selected_ecoregion, shared,
-  bookmark_qs = reactive(NULL),
-  set_subtab   = function(...) {}
-) {
+    id, cap_year, cap_month, selected_ecoregion, shared,
+    bookmark_qs = reactive(NULL),
+    set_subtab = function(...) {}) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # RESTORE once, defer until after first flush, then push up
-observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
-  qs <- bookmark_qs()
-  wanted <- qs$subtab
-  valid  <- c("status_summary", "trends_by_group", "kobe_cld", "status_lookup")
-  if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
-    session$onFlushed(function() {
-      if (utils::packageVersion("bslib") >= "0.5.0") {
-        bslib::nav_select(id = "main_tabset", selected = wanted, session = session)
-      } else {
-        updateTabsetPanel(session, "main_tabset", selected = wanted)
+    observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+      qs <- bookmark_qs()
+      wanted <- qs$subtab
+      valid <- c("status_summary", "trends_by_group", "kobe_cld", "status_lookup")
+      if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+        session$onFlushed(function() {
+          if (utils::packageVersion("bslib") >= "0.5.0") {
+            bslib::nav_select(id = "main_tabset", selected = wanted, session = session)
+          } else {
+            updateTabsetPanel(session, "main_tabset", selected = wanted)
+          }
+          isolate(set_subtab(wanted))
+        }, once = TRUE)
       }
-      isolate(set_subtab(wanted))
-    }, once = TRUE)
-  }
-})
+    })
 
-# REPORT on user changes, skip initial default
-observeEvent(input$main_tabset, {
-  set_subtab(input$main_tabset)
-}, ignoreInit = TRUE)
+    # REPORT on user changes, skip initial default
+    observeEvent(input$main_tabset,
+      {
+        set_subtab(input$main_tabset)
+      },
+      ignoreInit = TRUE
+    )
 
 
     output$ecoregion_label <- renderText({
-      req(selected_ecoregion()); paste("Ecoregion:", selected_ecoregion())
+      req(selected_ecoregion())
+      paste("Ecoregion:", selected_ecoregion())
     })
 
     output$current_date <- renderText({
-      paste0("Last update: ", format(Sys.Date(), "%B %d, %Y"))
+      paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
     })
 
     output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       HTML(select_text(texts, "status", "sidebar"))
     })
 
+    ################# Status summary tab #####################
+
     catch_current <- reactive({
       stockstatus_CLD_current(format_sag(shared$SAG, shared$SID))
     })
 
     output$status_summary_ices <- renderPlot({
-      plot_status_prop_pies(shared$clean_status, cap_month, cap_year)
+      plot_status_prop_pies(shared$clean_status, return_data = FALSE)
     })
 
+    # output$download_clean_status_data <- downloadHandler(
+    #   filename = function() { paste0("status_data_", Sys.Date(), ".csv") },
+    #   content = function(file) { write.csv(shared$clean_status, file, row.names = FALSE) }
+    # )
     output$download_clean_status_data <- downloadHandler(
-      filename = function() { paste0("status_data_", Sys.Date(), ".csv") },
-      content = function(file) { write.csv(shared$clean_status, file, row.names = FALSE) }
+      filename = function() {
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+        paste0("status_data_bundle_", acronym, "_", date_tag, ".zip")
+      },
+      content = function(file) {
+        # --- Temp workspace
+        td <- tempfile("status_bundle_")
+        dir.create(td, showWarnings = FALSE)
+        on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
+
+        # --- Helper: robust downloader with curl fallback
+        safe_download <- function(url, dest) {
+          tryCatch(
+            {
+              if (requireNamespace("curl", quietly = TRUE)) {
+                curl::curl_download(url, destfile = dest, quiet = TRUE)
+              } else {
+                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
+              }
+              file.exists(dest) && file.info(dest)$size > 0
+            },
+            error = function(e) FALSE
+          )
+        }
+
+        # --- Naming tokens
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+
+        # --- 1) CSV (with acronym + date)
+        csv_name <- paste0("status_data_", acronym, "_", date_tag, ".csv")
+        csv_path <- file.path(td, csv_name)
+        dat <- shared$clean_status
+        utils::write.csv(dat, csv_path, row.names = FALSE)
+
+        # --- 2) Disclaimer.txt (fixed name; no acronym/date)
+        disc_path <- file.path(td, "Disclaimer.txt")
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        if (!safe_download(disc_url, disc_path)) {
+          writeLines(c(
+            "Disclaimer for fisheriesXplorer status data.",
+            "The official disclaimer could not be fetched automatically.",
+            paste("Please see:", disc_url)
+          ), con = disc_path)
+        }
+
+        # --- 3) Plot image (PNG) of the static pies
+        png_name <- paste0("status_pie_plot_", acronym, "_", date_tag, ".png")
+        png_path <- file.path(td, png_name)
+
+        plot_ok <- FALSE
+        try(
+          {
+            p <- plot_status_prop_pies(dat) # your static ggplot function
+            if (inherits(p, "ggplot")) {
+              # Prefer ragg for crisp text; fall back to ggsave
+              if (requireNamespace("ragg", quietly = TRUE)) {
+                ragg::agg_png(filename = png_path, width = 2200, height = 1400, units = "px", res = 144)
+                print(p)
+                grDevices::dev.off()
+              } else {
+                ggplot2::ggsave(
+                  filename = png_path, plot = p, width = 14, height = 9,
+                  dpi = 150, limitsize = FALSE
+                )
+              }
+              plot_ok <- file.exists(png_path) && file.info(png_path)$size > 0
+            }
+          },
+          silent = TRUE
+        )
+
+        if (!plot_ok) {
+          writeLines(
+            c(
+              "Plot image could not be generated.",
+              "Check that 'shared$clean_status' has these columns:",
+              "StockKeyLabel, FisheriesGuild, lineDescription, FishingPressure, StockSize."
+            ),
+            con = file.path(td, "PLOT_GENERATION_FAILED.txt")
+          )
+        }
+
+        # --- Zip everything
+        files_to_zip <- c(csv_path, disc_path, if (plot_ok) png_path)
+        if ("zipr" %in% getNamespaceExports("zip")) {
+          zip::zipr(zipfile = file, files = files_to_zip, root = td)
+        } else {
+          owd <- setwd(td)
+          on.exit(setwd(owd), add = TRUE)
+          zip::zip(zipfile = file, files = basename(files_to_zip))
+        }
+      },
+      contentType = "application/zip"
     )
+
 
     output$status_summary_ges <- renderPlot({
-      plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year)
+      plot_GES_pies(shared$clean_status, catch_current(), return_data = FALSE)
     })
 
+    # output$download_status_catch_data <- downloadHandler(
+    #   filename = function() {
+    #     paste0("status_catch_data_", Sys.Date(), ".csv")
+    #   },
+    #   content = function(file) {
+    #     write.csv(plot_GES_pies(shared$clean_status, catch_current(),  return_data = TRUE), file, row.names = FALSE)
+    #   }
+    # )
     output$download_status_catch_data <- downloadHandler(
-      filename = function() { paste0("status_catch_data_", Sys.Date(), ".csv") },
+      filename = function() {
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+        paste0("status_catch_data_bundle_", acronym, "_", date_tag, ".zip")
+      },
       content = function(file) {
-        write.csv(plot_GES_pies(shared$clean_status, catch_current(), cap_month, cap_year, return_data = TRUE), file, row.names = FALSE)
-      }
+        # Temp workspace
+        td <- tempfile("status_catch_bundle_")
+        dir.create(td, showWarnings = FALSE)
+        on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
+
+        # Helper: robust downloader
+        safe_download <- function(url, dest) {
+          tryCatch(
+            {
+              if (requireNamespace("curl", quietly = TRUE)) {
+                curl::curl_download(url, destfile = dest, quiet = TRUE)
+              } else {
+                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
+              }
+              file.exists(dest) && file.info(dest)$size > 0
+            },
+            error = function(e) FALSE
+          )
+        }
+
+        # Naming tokens
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+
+        # 1) CSV (includes acronym + date)
+        dat <- plot_GES_pies(shared$clean_status, catch_current(), return_data = TRUE)
+        csv_name <- paste0("status_catch_data_", acronym, "_", date_tag, ".csv")
+        csv_path <- file.path(td, csv_name)
+        utils::write.csv(dat, csv_path, row.names = FALSE)
+
+        # 2) Disclaimer.txt (fixed name)
+        disc_path <- file.path(td, "Disclaimer.txt")
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        if (!safe_download(disc_url, disc_path)) {
+          writeLines(c(
+            "Disclaimer for fisheriesXplorer status & catch data.",
+            "The official disclaimer could not be fetched automatically.",
+            paste("Please see:", disc_url)
+          ), con = disc_path)
+        }
+
+        # 3) PNG plot image
+        png_name <- paste0("status_catch_pie_plot_", acronym, "_", date_tag, ".png")
+        png_path <- file.path(td, png_name)
+        plot_ok <- FALSE
+        try(
+          {
+            p <- plot_GES_pies(shared$clean_status, catch_current(), return_data = FALSE)
+            if (inherits(p, "ggplot")) {
+              if (requireNamespace("ragg", quietly = TRUE)) {
+                ragg::agg_png(filename = png_path, width = 2200, height = 1400, units = "px", res = 144)
+                print(p)
+                grDevices::dev.off()
+              } else {
+                ggplot2::ggsave(filename = png_path, plot = p, width = 14, height = 9, dpi = 150, limitsize = FALSE)
+              }
+              plot_ok <- file.exists(png_path) && file.info(png_path)$size > 0
+            }
+          },
+          silent = TRUE
+        )
+
+        if (!plot_ok) {
+          writeLines(
+            c(
+              "Plot image could not be generated.",
+              "Check that 'plot_GES_pies' returns a ggplot object when return_data = FALSE."
+            ),
+            con = file.path(td, "PLOT_GENERATION_FAILED.txt")
+          )
+        }
+
+        # Zip bundle
+        files_to_zip <- c(csv_path, disc_path, if (plot_ok) png_path)
+        if ("zipr" %in% getNamespaceExports("zip")) {
+          zip::zipr(zipfile = file, files = files_to_zip, root = td)
+        } else {
+          owd <- setwd(td)
+          on.exit(setwd(owd), add = TRUE)
+          zip::zip(zipfile = file, files = basename(files_to_zip))
+        }
+      },
+      contentType = "application/zip"
     )
 
+
+    ##################### Stock trends tab #####################
     trends_data <- reactive({
       stock_trends(format_sag(shared$SAG, shared$SID))
     })
@@ -264,8 +466,12 @@ observeEvent(input$main_tabset, {
     })
 
     output$download_trends_data <- downloadHandler(
-      filename = function() { paste0("status_trends_data_", Sys.Date(), ".csv") },
-      content = function(file) { write.csv(trends_data(), file, row.names = FALSE) }
+      filename = function() {
+        paste0("status_trends_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(trends_data(), file, row.names = FALSE)
+      }
     )
 
     output$kobe_cld_slider <- renderUI({
@@ -305,8 +511,12 @@ observeEvent(input$main_tabset, {
     })
 
     output$download_CLD_data <- downloadHandler(
-      filename = function() { paste0("status_CLD_data_", Sys.Date(), ".csv") },
-      content = function(file) { write.csv(kobe_cld_data(), file, row.names = FALSE) }
+      filename = function() {
+        paste0("status_CLD_data_", Sys.Date(), ".csv")
+      },
+      content = function(file) {
+        write.csv(kobe_cld_data(), file, row.names = FALSE)
+      }
     )
 
     processed_data_reactable <- reactive({
@@ -315,7 +525,7 @@ observeEvent(input$main_tabset, {
       annex_data_cleaned <- annex_data %>%
         dplyr::mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),
-          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent,"' target='_blank'>", StockKeyLabel, ifelse(is.na(AssessmentComponent), "", paste0(" (", AssessmentComponent, ")")), "</a>")
+          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent, "' target='_blank'>", StockKeyLabel, ifelse(is.na(AssessmentComponent), "", paste0(" (", AssessmentComponent, ")")), "</a>")
         ) %>%
         dplyr::select(
           "Stock code (component)" = StockKeyLabel,
@@ -350,7 +560,9 @@ observeEvent(input$main_tabset, {
     })
 
     output$download_status_table <- downloadHandler(
-      filename = function() { paste0("status_table_data_", Sys.Date(), ".csv") },
+      filename = function() {
+        paste0("status_table_data_", Sys.Date(), ".csv")
+      },
       content = function(file) {
         write.csv(format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG), file, row.names = FALSE)
       }

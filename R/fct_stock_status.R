@@ -475,109 +475,204 @@ format_sag_status_new <- function(df) {
 }
 
 
-plot_status_prop_pies <- function(df, cap_month = "November",
-                         cap_year = "2018",
-                         return_data = FALSE) {
-
-
-        # df <- dplyr::filter(df, !is.na(FisheriesGuild))
+# plot_status_prop_pies <- function(df, return_data = FALSE) {        
+        
+#         # df <- dplyr::filter(df, !is.na(FisheriesGuild))
         
         
-        cap_lab <- ggplot2::labs(title = "", x = "", y = "",
-                        caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen",
-                                          cap_month,
-                                          cap_year))
-        colList <- c("GREEN" = "#00B26D",
-                     "GREY" = "#d3d3d3",
-                     "ORANGE" = "#ff7f00",
-                     "RED" = "#d93b1c",
-                     "qual_RED" = "#d93b1c",
-                     "qual_GREEN" = "#00B26D",
-                     "UNDEFINED" = "#006aff")
+#         cap_lab <- ggplot2::labs(title = "", x = "", y = "",
+#                         caption = paste0("ICES Stock Assessment Database,", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"))
+#         colList <- c("GREEN" = "#00B26D",
+#                      "GREY" = "#d3d3d3",
+#                      "ORANGE" = "#ff7f00",
+#                      "RED" = "#d93b1c",
+#                      "qual_RED" = "#d93b1c",
+#                      "qual_GREEN" = "#00B26D",
+#                      "UNDEFINED" = "#006aff")
 
 
-        df_stock <- dplyr::select(df,StockKeyLabel,
-                       FisheriesGuild,
-                       lineDescription,
-                       FishingPressure,
-                       StockSize)#,
-                #        SBL)
-        df_stock <- tidyr::gather(df_stock,Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
-        df2 <- dplyr::group_by(df_stock, FisheriesGuild, lineDescription, Variable, Colour)
-        df2 <- dplyr::summarize(df2, COUNT = dplyr::n())
-        df2 <- tidyr::spread(df2, Colour, COUNT)
+#         df_stock <- dplyr::select(df,StockKeyLabel,
+#                        FisheriesGuild,
+#                        lineDescription,
+#                        FishingPressure,
+#                        StockSize)#,
+#                 #        SBL)
+#         df_stock <- tidyr::gather(df_stock,Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
+#         df2 <- dplyr::group_by(df_stock, FisheriesGuild, lineDescription, Variable, Colour)
+#         df2 <- dplyr::summarize(df2, COUNT = dplyr::n())
+#         df2 <- tidyr::spread(df2, Colour, COUNT)
         
-        # replace NAs with 0 in int columns
-        # browser()
-        # is.na(df2$FisheriesGuild)
-        # df[is.na(df$FisheriesGuild),]
-        # df2 <- dplyr::filter(df2, !is.na(FisheriesGuild))
-        # str(df2)
-        # df2 <- df2 %>% na.omit(FisheriesGuild)
-        df2[is.na(df2)] <- 0
-        df3 <- subset(df2,select =-c(FisheriesGuild))
-        df3 <- dplyr::group_by(df3,lineDescription, Variable)
-        df3 <- dplyr::summarise_each(df3,dplyr::funs(sum))
-        df3$FisheriesGuild <- "total"
-        df2 <- rbind(df2,df3)
+#         # replace NAs with 0 in int columns
+#         # browser()
+#         # is.na(df2$FisheriesGuild)
+#         # df[is.na(df$FisheriesGuild),]
+#         # df2 <- dplyr::filter(df2, !is.na(FisheriesGuild))
+#         # str(df2)
+#         # df2 <- df2 %>% na.omit(FisheriesGuild)
+#         df2[is.na(df2)] <- 0
+#         df3 <- subset(df2,select =-c(FisheriesGuild))
+#         df3 <- dplyr::group_by(df3,lineDescription, Variable)
+#         df3 <- dplyr::summarise_each(df3,dplyr::funs(sum))
+#         df3$FisheriesGuild <- "total"
+#         df2 <- rbind(df2,df3)
 
-        # df4 <- dplyr::filter(df2,Variable == "SBL")
-        # df4$lineDescription <- ""
-        # df4 <- unique(df4)
-        # df2 <- dplyr::filter(df2,Variable != "SBL")
-        # df2 <- rbind(df2,df4)
-        df2$lineDescription <- gsub("Maximum sustainable yield","MSY", df2$lineDescription)
-        df2$lineDescription <- gsub("Precautionary approach", "PA", df2$lineDescription)
-        df2$header <- paste0(df2$Variable, "\n" , df2$lineDescription)
-        # browser()
-        # df2 <- tidyr::gather(df2,colour, value,GREEN:UNDEFINED, factor_key = TRUE)
-        df2 <- tidyr::gather(df2,colour, value,GREEN:RED, factor_key = TRUE)
-        df2 <- dplyr::filter(df2,value > 0)
+#         # df4 <- dplyr::filter(df2,Variable == "SBL")
+#         # df4$lineDescription <- ""
+#         # df4 <- unique(df4)
+#         # df2 <- dplyr::filter(df2,Variable != "SBL")
+#         # df2 <- rbind(df2,df4)
+#         df2$lineDescription <- gsub("Maximum sustainable yield","MSY", df2$lineDescription)
+#         df2$lineDescription <- gsub("Precautionary approach", "PA", df2$lineDescription)
+#         df2$header <- paste0(df2$Variable, "\n" , df2$lineDescription)
+#         # browser()
+#         # df2 <- tidyr::gather(df2,colour, value,GREEN:UNDEFINED, factor_key = TRUE)
+#         df2 <- tidyr::gather(df2,colour, value,GREEN:RED, factor_key = TRUE)
+#         df2 <- dplyr::filter(df2,value > 0)
         
 
-        tot <- dplyr::filter(df2,FisheriesGuild == "total")
-        tot <- dplyr::group_by(tot,header)
-        tot <- dplyr::mutate(tot, tot = sum(value))
-        max <- unique(tot$tot)
-        df2 <- dplyr::group_by(df2, FisheriesGuild, header)
-        df2 <- dplyr::mutate(df2,sum = sum(value))
+#         tot <- dplyr::filter(df2,FisheriesGuild == "total")
+#         tot <- dplyr::group_by(tot,header)
+#         tot <- dplyr::mutate(tot, tot = sum(value))
+#         max <- unique(tot$tot)
+#         df2 <- dplyr::group_by(df2, FisheriesGuild, header)
+#         df2 <- dplyr::mutate(df2,sum = sum(value))
          
-        # testMax <- max(max) ############################## modified here because I would get 3 values
-        df2$fraction <- df2$value*max/df2$sum
-        df2$header <- factor(df2$header, levels = c("FishingPressure\nMSY", "StockSize\nMSY",
-                                                    "FishingPressure\nPA" ,"StockSize\nPA",
-                                                    "SBL\n" ))
-        df2$FisheriesGuild <- tolower(df2$FisheriesGuild)
-        df2$FisheriesGuild <- factor(df2$FisheriesGuild, levels= c("total", "benthic", "demersal", "pelagic", "crustacean", "elasmobranch"))
+#         # testMax <- max(max) ############################## modified here because I would get 3 values
+#         df2$fraction <- df2$value*max/df2$sum
+#         df2$header <- factor(df2$header, levels = c("FishingPressure\nMSY", "StockSize\nMSY",
+#                                                     "FishingPressure\nPA" ,"StockSize\nPA",
+#                                                     "SBL\n" ))
+#         df2$FisheriesGuild <- tolower(df2$FisheriesGuild)
+#         df2$FisheriesGuild <- factor(df2$FisheriesGuild, levels= c("total", "benthic", "demersal", "pelagic", "crustacean", "elasmobranch"))
         
         
-        p1 <- ggplot2::ggplot(data = df2, ggplot2::aes(x = "", y = fraction, fill = colour)) +
-                ggplot2::geom_bar(stat = "identity", width = 1) +
-                ggplot2::geom_text(ggplot2::aes(label = value),
-                          position = ggplot2::position_stack(vjust = 0.5),
-                          size = 5) +
-                ggplot2::scale_fill_manual(values = colList) +
-                ggplot2::theme_bw(base_size = 14) +
-                ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                      panel.border = ggplot2::element_blank(),
-                      panel.background = ggplot2::element_blank(),
-                      legend.position="none") +
-                ggplot2::theme(axis.text=ggplot2::element_blank(),
-                      axis.ticks=ggplot2::element_blank(),
-                      strip.background = ggplot2::element_blank(),
-                      plot.caption = ggplot2::element_text(size = 8)) +
-                # cap_lab +
-                ggplot2::coord_polar(theta = "y", direction = 1) +
-                ggplot2::facet_grid(FisheriesGuild ~ header)
+#         p1 <- ggplot2::ggplot(data = df2, ggplot2::aes(x = "", y = fraction, fill = colour)) +
+#                 ggplot2::geom_bar(stat = "identity", width = 1) +
+#                 ggplot2::geom_text(ggplot2::aes(label = value),
+#                           position = ggplot2::position_stack(vjust = 0.5),
+#                           size = 5) +
+#                 ggplot2::scale_fill_manual(values = colList) +
+#                 ggplot2::theme_bw(base_size = 14) +
+#                 ggplot2::theme(panel.grid = ggplot2::element_blank(),
+#                       panel.border = ggplot2::element_blank(),
+#                       panel.background = ggplot2::element_blank(),
+#                       legend.position="none") +
+#                 ggplot2::theme(axis.text=ggplot2::element_blank(),
+#                       axis.ticks=ggplot2::element_blank(),
+#                       strip.background = ggplot2::element_blank(),
+#                       plot.caption = ggplot2::element_text(size = 8)) +
+#                 # cap_lab +
+#                 ggplot2::coord_polar(theta = "y", direction = 1) +
+#                 ggplot2::facet_grid(FisheriesGuild ~ header)
                 
         
-        if(return_data == T){
-                df2
-        }else{
-                p1
-        }
-}
+#         if(return_data == T){
+#                 df2
+#         }else{
+#                 p1
+#         }
+# }
 
+plot_status_prop_pies <- function(df, return_data = FALSE) {
+
+  cap_lab <- ggplot2::labs(
+    title = NULL, x = NULL, y = NULL,
+    caption = paste0(
+      "ICES Stock Assessment Database, ",
+      format(Sys.Date(), "%d-%b-%y"),
+      ". ICES, Copenhagen"
+    )
+  )
+
+  colList <- c(
+    "GREEN" = "#00B26D",
+    "GREY" = "#d3d3d3",
+    "ORANGE" = "#ff7f00",
+    "RED" = "#d93b1c",
+    "qual_RED" = "#d93b1c",
+    "qual_GREEN" = "#00B26D",
+    "UNDEFINED" = "#006aff"
+  )
+
+  df_stock <- dplyr::select(
+    df, StockKeyLabel, FisheriesGuild, lineDescription, FishingPressure, StockSize
+  )
+  df_stock <- tidyr::gather(df_stock, Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
+
+  df2 <- df_stock |>
+    dplyr::group_by(FisheriesGuild, lineDescription, Variable, Colour) |>
+    dplyr::summarise(COUNT = dplyr::n(), .groups = "drop") |>
+    tidyr::spread(Colour, COUNT)
+
+  df2[is.na(df2)] <- 0
+
+  df3 <- df2 |>
+    dplyr::select(-FisheriesGuild) |>
+    dplyr::group_by(lineDescription, Variable) |>
+    dplyr::summarise(dplyr::across(dplyr::everything(), sum), .groups = "drop") |>
+    dplyr::mutate(FisheriesGuild = "total")
+
+  df2 <- dplyr::bind_rows(df2, df3)
+
+  df2$lineDescription <- gsub("Maximum sustainable yield", "MSY", df2$lineDescription)
+  df2$lineDescription <- gsub("Precautionary approach", "PA", df2$lineDescription)
+  df2$header <- paste0(df2$Variable, "\n", df2$lineDescription)
+
+  df2 <- df2 |>
+    tidyr::gather(colour, value, GREEN:RED, factor_key = TRUE) |>
+    dplyr::filter(value > 0)
+
+  tot <- df2 |>
+    dplyr::filter(FisheriesGuild == "total") |>
+    dplyr::group_by(header) |>
+    dplyr::summarise(tot = sum(value), .groups = "drop")
+
+  overall_max <- max(tot$tot, na.rm = TRUE)
+
+  df2 <- df2 |>
+    dplyr::group_by(FisheriesGuild, header) |>
+    dplyr::mutate(sum = sum(value), fraction = value * overall_max / sum) |>
+    dplyr::ungroup()
+
+  df2$header <- factor(
+    df2$header,
+    levels = c("FishingPressure\nMSY", "StockSize\nMSY",
+               "FishingPressure\nPA",  "StockSize\nPA",
+               "SBL\n")
+  )
+  df2$FisheriesGuild <- factor(
+    tolower(df2$FisheriesGuild),
+    levels = c("total", "benthic", "demersal", "pelagic", "crustacean", "elasmobranch")
+  )
+
+  p1 <- ggplot2::ggplot(df2, ggplot2::aes(x = "", y = fraction, fill = colour)) +
+    ggplot2::geom_bar(stat = "identity", width = 1) +
+    ggplot2::geom_text(
+      ggplot2::aes(label = value),
+      position = ggplot2::position_stack(vjust = 0.5),
+      size = 5
+    ) +
+    ggplot2::scale_fill_manual(values = colList) +
+    ggplot2::coord_polar(theta = "y", direction = 1) +
+    ggplot2::facet_grid(FisheriesGuild ~ header) +
+    cap_lab +
+    ggplot2::theme_bw(base_size = 14) +
+    ggplot2::theme(
+      panel.grid = ggplot2::element_blank(),
+      panel.border = ggplot2::element_blank(),
+      panel.background = ggplot2::element_blank(),
+      legend.position = "none",
+      axis.text = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
+      axis.title = ggplot2::element_blank(),   # removes “x” and “fraction”
+      strip.background = ggplot2::element_blank(),
+      plot.caption = ggplot2::element_text(size = 12, hjust = 0),
+      plot.caption.position = "plot",
+      plot.margin = ggplot2::margin(5.5, 5.5, 24, 5.5, unit = "pt") # space for caption
+    )
+
+  if (isTRUE(return_data)) df2 else p1
+}
 
 format_annex_table <- function(status, year, sid, sag) {
         
@@ -713,60 +808,67 @@ stockstatus_CLD_current <- function(x) {
         df4
 }
 
-plot_GES_pies <- function(x, y, cap_month = "August",
-                         cap_year = "2019",
-                         return_data = FALSE) {
+plot_GES_pies <- function(x, y, return_data = FALSE) {
         df <- x
-        cap_lab <- ggplot2::labs(title = "", x = "", y = "",
-                        caption = sprintf("ICES Stock Assessment Database, %s %s. ICES, Copenhagen",
-                                          cap_month,
-                                          cap_year))
-        colList <- c("GREEN" = "#00B26D",
-                     "GREY" = "#d3d3d3",
-                     "ORANGE" = "#ff7f00",
-                     "RED" = "#d93b1c",
-                     "qual_RED" = "#d93b5c",
-                     "qual_GREEN" = "#00B28F")
+        cap_lab <- ggplot2::labs(
+                title = NULL, x = NULL, y = NULL,
+                caption = paste0(
+                        "ICES Stock Assessment Database, ",
+                        format(Sys.Date(), "%d-%b-%y"),
+                        ". ICES, Copenhagen"
+                )
+        )
+        colList <- c(
+                "GREEN" = "#00B26D",
+                "GREY" = "#d3d3d3",
+                "ORANGE" = "#ff7f00",
+                "RED" = "#d93b1c",
+                "qual_RED" = "#d93b5c",
+                "qual_GREEN" = "#00B28F"
+        )
 
 
-        df_stock <- dplyr::filter (df, lineDescription == "Maximum sustainable yield")
-        df_stock <- dplyr::select(df_stock, StockKeyLabel,
-                       FishingPressure,
-                       StockSize)
-        df_stock <- tidyr::gather(df_stock,Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
-        df2 <- dplyr::group_by(df_stock,Variable, Colour) %>%
-                dplyr::summarize(COUNT = dplyr::n())%>%
+        df_stock <- dplyr::filter(df, lineDescription == "Maximum sustainable yield")
+        df_stock <- dplyr::select(
+                df_stock, StockKeyLabel,
+                FishingPressure,
+                StockSize
+        )
+        df_stock <- tidyr::gather(df_stock, Variable, Colour, FishingPressure:StockSize, factor_key = TRUE)
+        df2 <- dplyr::group_by(df_stock, Variable, Colour) %>%
+                dplyr::summarize(COUNT = dplyr::n()) %>%
                 tidyr::spread(Colour, COUNT)
         df2[is.na(df2)] <- 0
 
         df3 <- dplyr::filter(y, StockKeyLabel %in% df_stock$StockKeyLabel)
-        df3 <- dplyr::mutate(df3,CATCH = ifelse(is.na(Catches) & !is.na(Landings),
-                                         Landings,
-                                         Catches))
-        df3 <- dplyr::select(df3,c(StockKeyLabel, CATCH))
-        df4 <- dplyr::left_join(df_stock,df3)
+        df3 <- dplyr::mutate(df3, CATCH = ifelse(is.na(Catches) & !is.na(Landings),
+                Landings,
+                Catches
+        ))
+        df3 <- dplyr::select(df3, c(StockKeyLabel, CATCH))
+        df4 <- dplyr::left_join(df_stock, df3)
         df4[is.na(df4)] <- 0
-        df4 <- dplyr::group_by(df4,Variable, Colour) %>%
-                dplyr::summarize(CATCH = sum(CATCH))%>%
+        df4 <- dplyr::group_by(df4, Variable, Colour) %>%
+                dplyr::summarize(CATCH = sum(CATCH)) %>%
                 tidyr::spread(Colour, CATCH)
-        df4 <- tidyr::gather(df4,Color, Catch, GREEN:RED, factor_key = TRUE)
-        df2 <- tidyr::gather(df2,Color, Stocks, GREEN:RED, factor_key = TRUE)
-        df5 <- merge(df2,df4)
+        df4 <- tidyr::gather(df4, Color, Catch, GREEN:RED, factor_key = TRUE)
+        df2 <- tidyr::gather(df2, Color, Stocks, GREEN:RED, factor_key = TRUE)
+        df5 <- merge(df2, df4)
         df5[is.na(df5)] <- 0
-        tot <- sum(df5$Catch)/2
-        stocks <- sum(df5$Stocks)/2
-        df5 <- tidyr::gather(df5,Metric, Value, Stocks:Catch)
-        df5 <- dplyr::group_by(df5,Metric)
-        df5 <- dplyr::mutate(df5,sum = sum(Value)/2)
+        tot <- sum(df5$Catch) / 2
+        stocks <- sum(df5$Stocks) / 2
+        df5 <- tidyr::gather(df5, Metric, Value, Stocks:Catch)
+        df5 <- dplyr::group_by(df5, Metric)
+        df5 <- dplyr::mutate(df5, sum = sum(Value) / 2)
         # df5 <- df5 %>% group_by(Metric) %>% mutate(max = max(Value)/2)
-        
+
         # filter out metric == Stocks
         df5 <- df5 %>% filter(Metric != "Stocks")
-        df5$fraction <- ifelse(df5$Metric == "Stocks", (df5$Value*tot)/stocks, df5$Value)
-        df5$Variable <- plyr::revalue(df5$Variable, c("FishingPressure"="Fishing Pressure", "StockSize"="Stock Size"))
-        df5$Metric <- plyr::revalue(df5$Metric, c("Stocks"="Number of stocks", "Catch"="Proportion of catch \n(thousand tonnes)"))
-        df5$Value2 <- ifelse(df5$Metric == "Proportion of catch \n(thousand tonnes)", df5$Value/1000, df5$Value)
-        df5$sum2 <- ifelse(df5$Metric == "Proportion of catch \n(thousand tonnes)", df5$sum/1000, df5$sum)
+        df5$fraction <- ifelse(df5$Metric == "Stocks", (df5$Value * tot) / stocks, df5$Value)
+        df5$Variable <- plyr::revalue(df5$Variable, c("FishingPressure" = "Fishing Pressure", "StockSize" = "Stock Size"))
+        df5$Metric <- plyr::revalue(df5$Metric, c("Stocks" = "Number of stocks", "Catch" = "Proportion of catch \n(thousand tonnes)"))
+        df5$Value2 <- ifelse(df5$Metric == "Proportion of catch \n(thousand tonnes)", df5$Value / 1000, df5$Value)
+        df5$sum2 <- ifelse(df5$Metric == "Proportion of catch \n(thousand tonnes)", df5$sum / 1000, df5$sum)
         df5$Value <- as.integer(df5$Value)
         df5$Value2 <- as.integer(df5$Value2)
         df5$sum2 <- as.integer(df5$sum2)
@@ -774,74 +876,36 @@ plot_GES_pies <- function(x, y, cap_month = "August",
         p1 <- ggplot2::ggplot(data = df5, ggplot2::aes(x = "", y = fraction, fill = Color)) +
                 ggplot2::geom_bar(stat = "identity", width = 1) +
                 ggplot2::geom_text(ggplot2::aes(label = Value2),
-                          position = ggplot2::position_stack(vjust = 0.5),                          
-                          size = 7) +
-                ggplot2::geom_text(ggplot2::aes(label = paste0("total = ", sum2) ,x = 0, y = 0), size = 5)+
+                        position = ggplot2::position_stack(vjust = 0.5),
+                        size = 7
+                ) +
+                ggplot2::geom_text(ggplot2::aes(label = paste0("total = ", sum2), x = 0, y = 0), size = 5) +
                 ggplot2::scale_fill_manual(values = colList) +
                 ggplot2::theme_bw(base_size = 20) +
-                ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                      panel.border = ggplot2::element_blank(),
-                      panel.background = ggplot2::element_blank(),
-                      legend.position="none") +
-                ggplot2::theme(axis.text = ggplot2::element_blank(),
-                      axis.ticks = ggplot2::element_blank(),
-                      strip.background = ggplot2::element_blank(),
-                      plot.caption = ggplot2::element_text(size = 13)) +
+                ggplot2::theme(
+                        panel.grid = ggplot2::element_blank(),
+                        panel.border = ggplot2::element_blank(),
+                        panel.background = ggplot2::element_blank(),
+                        legend.position = "none"
+                ) +
+                ggplot2::theme(
+                        axis.text = ggplot2::element_blank(),
+                        axis.ticks = ggplot2::element_blank(),
+                        strip.background = ggplot2::element_blank(),
+                        plot.caption = ggplot2::element_text(size = 12)
+                ) +
                 cap_lab +
                 ggplot2::coord_polar(theta = "y") +
                 ggplot2::facet_grid(Metric ~ Variable)
 
-        if(return_data == T){
-                df5 <- subset(df5,select= -c(Value2, sum2))
+        if (return_data == T) {
+                df5 <- subset(df5, select = -c(Value2, sum2))
                 df5
-        }else{
+        } else {
                 p1
         }
 }
-plot_GES_pies_interactive <- function(x, y, cap_month = "August",
-                                      cap_year = "2019",
-                                      return_data = FALSE) {
-    df <- x
-    colList <- c("GREEN" = "#00B26D",
-                 "GREY" = "#d3d3d3",
-                 "ORANGE" = "#ff7f00",
-                 "RED" = "#d93b1c",
-                 "qual_RED" = "#d93b5c",
-                 "qual_GREEN" = "#00B28F")
 
-    df_stock <- dplyr::filter(df, lineDescription == "Maximum sustainable yield") %>%
-        dplyr::select(StockKeyLabel, FishingPressure, StockSize) %>%
-        tidyr::pivot_longer(cols = FishingPressure:StockSize, names_to = "Variable", values_to = "Colour")
-
-    df3 <- dplyr::filter(y, StockKeyLabel %in% df_stock$StockKeyLabel) %>%
-        dplyr::mutate(CATCH = ifelse(is.na(Catches) & !is.na(Landings), Landings, Catches)) %>%
-        dplyr::select(StockKeyLabel, CATCH)
-
-    df4 <- dplyr::left_join(df_stock, df3, by = "StockKeyLabel") %>%
-        replace(is.na(.), 0) %>%
-        dplyr::group_by(Variable, Colour) %>%
-        dplyr::summarise(CATCH = sum(CATCH), .groups = "drop") %>%
-        tidyr::pivot_wider(names_from = Colour, values_from = CATCH, values_fill = 0) %>%
-        tidyr::pivot_longer(cols = GREEN:RED, names_to = "Color", values_to = "Catch")
-
-    df4$Metric <- "Proportion of catch (thousand tonnes)"
-    df4$fraction <- df4$Catch
-    df4$Value2 <- as.integer(df4$Catch / 1000)
-    df4$sum2 <- as.integer(sum(df4$Catch) / 1000)
-
-    if (return_data) {
-        return(df4)
-    }
-
-    # Create interactive pie chart using plotly
-    p <- plotly::plot_ly(df4, labels = ~Color, values = ~fraction, type = "pie",
-                          textinfo = "label+percent", text = ~paste("Catch:", Value2, "kt"),
-                          hoverinfo = "text", marker = list(colors = colList)) %>%
-        plotly::layout(title = paste("ICES Stock Assessment Database,", cap_month, cap_year),
-                       showlegend = TRUE)
-
-    p
-}
 
 
 stock_trends <- function(x){
