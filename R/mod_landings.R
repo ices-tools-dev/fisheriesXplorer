@@ -143,7 +143,7 @@ mod_landings_server <- function(
 
     output$landings_layer <- renderUI({
       req(!is.null(input$landings_layer_selector))
-
+      
       plotting_params <- list()
       plotting_params$landings <- list(
         "Common name" = list("n" = 10, type = "line"),

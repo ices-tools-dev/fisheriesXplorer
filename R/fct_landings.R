@@ -369,7 +369,7 @@ plot_catch_trends_plotly <- function(
             margin = list(l = 80, r = 20, t = 110, b = 90),
             annotations = list(
               list(
-                text = paste0("Landings trends: ", gname),
+                text = paste0("Landings trends: ", gname, " (", ecoregion, ")"),
                 x = 0.01, y = 0.98,
                 xref = "paper", yref = "paper",
                 showarrow = FALSE,

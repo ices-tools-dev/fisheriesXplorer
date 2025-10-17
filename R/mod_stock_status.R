@@ -37,7 +37,7 @@ mod_stock_status_ui <- function(id) {
                 card_header(
                   "MSY & Precautionary Approach",
                   downloadLink(ns("download_clean_status_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
@@ -54,7 +54,7 @@ mod_stock_status_ui <- function(id) {
                 card_header(
                   "Catches in relation to MSY status",
                   downloadLink(ns("download_status_catch_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
@@ -133,7 +133,7 @@ mod_stock_status_ui <- function(id) {
                   style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
                   uiOutput(ns("kobe_cld_slider")),
                   downloadLink(ns("download_CLD_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 )
               )
@@ -166,7 +166,7 @@ mod_stock_status_ui <- function(id) {
             card_header(
               "Stock status table",
               downloadLink(ns("download_status_table"),
-                HTML(paste0("<span class='hovertext' data-hover='Download stock status relative to exploitation and stock size (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                HTML(paste0("<span class='hovertext' data-hover='Download table (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
               )
             ),
             card_body(withSpinner(reactableOutput(ns("stock_status_table_reactable"))))
@@ -348,11 +348,11 @@ mod_stock_status_server <- function(
 
 
     output$status_summary_ges <- renderPlot({
-      key <- "output_stock_status_1-status_summary_ges_width"  # adjust if different
+      key <- "output_stock_status_1-status_summary_ges_width" # adjust if different
       req(!is.null(session$clientData[[key]]), session$clientData[[key]] > 0)
       w <- session$clientData[[key]]
 
-      plot_GES_pies(shared$clean_status, catch_current(), return_data = FALSE)
+      plot_GES_pies(shared$clean_status, catch_current(), width_px = w, return_data = FALSE)
     })
 
     # output$download_status_catch_data <- downloadHandler(
@@ -473,14 +473,70 @@ mod_stock_status_server <- function(
       plot_stock_trends(trends_data(), guild, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
+    #
     output$download_trends_data <- downloadHandler(
       filename = function() {
-        paste0("status_trends_data_", Sys.Date(), ".csv")
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+        paste0("status_trends_data_bundle_", acronym, "_", date_tag, ".zip")
       },
       content = function(file) {
-        write.csv(trends_data(), file, row.names = FALSE)
-      }
+        # --- Temp workspace
+        td <- tempfile("status_trends_bundle_")
+        dir.create(td, showWarnings = FALSE)
+        on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
+
+        # --- Helper: robust downloader
+        safe_download <- function(url, dest) {
+          tryCatch(
+            {
+              if (requireNamespace("curl", quietly = TRUE)) {
+                curl::curl_download(url, destfile = dest, quiet = TRUE)
+              } else {
+                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
+              }
+              file.exists(dest) && file.info(dest)$size > 0
+            },
+            error = function(e) FALSE
+          )
+        }
+
+        # --- Naming tokens
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+
+        # --- 1) CSV (includes acronym + date)
+        dat <- trends_data()
+        csv_name <- paste0("status_trends_data_", acronym, "_", date_tag, ".csv")
+        csv_path <- file.path(td, csv_name)
+        utils::write.csv(dat, csv_path, row.names = FALSE)
+
+        # --- 2) Disclaimer.txt (fixed name; no acronym/date)
+        disc_path <- file.path(td, "Disclaimer.txt")
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        if (!safe_download(disc_url, disc_path)) {
+          writeLines(c(
+            "Disclaimer for fisheriesXplorer trends data.",
+            "The official disclaimer could not be fetched automatically.",
+            paste("Please see:", disc_url)
+          ), con = disc_path)
+        }
+
+        # --- Zip bundle
+        files_to_zip <- c(csv_path, disc_path)
+        if ("zipr" %in% getNamespaceExports("zip")) {
+          zip::zipr(zipfile = file, files = files_to_zip, root = td)
+        } else {
+          owd <- setwd(td)
+          on.exit(setwd(owd), add = TRUE)
+          zip::zip(zipfile = file, files = basename(files_to_zip))
+        }
+      },
+      contentType = "application/zip"
     )
+
 
     output$kobe_cld_slider <- renderUI({
       slider_max <- nrow(kobe_cld_data())
@@ -518,14 +574,146 @@ mod_stock_status_server <- function(
       plot_CLD_bar_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = FALSE)
     })
 
+    
     output$download_CLD_data <- downloadHandler(
       filename = function() {
-        paste0("status_CLD_data_", Sys.Date(), ".csv")
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+        paste0("status_CLD_data_bundle_", acronym, "_", date_tag, ".zip")
       },
       content = function(file) {
-        write.csv(kobe_cld_data(), file, row.names = FALSE)
-      }
+        # --- Temp workspace
+        td <- tempfile("status_CLD_bundle_")
+        dir.create(td, showWarnings = FALSE)
+        on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
+
+        # --- Helper: robust downloader with curl fallback
+        safe_download <- function(url, dest) {
+          tryCatch(
+            {
+              if (requireNamespace("curl", quietly = TRUE)) {
+                curl::curl_download(url, destfile = dest, quiet = TRUE)
+              } else {
+                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
+              }
+              file.exists(dest) && file.info(dest)$size > 0
+            },
+            error = function(e) FALSE
+          )
+        }
+
+        # --- Naming tokens
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+
+        # --- Inputs for plots (with safe fallbacks)
+        guild <- input$status_kobe_cld_selector %||% "All"
+        n_sel <- input$n_selector
+        if (is.null(n_sel) || !is.finite(n_sel) || n_sel <= 0) n_sel <- 10L
+
+        # Optional caption tokens (fallback to current date if not in scope)
+        capY <- if (exists("cap_year", inherits = TRUE)) get("cap_year") else format(Sys.Date(), "%Y")
+        capM <- if (exists("cap_month", inherits = TRUE)) get("cap_month") else format(Sys.Date(), "%m")
+
+        # --- 1) CSV (with acronym + date)
+        dat <- kobe_cld_data()
+        plot_data <- dat %>% dplyr::slice_max(order_by = total, n = n_sel)
+        csv_name <- paste0("status_CLD_data_", acronym, "_", date_tag, ".csv")
+        csv_path <- file.path(td, csv_name)
+        utils::write.csv(plot_data, csv_path, row.names = FALSE)
+
+        # --- 2) Disclaimer.txt (fixed name; no acronym/date)
+        disc_path <- file.path(td, "Disclaimer.txt")
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        if (!safe_download(disc_url, disc_path)) {
+          writeLines(c(
+            "Disclaimer for fisheriesXplorer CLD/Kobe data.",
+            "The official disclaimer could not be fetched automatically.",
+            paste("Please see:", disc_url)
+          ), con = disc_path)
+        }
+
+        # --- 3) PNGs: Kobe + CLD bar (saved at high resolution)
+        kobe_png_name <- paste0("status_kobe_plot_", acronym, "_", date_tag, ".png")
+        kobe_png_path <- file.path(td, kobe_png_name)
+        cld_png_name <- paste0("status_CLD_bar_", acronym, "_", date_tag, ".png")
+        cld_png_path <- file.path(td, cld_png_name)
+
+        # Generate Kobe plot
+        kobe_ok <- FALSE
+        try(
+          {
+            p_kobe <- plot_kobe_app(
+              plot_data,
+              guild = guild,
+              caption = TRUE,
+              cap_year = capY,
+              cap_month = capM,
+              return_data = FALSE
+            )
+            if (inherits(p_kobe, "ggplot")) {
+              if (requireNamespace("ragg", quietly = TRUE)) {
+                ragg::agg_png(filename = kobe_png_path, width = 2200, height = 1600, units = "px", res = 144)
+                print(p_kobe)
+                grDevices::dev.off()
+              } else {
+                ggplot2::ggsave(kobe_png_path, plot = p_kobe, width = 14, height = 10, dpi = 150, limitsize = FALSE)
+              }
+              kobe_ok <- file.exists(kobe_png_path) && file.info(kobe_png_path)$size > 0
+            }
+          },
+          silent = TRUE
+        )
+
+        # Generate CLD bar plot
+        cld_ok <- FALSE
+        try(
+          {
+            p_cld <- plot_CLD_bar_app(
+              plot_data,
+              guild = guild,
+              caption = TRUE,
+              cap_year = capY,
+              cap_month = capM,
+              return_data = FALSE
+            )
+            if (inherits(p_cld, "ggplot")) {
+              if (requireNamespace("ragg", quietly = TRUE)) {
+                ragg::agg_png(filename = cld_png_path, width = 2200, height = 1400, units = "px", res = 144)
+                print(p_cld)
+                grDevices::dev.off()
+              } else {
+                ggplot2::ggsave(cld_png_path, plot = p_cld, width = 14, height = 9, dpi = 150, limitsize = FALSE)
+              }
+              cld_ok <- file.exists(cld_png_path) && file.info(cld_png_path)$size > 0
+            }
+          },
+          silent = TRUE
+        )
+
+        if (!kobe_ok || !cld_ok) {
+          msg <- c("One or more plot images could not be generated.")
+          if (!kobe_ok) msg <- c(msg, "• Kobe plot failed.")
+          if (!cld_ok) msg <- c(msg, "• CLD bar plot failed.")
+          msg <- c(msg, "Check that plot_* functions return ggplot objects and inputs are available.")
+          writeLines(msg, con = file.path(td, "PLOT_GENERATION_FAILED.txt"))
+        }
+
+        # --- Zip everything
+        files_to_zip <- c(csv_path, disc_path, if (kobe_ok) kobe_png_path, if (cld_ok) cld_png_path)
+        if ("zipr" %in% getNamespaceExports("zip")) {
+          zip::zipr(zipfile = file, files = files_to_zip, root = td)
+        } else {
+          owd <- setwd(td)
+          on.exit(setwd(owd), add = TRUE)
+          zip::zip(zipfile = file, files = basename(files_to_zip))
+        }
+      },
+      contentType = "application/zip"
     )
+    ##################### Stock status lookup tab #####################
 
     processed_data_reactable <- reactive({
       annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
