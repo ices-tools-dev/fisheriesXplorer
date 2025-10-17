@@ -115,41 +115,41 @@ mod_navigation_page_ui <- function(id) {
                   )
                 )
               ),
-              fluidRow(
-                column(
-                  4, align = "center",
-                  div(class = "image-button-wrap",
-                    actionLink(
-                      ns("mixfishBtn"), label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/mix_fishieries.svg');",
-                      title = "Mixed Fisheries", `aria-label` = "Mixed Fisheries"
-                    ),
-                    div(class = "fx-tooltip", HTML("<strong>Mixed Fisheries</strong><br><br>Technical interactions across the main fisheries"))
-                  )
-                ),
-                column(
-                  4, align = "center",
-                  div(class = "image-button-wrap",
-                    actionLink(
-                      ns("VMS"), label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/vms.svg');",
-                      title = "VMS", `aria-label` = "VMS"
-                    ),
-                    div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Effort distribution and physical disturbance of benthic habitats"))
-                  )
-                ),
-                column(
-                  4, align = "center",
-                  div(class = "image-button-wrap",
-                    actionLink(
-                      ns("bycatchBtn"), label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/bycatch.svg');",
-                      title = "Bycatch", `aria-label` = "Bycatch"
-                    ),
-                    div(class = "fx-tooltip", HTML("<strong>Bycatch</strong><br><br>Protected, endangered, and threatened species"))
-                  )
-                )
-              )
+              # fluidRow(
+              #   column(
+              #     4, align = "center",
+              #     div(class = "image-button-wrap",
+              #       actionLink(
+              #         ns("mixfishBtn"), label = NULL, class = "image-button-link",
+              #         style = "background-image: url('www/icons/mix_fishieries.svg');",
+              #         title = "Mixed Fisheries", `aria-label` = "Mixed Fisheries"
+              #       ),
+              #       div(class = "fx-tooltip", HTML("<strong>Mixed Fisheries</strong><br><br>Technical interactions across the main fisheries"))
+              #     )
+              #   ),
+              #   column(
+              #     4, align = "center",
+              #     div(class = "image-button-wrap",
+              #       actionLink(
+              #         ns("VMS"), label = NULL, class = "image-button-link",
+              #         style = "background-image: url('www/icons/vms.svg');",
+              #         title = "VMS", `aria-label` = "VMS"
+              #       ),
+              #       div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Effort distribution and physical disturbance of benthic habitats"))
+              #     )
+              #   ),
+              #   column(
+              #     4, align = "center",
+              #     div(class = "image-button-wrap",
+              #       actionLink(
+              #         ns("bycatchBtn"), label = NULL, class = "image-button-link",
+              #         style = "background-image: url('www/icons/bycatch.svg');",
+              #         title = "Bycatch", `aria-label` = "Bycatch"
+              #       ),
+              #       div(class = "fx-tooltip", HTML("<strong>Bycatch</strong><br><br>Protected, endangered, and threatened species"))
+              #     )
+              #   )
+              # )
             )
           )
         )
@@ -210,9 +210,9 @@ mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
     observeEvent(input$overviewBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "overview") })
     observeEvent(input$landingsBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "landings") })
     observeEvent(input$stockStatusBtn,{ updateNavbarPage(parent_session, "nav-page", selected = "stock_status") })
-    observeEvent(input$mixfishBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "mixed_fisheries") })
-    observeEvent(input$VMS,           { updateNavbarPage(parent_session, "nav-page", selected = "vms") })
-    observeEvent(input$bycatchBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "bycatch") })
+    # observeEvent(input$mixfishBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "mixed_fisheries") })
+    # observeEvent(input$VMS,           { updateNavbarPage(parent_session, "nav-page", selected = "vms") })
+    # observeEvent(input$bycatchBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "bycatch") })
   })
 }
 
