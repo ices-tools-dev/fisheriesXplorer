@@ -182,21 +182,7 @@ mod_landings_server <- function(
         dir.create(td, showWarnings = FALSE)
         on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
 
-        # Helper: robust downloader with curl fallback
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
-
+        
         # Naming tokens
         ecoregion <- selected_ecoregion()
         acronym <- get_ecoregion_acronym(ecoregion)
@@ -247,7 +233,7 @@ mod_landings_server <- function(
         # ---- Zip everything ----
         files_to_zip <- c(csv_path, disc_path, downloaded_paths)
 
-        if ("zipr" %in% getNamespaceExports("zip")) {
+        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {
           owd <- setwd(td)
@@ -302,21 +288,7 @@ mod_landings_server <- function(
         dir.create(td, showWarnings = FALSE)
         on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
 
-        # Helper: robust downloader with curl fallback
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
-
+        
         # Naming tokens
         ecoregion <- selected_ecoregion()
         acronym <- get_ecoregion_acronym(ecoregion)
@@ -344,7 +316,7 @@ mod_landings_server <- function(
         # ---- Zip CSV + Disclaimer ----
         files_to_zip <- c(csv_path, disc_path)
 
-        if ("zipr" %in% getNamespaceExports("zip")) {
+        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {
           owd <- setwd(td)

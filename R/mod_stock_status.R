@@ -255,21 +255,7 @@ mod_stock_status_server <- function(
         td <- tempfile("status_bundle_")
         dir.create(td, showWarnings = FALSE)
         on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
-
-        # --- Helper: robust downloader with curl fallback
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
+       
 
         # --- Naming tokens
         ecoregion <- selected_ecoregion()
@@ -332,7 +318,7 @@ mod_stock_status_server <- function(
 
         # --- Zip everything
         files_to_zip <- c(csv_path, disc_path, if (plot_ok) png_path)
-        if ("zipr" %in% getNamespaceExports("zip")) {
+        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {
           owd <- setwd(td)
@@ -366,20 +352,7 @@ mod_stock_status_server <- function(
         dir.create(td, showWarnings = FALSE)
         on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
 
-        # Helper: robust downloader
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
+        
 
         # Naming tokens
         ecoregion <- selected_ecoregion()
@@ -436,7 +409,7 @@ mod_stock_status_server <- function(
 
         # Zip bundle
         files_to_zip <- c(csv_path, disc_path, if (plot_ok) png_path)
-        if ("zipr" %in% getNamespaceExports("zip")) {
+        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {
           owd <- setwd(td)
@@ -477,20 +450,7 @@ mod_stock_status_server <- function(
         dir.create(td, showWarnings = FALSE)
         on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
 
-        # --- Helper: robust downloader
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
+        
 
         # --- Naming tokens
         ecoregion <- selected_ecoregion()
@@ -516,7 +476,7 @@ mod_stock_status_server <- function(
 
         # --- Zip bundle
         files_to_zip <- c(csv_path, disc_path)
-        if ("zipr" %in% getNamespaceExports("zip")) {
+        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {
           owd <- setwd(td)
@@ -583,20 +543,7 @@ mod_stock_status_server <- function(
         dir.create(td, showWarnings = FALSE)
         on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
 
-        # --- Helper: robust downloader with curl fallback
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
+        
 
         # --- Naming tokens
         ecoregion <- selected_ecoregion()
@@ -692,7 +639,7 @@ mod_stock_status_server <- function(
 
         # --- Zip everything
         files_to_zip <- c(csv_path, disc_path, if (kobe_ok) kobe_png_path, if (cld_ok) cld_png_path)
-        if ("zipr" %in% getNamespaceExports("zip")) {
+        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {
           owd <- setwd(td)
@@ -744,14 +691,7 @@ mod_stock_status_server <- function(
         )
     })
 
-    # output$download_status_table <- downloadHandler(
-    #   filename = function() {
-    #     paste0("status_table_data_", Sys.Date(), ".csv")
-    #   },
-    #   content = function(file) {
-    #     write.csv(format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG), file, row.names = FALSE)
-    #   }
-    # )
+    
     ##################################### Stock status table display #################################
     output$stock_status_table_reactable <- renderReactable({
       req(nrow(processed_data_reactable()) != 0)
@@ -790,20 +730,7 @@ mod_stock_status_server <- function(
         dir.create(td, showWarnings = FALSE)
         on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
 
-        # --- Helper: robust downloader with curl fallback
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
+        
 
         # --- Naming tokens
         ecoregion <- selected_ecoregion()
@@ -845,7 +772,7 @@ mod_stock_status_server <- function(
 
         # --- Zip everything
         files_to_zip <- c(if (file.exists(csv_path)) csv_path, disc_path)
-        if ("zipr" %in% getNamespaceExports("zip")) {
+        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {
           owd <- setwd(td)
