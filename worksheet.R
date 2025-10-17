@@ -788,3 +788,77 @@ output$myPlot <- renderPlotly({
   
   ggplotly(p)
 })
+
+
+
+/* -------- Plotly responsive typography -------- */
+
+/* Base (tablet-ish defaults) */
+:root{
+  --plt-tick: 12px;
+  --plt-legend: 12px;
+  --plt-annotation: 12px;
+  --plt-axistitle: 14px;
+  --plt-title: 16px;
+}
+
+/* Phones & small screens */
+@media (max-width: 600px){
+  :root{
+    --plt-tick: 9px;
+    --plt-legend: 9px;
+    --plt-annotation: 9px;
+    --plt-axistitle: 11px;
+    --plt-title: 13px;
+  }
+}
+
+/* Laptops / typical desktops */
+@media (min-width: 601px) and (max-width: 1440px){
+  :root{
+    --plt-tick: 12px;
+    --plt-legend: 12px;
+    --plt-annotation: 13px;
+    --plt-axistitle: 14px;
+    --plt-title: 16px;
+  }
+}
+
+/* Large / wide screens */
+@media (min-width: 1441px){
+  :root{
+    --plt-tick: 14px;
+    --plt-legend: 12px;
+    --plt-annotation: 14px;
+    --plt-axistitle: 16px;
+    --plt-title: 18px;
+  }
+}
+
+/* Apply variables to Plotly SVG text */
+.js-plotly-plot .xtick text,
+.js-plotly-plot .ytick text{
+  font-size: var(--plt-tick) !important;
+}
+
+.js-plotly-plot .legend .legendtext,
+.js-plotly-plot .legend text{
+  font-size: var(--plt-legend) !important;
+}
+
+/* Axis titles */
+.js-plotly-plot g.xtitle text,
+.js-plotly-plot g.ytitle text{
+  font-size: var(--plt-axistitle) !important;
+}
+
+/* Plot title */
+.js-plotly-plot .gtitle{
+  font-size: var(--plt-title) !important;
+}
+
+/* Annotations */
+.js-plotly-plot .annotation-text,
+.js-plotly-plot .annotation text{
+  font-size: var(--plt-annotation) !important;
+}

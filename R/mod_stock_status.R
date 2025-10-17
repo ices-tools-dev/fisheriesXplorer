@@ -133,7 +133,7 @@ mod_stock_status_ui <- function(id) {
                   style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
                   uiOutput(ns("kobe_cld_slider")),
                   downloadLink(ns("download_CLD_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Data + graphs'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 )
               )
@@ -242,10 +242,7 @@ mod_stock_status_server <- function(
       plot_status_prop_pies(shared$clean_status, width_px = w, return_data = FALSE)
     })
 
-    # output$download_clean_status_data <- downloadHandler(
-    #   filename = function() { paste0("status_data_", Sys.Date(), ".csv") },
-    #   content = function(file) { write.csv(shared$clean_status, file, row.names = FALSE) }
-    # )
+    
     output$download_clean_status_data <- downloadHandler(
       filename = function() {
         ecoregion <- selected_ecoregion()
@@ -287,7 +284,7 @@ mod_stock_status_server <- function(
 
         # --- 2) Disclaimer.txt (fixed name; no acronym/date)
         disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
         if (!safe_download(disc_url, disc_path)) {
           writeLines(c(
             "Disclaimer for fisheriesXplorer status data.",
@@ -346,7 +343,7 @@ mod_stock_status_server <- function(
       contentType = "application/zip"
     )
 
-
+    ################################ GES pies ##################################################
     output$status_summary_ges <- renderPlot({
       key <- "output_stock_status_1-status_summary_ges_width" # adjust if different
       req(!is.null(session$clientData[[key]]), session$clientData[[key]] > 0)
@@ -355,14 +352,7 @@ mod_stock_status_server <- function(
       plot_GES_pies(shared$clean_status, catch_current(), width_px = w, return_data = FALSE)
     })
 
-    # output$download_status_catch_data <- downloadHandler(
-    #   filename = function() {
-    #     paste0("status_catch_data_", Sys.Date(), ".csv")
-    #   },
-    #   content = function(file) {
-    #     write.csv(plot_GES_pies(shared$clean_status, catch_current(),  return_data = TRUE), file, row.names = FALSE)
-    #   }
-    # )
+    ############################### GES download ##################################################
     output$download_status_catch_data <- downloadHandler(
       filename = function() {
         ecoregion <- selected_ecoregion()
@@ -404,7 +394,7 @@ mod_stock_status_server <- function(
 
         # 2) Disclaimer.txt (fixed name)
         disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
         if (!safe_download(disc_url, disc_path)) {
           writeLines(c(
             "Disclaimer for fisheriesXplorer status & catch data.",
@@ -458,7 +448,7 @@ mod_stock_status_server <- function(
     )
 
 
-    ##################### Stock trends tab #####################
+    ##################### Stock trends tab ###############################################
     trends_data <- reactive({
       stock_trends(format_sag(shared$SAG, shared$SID))
     })
@@ -473,7 +463,7 @@ mod_stock_status_server <- function(
       plot_stock_trends(trends_data(), guild, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
-    #
+    ######################### Download stock trends data ##########################################
     output$download_trends_data <- downloadHandler(
       filename = function() {
         ecoregion <- selected_ecoregion()
@@ -515,7 +505,7 @@ mod_stock_status_server <- function(
 
         # --- 2) Disclaimer.txt (fixed name; no acronym/date)
         disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
         if (!safe_download(disc_url, disc_path)) {
           writeLines(c(
             "Disclaimer for fisheriesXplorer trends data.",
@@ -537,13 +527,18 @@ mod_stock_status_server <- function(
       contentType = "application/zip"
     )
 
-
+    ######################### Kobe-CLD tab ################################################
     output$kobe_cld_slider <- renderUI({
       slider_max <- nrow(kobe_cld_data())
       div(
         id = "custom_slider",
-        sliderInput(ns("n_selector"), HTML("Choose <em>n</em> of stocks"),
-          min = 1, max = slider_max, value = min(10, slider_max), step = 1
+        sliderInput(ns("n_selector"), 
+          HTML("Choose <em>n</em> of stocks"),
+          min = 1, 
+          max = slider_max, 
+          value = min(10, slider_max), 
+          step = 1,
+          width = "200px"
         )
       )
     })
@@ -552,29 +547,29 @@ mod_stock_status_server <- function(
       if (input$status_kobe_cld_selector == "All") {
         guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
         tmp <- catch_current() %>% dplyr::filter(FisheriesGuild %in% guild)
-        tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = TRUE)
+        tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, return_data = TRUE)
       } else {
         guild <- input$status_kobe_cld_selector
         tmp <- catch_current() %>% dplyr::filter(FisheriesGuild %in% guild)
-        tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = TRUE)
+        tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, return_data = TRUE)
       }
     })
-
+    ########################### Kobe-CLD plots ##############################################
     output$status_kobe <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
       req(!is.null(input$n_selector))
       plot_data <- kobe_cld_data() %>% dplyr::slice_max(order_by = total, n = input$n_selector)
-      plot_kobe_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = FALSE)
+      plot_kobe_app(plot_data, guild = input$status_kobe_cld_selector, return_data = FALSE)
     })
 
     output$status_cld <- renderPlot({
       req(!is.null(input$status_kobe_cld_selector))
       req(!is.null(input$n_selector))
       plot_data <- kobe_cld_data() %>% dplyr::slice_max(order_by = total, n = input$n_selector)
-      plot_CLD_bar_app(plot_data, guild = input$status_kobe_cld_selector, caption = TRUE, cap_year, cap_month, return_data = FALSE)
+      plot_CLD_bar_app(plot_data, guild = input$status_kobe_cld_selector,  return_data = FALSE)
     })
 
-    
+    ######################### CLD/Kobe download ################################################
     output$download_CLD_data <- downloadHandler(
       filename = function() {
         ecoregion <- selected_ecoregion()
@@ -626,7 +621,7 @@ mod_stock_status_server <- function(
 
         # --- 2) Disclaimer.txt (fixed name; no acronym/date)
         disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
         if (!safe_download(disc_url, disc_path)) {
           writeLines(c(
             "Disclaimer for fisheriesXplorer CLD/Kobe data.",
@@ -647,10 +642,7 @@ mod_stock_status_server <- function(
           {
             p_kobe <- plot_kobe_app(
               plot_data,
-              guild = guild,
-              caption = TRUE,
-              cap_year = capY,
-              cap_month = capM,
+              guild = guild,              
               return_data = FALSE
             )
             if (inherits(p_kobe, "ggplot")) {
@@ -674,9 +666,6 @@ mod_stock_status_server <- function(
             p_cld <- plot_CLD_bar_app(
               plot_data,
               guild = guild,
-              caption = TRUE,
-              cap_year = capY,
-              cap_month = capM,
               return_data = FALSE
             )
             if (inherits(p_cld, "ggplot")) {
@@ -713,7 +702,7 @@ mod_stock_status_server <- function(
       },
       contentType = "application/zip"
     )
-    ##################### Stock status lookup tab #####################
+    ##################### Stock status lookup tab ######################################################
 
     processed_data_reactable <- reactive({
       annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
@@ -755,15 +744,15 @@ mod_stock_status_server <- function(
         )
     })
 
-    output$download_status_table <- downloadHandler(
-      filename = function() {
-        paste0("status_table_data_", Sys.Date(), ".csv")
-      },
-      content = function(file) {
-        write.csv(format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG), file, row.names = FALSE)
-      }
-    )
-
+    # output$download_status_table <- downloadHandler(
+    #   filename = function() {
+    #     paste0("status_table_data_", Sys.Date(), ".csv")
+    #   },
+    #   content = function(file) {
+    #     write.csv(format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG), file, row.names = FALSE)
+    #   }
+    # )
+    ##################################### Stock status table display #################################
     output$stock_status_table_reactable <- renderReactable({
       req(nrow(processed_data_reactable()) != 0)
       reactable::reactable(processed_data_reactable(),
@@ -786,6 +775,87 @@ mod_stock_status_server <- function(
         )
       )
     })
+
+    ######################### Stock status table download ##############################################
+    output$download_status_table <- downloadHandler(
+      filename = function() {
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+        paste0("status_table_data_bundle_", acronym, "_", date_tag, ".zip")
+      },
+      content = function(file) {
+        # --- Temp workspace
+        td <- tempfile("status_table_bundle_")
+        dir.create(td, showWarnings = FALSE)
+        on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
+
+        # --- Helper: robust downloader with curl fallback
+        safe_download <- function(url, dest) {
+          tryCatch(
+            {
+              if (requireNamespace("curl", quietly = TRUE)) {
+                curl::curl_download(url, destfile = dest, quiet = TRUE)
+              } else {
+                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
+              }
+              file.exists(dest) && file.info(dest)$size > 0
+            },
+            error = function(e) FALSE
+          )
+        }
+
+        # --- Naming tokens
+        ecoregion <- selected_ecoregion()
+        acronym <- get_ecoregion_acronym(ecoregion)
+        date_tag <- format(Sys.Date(), "%d-%b-%y")
+
+        # --- 1) CSV (with acronym + date)
+        csv_name <- paste0("status_table_data_", acronym, "_", date_tag, ".csv")
+        csv_path <- file.path(td, csv_name)
+        year_int <- as.integer(format(Sys.Date(), "%Y"))
+
+        dat <- tryCatch(
+          format_annex_table(shared$clean_status, year_int, shared$SID, shared$SAG),
+          error = function(e) NULL
+        )
+
+        if (is.null(dat)) {
+          writeLines(
+            c(
+              "Data generation failed in format_annex_table().",
+              "Check inputs: shared$clean_status, shared$SID, shared$SAG."
+            ),
+            con = file.path(td, "DATA_GENERATION_FAILED.txt")
+          )
+        } else {
+          utils::write.csv(dat, csv_path, row.names = FALSE)
+        }
+
+        # --- 2) Disclaimer.txt (fixed name; no acronym/date)
+        disc_path <- file.path(td, "Disclaimer.txt")
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        if (!safe_download(disc_url, disc_path)) {
+          writeLines(c(
+            "Disclaimer for fisheriesXplorer status table data.",
+            "The official disclaimer could not be fetched automatically.",
+            paste("Please see:", disc_url)
+          ), con = disc_path)
+        }
+
+        # --- Zip everything
+        files_to_zip <- c(if (file.exists(csv_path)) csv_path, disc_path)
+        if ("zipr" %in% getNamespaceExports("zip")) {
+          zip::zipr(zipfile = file, files = files_to_zip, root = td)
+        } else {
+          owd <- setwd(td)
+          on.exit(setwd(owd), add = TRUE)
+          zip::zip(zipfile = file, files = basename(files_to_zip))
+        }
+      },
+      contentType = "application/zip"
+    )
+
   })
 }
 

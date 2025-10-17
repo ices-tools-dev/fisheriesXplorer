@@ -39,7 +39,7 @@ mod_landings_ui <- function(id) {
               ),
               downloadLink(
                 ns("download_landings_data"),
-                HTML(paste0("<span class='hovertext' data-hover='Download landings (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                HTML(paste0("<span class='hovertext' data-hover='Download landings (csv) takes a few seconds'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
               )
             ),
             card_body(
@@ -141,6 +141,8 @@ mod_landings_server <- function(
       HTML(select_text(texts, "landings_discards", "discards"))
     })
 
+    ################################## Landings plots #########################################
+
     output$landings_layer <- renderUI({
       req(!is.null(input$landings_layer_selector))
       
@@ -166,16 +168,7 @@ mod_landings_server <- function(
       fig
     })
 
-    # output$download_landings_data <- downloadHandler(
-    #   filename = function() paste0("landings_trends_data_", Sys.Date(), ".csv"),
-    #   content  = function(file) {
-    #     ecoregion <- selected_ecoregion()
-    #     acronym   <- get_ecoregion_acronym(ecoregion)
-    #     rda_path  <- paste0("./data/", acronym, ".rda")
-    #     load(rda_path)
-    #     write.csv(get(get_ecoregion_acronym(ecoregion)), file, row.names = FALSE)
-    #   }
-    # )
+    ############################### Download landings data bundle ###############################
     output$download_landings_data <- downloadHandler(
       filename = function() {
         ecoregion <- selected_ecoregion()
@@ -221,10 +214,10 @@ mod_landings_server <- function(
 
         # ---- Disclaimer.txt (fixed name, no acronym/date) ----
         disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
         if (!safe_download(disc_url, disc_path)) {
           writeLines(c(
-            "Disclaimer for adviceXplorer landings trends data.",
+            "Disclaimer for fisheriesXplorer landings trends data.",
             "The official disclaimer could not be fetched automatically.",
             paste("Please see:", disc_url)
           ), con = disc_path)
@@ -264,8 +257,9 @@ mod_landings_server <- function(
       },
       contentType = "application/zip"
     )
+    ############### Discards plots ##########################################################
 
-    year <- 2025
+    year <- Sys.Date() %>% format("%Y") %>% as.numeric()
 
     output$discard_trends <- renderPlotly({
       fig2 <- ggplotly(plot_discard_trends_app_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)),
@@ -294,7 +288,7 @@ mod_landings_server <- function(
                                   ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
-    
+    ############################### Download discard data bundle ###############################
     output$download_discard_data <- downloadHandler(
       filename = function() {
         ecoregion <- selected_ecoregion()
@@ -338,7 +332,7 @@ mod_landings_server <- function(
 
         # ---- Disclaimer.txt (fixed name, no acronym/date) ----
         disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
         if (!safe_download(disc_url, disc_path)) {
           writeLines(c(
             "Disclaimer for fisheriesXplorer discard data.",
