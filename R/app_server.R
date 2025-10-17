@@ -193,14 +193,14 @@ app_server <- function(input, output, session) {
     bookmark_qs        = reactive(list()),     # parent restores
     set_subtab         = function(...) {}
   )
-  sel_mixfish <- mod_mixfish_plot_selection_server("mixfish_selection_1", selected_ecoregion = selected_ecoregion)
-  mod_mixfish_plot_display_server("mixfish_viz_1",
-    plot_name          = sel_mixfish$plot_choice,
-    selected_ecoregion = selected_ecoregion,
-    selected_subRegion = sel_mixfish$sub_region
-  )
-  mod_vms_server("vms_1", selected_ecoregion = selected_ecoregion)
-  mod_bycatch_server("bycatch_1", selected_ecoregion = selected_ecoregion)
+  # sel_mixfish <- mod_mixfish_plot_selection_server("mixfish_selection_1", selected_ecoregion = selected_ecoregion)
+  # mod_mixfish_plot_display_server("mixfish_viz_1",
+  #   plot_name          = sel_mixfish$plot_choice,
+  #   selected_ecoregion = selected_ecoregion,
+  #   selected_subRegion = sel_mixfish$sub_region
+  # )
+  # mod_vms_server("vms_1", selected_ecoregion = selected_ecoregion)
+  # mod_bycatch_server("bycatch_1", selected_ecoregion = selected_ecoregion)
 
   # ------------------------
   # Single writer: keep URL hash in sync (debounced), except during restore
