@@ -201,7 +201,7 @@ app_server <- function(input, output, session) {
   # )
   # mod_vms_server("vms_1", selected_ecoregion = selected_ecoregion)
   # mod_bycatch_server("bycatch_1", selected_ecoregion = selected_ecoregion)
-
+  mod_resources_server("resources_1")
   # ------------------------
   # Single writer: keep URL hash in sync (debounced), except during restore
   # ------------------------
