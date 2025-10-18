@@ -3,6 +3,8 @@
 mod_resources_ui <- function(id) {
   ns <- NS(id)
   repo_url <- "https://github.com/ices-tools-prod/fisheriesXplorer"
+  # Build the citation strings for display
+  app_cite <- build_app_citation()
 
   bslib::navset_tab(
     id = ns("resources_nav"),
@@ -84,7 +86,7 @@ mod_resources_ui <- function(id) {
             description = "Ecoregion layers and spatial context used across the app.",
             dataset_url = "https://gis.ices.dk/sf/index.html",
             metadata_url = "https://gis.ices.dk/geonetwork/srv/api/records/4745e824-a612-4a1f-bc56-b540772166eb?language=all",
-            services     = list("Ecoregions shapefiles (zip)" = "https://gis.ices.dk/shapefiles/ICES_ecoregions.zip"),  
+            services = list("Ecoregions shapefiles (zip)" = "https://gis.ices.dk/shapefiles/ICES_ecoregions.zip"),
             notes = "See dataset page for data access and conditions."
           ),
 
@@ -94,7 +96,7 @@ mod_resources_ui <- function(id) {
             description = "Used to resolve stock metadata and keys used across the app.",
             dataset_url = "http://sid.ices.dk",
             metadata_url = "https://gis.ices.dk/geonetwork/srv/api/records/ec374765-55e8-401a-b219-e011b231ae1b?language=all",
-            services     = list("API/Docs" = "http://sid.ices.dk/services/"),
+            services = list("APIs" = "http://sid.ices.dk/services/"),
             notes = "See dataset page for data access and conditions."
           ),
 
@@ -104,7 +106,7 @@ mod_resources_ui <- function(id) {
             description = "Assessment outputs and status indicators (e.g., F/FMSY, SSB/MSY Btrigger) shown in status and trends views.",
             dataset_url = "https://www.ices.dk/data/assessment-tools/Pages/stock-assessment-graphs.aspx",
             metadata_url = "https://gis.ices.dk/geonetwork/srv/api/records/f5992b7d-b9da-40d4-81b9-d6db9e87e759?language=all",
-            services     = list("API" = "https://sag.ices.dk/sag_api/docs/swagger/index.html"),
+            services = list("APIs" = "https://sag.ices.dk/sag_api/docs/swagger/index.html"),
             notes = "See dataset page for data access and conditions."
           ),
 
@@ -115,14 +117,13 @@ mod_resources_ui <- function(id) {
             dataset_url = "https://www.ices.dk/data/dataset-collections/Pages/Fish-catch-and-stock-assessment.aspx",
             metadata_url = "https://gis.ices.dk/geonetwork/srv/api/records/7d242743-1069-417b-81e3-57f25c791a26",
             notes = "See dataset page for data access and conditions."
-            
           ),
 
           # 5) Application source code (not a dataset, but important for reuse)
           resource_card(
             title = "Application source code",
             description = "Code for this application (versioning, issues, reproducibility).",
-            services = list("GitHub" = "https://github.com/ices-tools-prod/fisheriesXplorer"),
+            services = list("GitHub" = "https://github.com/ices-tools-dev/fisheriesXplorer"),
             notes = "This application is open source under the MIT license. See the repository for code, issues, and contribution guidelines."
           ),
           resource_card(
@@ -165,16 +166,83 @@ mod_resources_ui <- function(id) {
     ),
     bslib::nav_panel(
       tagList(icon("exclamation-triangle"), "Data disclaimer & policy"),
-      h3("Data disclaimer & policy")
+      make_disclaimer_block()
     ),
     bslib::nav_panel(
       tagList(icon("quote-right"), "Citation"),
-      h3("Citation")
+      tags$style(HTML("
+        .cite-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:12px 16px; }
+        .cite-title { font-weight:600; font-size:1.15rem; margin:0 0 6px 0; }
+        .codeblock { background:#f6f8fa; border-radius:6px; padding:8px 10px; white-space:pre-wrap;
+                     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+        .cite-actions { margin-top:.5rem; display:flex; gap:.5rem; flex-wrap:wrap; }
+        details summary { cursor:pointer; margin-top:.5rem; font-weight:600; }
+      ")),
+      div(class = "cite-card",
+        div(class = "cite-title", "How to cite this application"),
+        p("Please cite the application to support reproducibility:"),
+        div(class = "codeblock", app_cite$text),
+
+        tags$details(
+          tags$summary("BibTeX"),
+          div(class = "codeblock", app_cite$bibtex)
+        ),
+        tags$details(
+          tags$summary("CSL-JSON"),
+          div(class = "codeblock", jsonlite::toJSON(app_cite$csl, auto_unbox = TRUE, pretty = TRUE))
+        ),
+
+        div(class = "cite-actions",
+          downloadButton(ns("dl_citations_txt"), "Download TXT"),
+          downloadButton(ns("dl_citations_bib"), "Download BibTeX"),
+          downloadButton(ns("dl_citations_csl"), "Download CSL-JSON")
+        ),
+
+        # Optional: machine-readable JSON-LD for the app
+        tags$script(
+          type = "application/ld+json",
+          HTML(jsonlite::toJSON(
+            list(
+              "@context"="https://schema.org",
+              "@type"="SoftwareApplication",
+              "name"="fisheriesXplorer",
+              "applicationCategory"="DataVisualization",
+              "url"="https://ices-tools-dev.shinyapps.io/fisheriesXplorer/",
+              "publisher"=list("@type"="Organization","name"="ICES"),
+              "license"="https://creativecommons.org/licenses/by/4.0/"
+            ), auto_unbox = TRUE, pretty = TRUE))
+        )
+      )
     )
+  # )
+
+
+
+
+
+
   )
 }
 
 mod_resources_server <- function(id) {
-  moduleServer(id, function(input, output, session) { })
+  moduleServer(id, function(input, output, session) {
+
+    app_cite <- build_app_citation()
+
+    output$dl_citations_txt <- downloadHandler(
+      filename = function() sprintf("fisheriesXplorer_citation_%s.txt", Sys.Date()),
+      content  = function(file) writeLines(app_cite$text, file)
+    )
+
+    output$dl_citations_bib <- downloadHandler(
+      filename = function() sprintf("fisheriesXplorer_citation_%s.bib", Sys.Date()),
+      content  = function(file) writeLines(app_cite$bibtex, file)
+    )
+
+    output$dl_citations_csl <- downloadHandler(
+      filename = function() sprintf("fisheriesXplorer_citation_%s.json", Sys.Date()),
+      content  = function(file) writeLines(jsonlite::toJSON(app_cite$csl, auto_unbox = TRUE, pretty = TRUE), file)
+    )
+  })
 }
 #-- end of mod_resources.R --#

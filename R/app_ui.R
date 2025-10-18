@@ -128,7 +128,7 @@ app_ui <- function(request) {
       #     )
       #   )
       # )
-      # NEW: Resources as a module tab (kept on the right due to nav_spacer above)
+      # NEW: Resources as a module tab 
       tabPanel(
         tagList(icon("book"), "Resources"),
         value = "resources",
