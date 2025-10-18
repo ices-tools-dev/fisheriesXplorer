@@ -40,7 +40,6 @@ mod_resources_ui <- function(id) {
       )
     ),
 
-    # --- in mod_resources_ui(), replace your current Data Sources nav_panel with this:
 
     bslib::nav_panel(
       tagList(icon("database"), "Data Sources"),
@@ -214,13 +213,6 @@ mod_resources_ui <- function(id) {
         )
       )
     )
-  # )
-
-
-
-
-
-
   )
 }
 
