@@ -89,65 +89,6 @@ safe_max <- function(x, default = NA) {
           )
         }
 
-        # # Helper: robust downloader
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
-
-        # # --- Helper: robust downloader
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
-
-        # # --- Helper: robust downloader with curl fallback
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
-
-        # # --- Helper: robust downloader with curl fallback
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
 
 safe_download <- function(url, dest, retries = 2, timeout = 30, quiet = TRUE) {
   attempt <- function() {
@@ -170,3 +111,5 @@ safe_download <- function(url, dest, retries = 2, timeout = 30, quiet = TRUE) {
   }
   ok
 }
+
+

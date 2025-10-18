@@ -761,7 +761,7 @@ mod_stock_status_server <- function(
 
         # --- 2) Disclaimer.txt (fixed name; no acronym/date)
         disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_adviceXplorer.txt"
+        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
         if (!safe_download(disc_url, disc_path)) {
           writeLines(c(
             "Disclaimer for fisheriesXplorer status table data.",
