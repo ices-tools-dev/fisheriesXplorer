@@ -89,65 +89,6 @@ safe_max <- function(x, default = NA) {
           )
         }
 
-        # # Helper: robust downloader
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
-
-        # # --- Helper: robust downloader
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
-
-        # # --- Helper: robust downloader with curl fallback
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
-
-        # # --- Helper: robust downloader with curl fallback
-        # safe_download <- function(url, dest) {
-        #   tryCatch(
-        #     {
-        #       if (requireNamespace("curl", quietly = TRUE)) {
-        #         curl::curl_download(url, destfile = dest, quiet = TRUE)
-        #       } else {
-        #         utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-        #       }
-        #       file.exists(dest) && file.info(dest)$size > 0
-        #     },
-        #     error = function(e) FALSE
-        #   )
-        # }
 
 safe_download <- function(url, dest, retries = 2, timeout = 30, quiet = TRUE) {
   attempt <- function() {
@@ -170,3 +111,54 @@ safe_download <- function(url, dest, retries = 2, timeout = 30, quiet = TRUE) {
   }
   ok
 }
+
+# Create a standard card for one data source
+# Standardized card for one data source
+# Simple, uniform "data source" card (one <ul> of linked items)
+resource_card <- function(title, description,
+                          dataset_url  = NULL,
+                          metadata_url = NULL,
+                          services     = NULL,   # named list OR (named/unnamed) character vector
+                          repo_url     = NULL,
+                          app_url      = NULL,
+                          notes        = NULL) {
+
+  # normalize services to a named list
+  svc <- NULL
+  if (!is.null(services)) {
+    if (is.list(services)) {
+      svc <- services
+    } else if (is.character(services)) {
+      if (is.null(names(services)) || any(names(services) == "")) {
+        names(services) <- paste("Service", seq_along(services))
+      }
+      svc <- as.list(services)
+    }
+  }
+
+  # build the list items
+  items <- list()
+  if (!is.null(dataset_url))
+    items <- c(items, list(tags$li(a("Dataset page",   href = dataset_url,  target = "_blank", rel = "noopener"))))
+  if (!is.null(metadata_url))
+    items <- c(items, list(tags$li(a("Metadata record", href = metadata_url, target = "_blank", rel = "noopener"))))
+  if (!is.null(svc)) {
+    items <- c(items, lapply(seq_along(svc), function(i) {
+      nm  <- names(svc)[i]
+      url <- unname(svc[[i]])
+      tags$li(a(nm, href = url, target = "_blank", rel = "noopener"))
+    }))
+  }
+  if (!is.null(repo_url))
+    items <- c(items, list(tags$li(a("GitHub repository", href = repo_url, target = "_blank", rel = "noopener"))))
+  if (!is.null(app_url))
+    items <- c(items, list(tags$li(a("Application link",  href = app_url,  target = "_blank", rel = "noopener"))))
+
+  tags$div(class = "source-card",
+    tags$div(class = "source-title", title),
+    tags$p(description),
+    if (length(items)) tags$ul(class = "source-links", do.call(tagList, items)),
+    if (!is.null(notes)) tags$p(class = "source-notes", notes)
+  )
+}
+
