@@ -215,14 +215,49 @@ mod_stock_status_server <- function(
     )
 
 
-    output$ecoregion_label <- renderText({
+    # output$ecoregion_label <- renderText({
+    #   req(selected_ecoregion())
+    #   paste("Ecoregion:", selected_ecoregion())
+    # })
+    output$ecoregion_label <- renderUI({
       req(selected_ecoregion())
-      paste("Ecoregion:", selected_ecoregion())
+      tags$span(tags$b("Ecoregion:"), " ", selected_ecoregion())
     })
 
-    output$current_date <- renderText({
-      paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
+    # output$current_date <- renderText({
+    #   paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
+    # })
+    output$current_date <- renderUI({
+      tab <- input$main_tabset
+      if (is.null(tab)) tab <- "landings"
+
+      # date_text <- switch(tab,
+      #   "landings" = "October, 2025",
+      #   "discards" = format(Sys.Date(), "%B %d, %Y"),
+      #   ""
+      # )
+      date_text <- format(Sys.Date(), "%B %d, %Y")
+
+      tagList(
+        tags$span(tags$b("Last data update:"), " ", date_text),
+        tags$span(" \u00B7 "),
+        mod_glossary_modal_ui(ns("status_glossary"), link_text = "Glossary")
+      )
     })
+    # One modal; terms switch with the sub-tab
+      mod_glossary_modal_server(
+        "status_glossary",
+        terms = reactive({
+          tab <- input$main_tabset
+          if (identical(tab, "stock_status")) {
+            glossary_for("Stock Status")
+          } else {
+            glossary_for("Stock Status")
+          }
+        }),
+        title = "Glossary",
+        size = "l"
+      )
 
     output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       HTML(select_text(texts, "status", "sidebar"))

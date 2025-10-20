@@ -112,4 +112,12 @@ safe_download <- function(url, dest, retries = 2, timeout = 30, quiet = TRUE) {
   ok
 }
 
-
+# Takes ns (the namespace function), not id
+mod_flex_header_ui <- function(ns, left_id, right_id) {
+  tags$div(
+    class = "fx-header-center",
+    uiOutput(ns(left_id),  inline = TRUE),
+    tags$span(class = "fx-sep", "\u00B7"),
+    uiOutput(ns(right_id), inline = TRUE)
+  )
+}
