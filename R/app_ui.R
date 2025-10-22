@@ -130,7 +130,7 @@ app_ui <- function(request) {
       # )
       # NEW: Resources as a module tab 
       tabPanel(
-        tagList(icon("book"), "Resources"),
+        tagList("Resources"),
         value = "resources",
         mod_resources_ui("resources_1")
       )
