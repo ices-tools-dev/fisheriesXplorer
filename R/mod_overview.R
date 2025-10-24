@@ -96,7 +96,7 @@ mod_overview_server <- function(
 
     output$current_date <- renderUI({
       tagList(
-        tags$span(tags$b("Last update:"), " December 05, 2024"),
+        tags$span(tags$b("Last text update:"), " December 05, 2024"),
         tags$span(" \u00B7 "),
         mod_glossary_modal_ui(ns("overview_glossary"), link_text = "Glossary")
       )

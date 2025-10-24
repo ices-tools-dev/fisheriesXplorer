@@ -566,3 +566,14 @@ caption {
 @media (max-width: 420px){
   .fx-header-center{ gap:.35rem; }
 }
+
+#share_url_box{
+  font-size: 0.9em; 
+  background:#f6f8fa; 
+  border:1px solid #e1e4e8;
+  border-radius: 6px; 
+  padding: 8px 10px; 
+  white-space: normal;
+  overflow-wrap: anywhere; 
+  word-break: break-word;
+}

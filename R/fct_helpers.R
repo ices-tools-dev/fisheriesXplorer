@@ -74,20 +74,20 @@ safe_max <- function(x, default = NA) {
 }
 
 
-# --- Helper: robust downloader with curl fallback
-        safe_download <- function(url, dest) {
-          tryCatch(
-            {
-              if (requireNamespace("curl", quietly = TRUE)) {
-                curl::curl_download(url, destfile = dest, quiet = TRUE)
-              } else {
-                utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
-              }
-              file.exists(dest) && file.info(dest)$size > 0
-            },
-            error = function(e) FALSE
-          )
-        }
+# # --- Helper: robust downloader with curl fallback
+#         safe_download <- function(url, dest) {
+#           tryCatch(
+#             {
+#               if (requireNamespace("curl", quietly = TRUE)) {
+#                 curl::curl_download(url, destfile = dest, quiet = TRUE)
+#               } else {
+#                 utils::download.file(url, destfile = dest, quiet = TRUE, mode = "wb")
+#               }
+#               file.exists(dest) && file.info(dest)$size > 0
+#             },
+#             error = function(e) FALSE
+#           )
+#         }
 
 
 safe_download <- function(url, dest, retries = 2, timeout = 30, quiet = TRUE) {
@@ -121,3 +121,57 @@ mod_flex_header_ui <- function(ns, left_id, right_id) {
     uiOutput(ns(right_id), inline = TRUE)
   )
 }
+
+
+# ------------------------
+  # bookmarking Helpers
+  # ------------------------
+  `%||%` <- function(a, b) if (!is.null(a) && length(a) > 0 && !is.na(a[1]) && nzchar(a[1])) a else b
+
+  .base_url <- function(session) {
+    proto <- session$clientData$url_protocol %||% "https:"
+    host  <- session$clientData$url_hostname %||% ""
+    port  <- session$clientData$url_port
+    path  <- session$clientData$url_pathname %||% "/"
+    port_part <- if (!is.null(port) && nzchar(port) &&
+                     !(proto == "https:" && port == "443") &&
+                     !(proto == "http:"  && port == "80")) paste0(":", port) else ""
+    paste0(proto, "//", host, port_part, path)
+  }
+
+  parse_nav <- function(hash, search) {
+    if (nzchar(hash)) shiny::parseQueryString(sub("^#", "", hash))
+    else if (nzchar(search)) shiny::parseQueryString(search)
+    else list()
+  }
+
+  # Map subtab input ids (read) & selectors (write)
+  SUBTAB_INPUTS <- list(
+    overview     = "overview_1-tabs_overview",
+    landings     = "landings_1-main_tabset",
+    stock_status = "stock_status_1-main_tabset",
+    resources    = "resources_1-resources_nav"
+  )
+
+  get_current_subtab <- function(tab, input) {
+    id <- SUBTAB_INPUTS[[tab]]
+    if (is.null(id)) "" else as.character(input[[id]] %||% "")
+  }
+
+  select_subtab <- function(tab, value, session) {
+    if (!nzchar(value)) return(invisible(NULL))
+    if (tab == "stock_status" && requireNamespace("bslib", quietly = TRUE) &&
+        utils::packageVersion("bslib") >= "0.5.0") {
+      bslib::nav_select(id = SUBTAB_INPUTS[[tab]], selected = value, session = session)
+    } else {
+      updateTabsetPanel(session, SUBTAB_INPUTS[[tab]], selected = value)
+    }
+  }
+
+  write_hash <- function(eco, tab, sub) {
+    paste0(
+      "#eco=", utils::URLencode(eco %||% "", reserved = TRUE),
+      "&tab=", utils::URLencode(tab %||% "", reserved = TRUE),
+      if (nzchar(sub %||% "")) paste0("&subtab=", utils::URLencode(sub, reserved = TRUE)) else ""
+    )
+  }
