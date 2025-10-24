@@ -135,18 +135,18 @@ app_server <- function(input, output, session) {
     bookmark_qs        = reactive(list()),     # parent restores
     set_subtab         = function(...) {}      # no-op
   )
-  mod_landings_server(
-    "landings_1", cap_year, cap_month,
-    selected_ecoregion = selected_ecoregion, shared = shared,
-    bookmark_qs        = reactive(list()),     # parent restores
-    set_subtab         = function(...) {}
-  )
-  mod_stock_status_server(
-    "stock_status_1", cap_year, cap_month,
-    selected_ecoregion = selected_ecoregion, shared = shared,
-    bookmark_qs        = reactive(list()),     # parent restores
-    set_subtab         = function(...) {}
-  )
+  # mod_landings_server(
+  #   "landings_1", cap_year, cap_month,
+  #   selected_ecoregion = selected_ecoregion, shared = shared,
+  #   bookmark_qs        = reactive(list()),     # parent restores
+  #   set_subtab         = function(...) {}
+  # )
+  # mod_stock_status_server(
+  #   "stock_status_1", cap_year, cap_month,
+  #   selected_ecoregion = selected_ecoregion, shared = shared,
+  #   bookmark_qs        = reactive(list()),     # parent restores
+  #   set_subtab         = function(...) {}
+  # )
   # sel_mixfish <- mod_mixfish_plot_selection_server("mixfish_selection_1", selected_ecoregion = selected_ecoregion)
   # mod_mixfish_plot_display_server("mixfish_viz_1",
   #   plot_name          = sel_mixfish$plot_choice,

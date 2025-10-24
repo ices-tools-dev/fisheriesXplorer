@@ -9,11 +9,36 @@
 #'
 #' @noRd
 
-select_text <- function(list_object, tab, section){
+# select_text <- function(list_object, tab, section){
   
-  list_object[[tab]] %>% dplyr::filter(section == !!section) %>% dplyr::pull(.data$text)
-}
+#   list_object[[tab]] %>% dplyr::filter(section == !!section) %>% dplyr::pull(.data$text)
+# }
+select_text <- function(list_object, tab, section) {
+  # 1) Existence checks
+  if (is.null(list_object[[tab]])) {
+    stop("Table '", tab, "' not found in the provided list_object.")
+  }
+  df <- list_object[[tab]]
 
+  # 2) If there's no 'section' column, return the whole table (e.g., glossary)
+  if (!"section" %in% names(df)) {
+    return(df)
+  }
+
+  # 3) There is a 'section' column: filter by the requested section
+  df_sub <- dplyr::filter(df, .data$section == !!section)
+
+  # 4) If there's a 'text' column (your normal case), return it as a character vector
+  if ("text" %in% names(df_sub)) {
+    out <- dplyr::pull(df_sub, .data$text)
+    if (length(out) == 0) return("")   # safe empty for renderUI(HTML())
+    # Coerce just in case
+    return(as.character(out))
+  }
+
+  # 5) Fallback: return the filtered data.frame (no 'text' column present)
+  df_sub
+}
 
 
 icon_mapping <- function(value) {
@@ -45,15 +70,22 @@ merge_cells <- function(values) {
   }, c(1, spans[-length(spans)] + 1), spans, unique_values)
 }
 
-mod_flex_header_ui <- function(ns, left_id, right_id) {  
-  div(  
-    style = "display: flex; justify-content: space-between; align-items: center;  
-         padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",  
-    span(textOutput(ns(left_id))),  
-    span(textOutput(ns(right_id)))  
-  )  
-}  
-
+# mod_flex_header_ui <- function(ns, left_id, right_id) {  
+#   div(  
+#     style = "display: flex; justify-content: space-between; align-items: center;  
+#          padding: 10px; font-weight: bold; font-size: 1.2em; margin-bottom: 0px;",  
+#     span(textOutput(ns(left_id))),  
+#     span(textOutput(ns(right_id)))  
+#   )  
+# }  
+mod_flex_header_ui <- function(ns, left_id, right_id) {
+  div(
+    style = "display:flex;justify-content:space-between;align-items:center;
+             padding:10px;font-weight:bold;font-size:1.2em;margin-bottom:0;",
+    uiOutput(ns(left_id)),
+    uiOutput(ns(right_id))
+  )
+}
 
 
 make_tooltip_choice <- function(label_text, tooltip_html) {

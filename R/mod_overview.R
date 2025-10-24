@@ -12,7 +12,7 @@ mod_overview_ui <- function(id) {
   ns <- NS(id)
   
   tagList(
-    mod_flex_header_ui(ns, "ecoregion_label", "current_date"),   
+    mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     tabsetPanel(
       type = "hidden",
       id = ns("overview"),
@@ -98,18 +98,31 @@ mod_overview_server <- function(
       tagList(
         tags$span(tags$b("Last text update:"), " December 05, 2024"),
         tags$span(" \u00B7 "),
-        mod_glossary_modal_ui(ns("overview_glossary"), link_text = "Glossary")
+        # mod_glossary_modal_ui(ns("app_glossary"), link_text = "Glossary")
+        # mod_glossary_modal_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
+        mod_glossary_float_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
       )
     })
-
-    # --- Glossary module server (Overview terms)
-    # assumes glossary_for("Overview") returns your ICES-sourced list
-    mod_glossary_modal_server(
-      "overview_glossary",
-      terms = reactive(glossary_for("Overview")),
-      title = "Overview \u2014 Glossary",
-      size  = "l"
-    )
+   mod_glossary_float_server(
+     "app_glossary",
+     terms = reactive({
+       df <- select_text(texts, "glossary", NULL) # your texts.rda table
+       df[, intersect(names(df), c("term", "definition", "source")), drop = FALSE]
+     })
+   )
+    # mod_glossary_modal_server(
+    #   "app_glossary",
+    #   terms = reactive({
+    #     df <- select_text(texts, "glossary", NULL) # <- no section
+    #     # keep only the columns the modal expects
+    #     df <- df[, intersect(names(df), c("term","definition","source")), drop = FALSE]
+    #     # optional: sort alphabetically
+    #     if (nrow(df)) df <- df[order(tolower(df$term)), , drop = FALSE]
+    #     df
+    #   }),
+    #   title = "Glossary",
+    #   size = "l"
+    # )
 
     output$staticMap1 <- renderUI({
       ecoregion <- get_ecoregion_acronym(selected_ecoregion())
