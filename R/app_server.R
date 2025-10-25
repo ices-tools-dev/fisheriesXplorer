@@ -125,8 +125,7 @@ app_server <- function(input, output, session) {
     "navigation_page_1", 
     parent_session = session, 
     selected_ecoregion = selected_ecoregion,
-    bookmark_qs        = reactive(list())    # parent restores
-    # set_subtab         = function(...) {}      # no-op
+    bookmark_qs        = reactive(list())
   )
 
   mod_overview_server(
