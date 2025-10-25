@@ -164,9 +164,26 @@ mod_navigation_page_ui <- function(id) {
 #' landing_page Server Functions
 #'
 #' @noRd 
-mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
+mod_navigation_page_server <- function(
+  id, 
+  parent_session, 
+  selected_ecoregion,
+  bookmark_qs = reactive(NULL)) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+
+    # RESTORE once, defer until after first flush, then push up
+    observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+      qs <- bookmark_qs()
+      wanted <- qs$subtab
+      valid <- c("exec_summary", "introduction", "who_is_fishing")
+      if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+        session$onFlushed(function() {
+          updateTabsetPanel(session, "tabs_overview", selected = wanted)
+          isolate(set_subtab(wanted)) # one-arg setter
+        }, once = TRUE)
+      }
+    })
 
     output$map <- leaflet::renderLeaflet({
       map_ecoregion(eco_shape, map_shape)

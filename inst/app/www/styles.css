@@ -530,3 +530,162 @@ caption {
 .hover-left:hover::after {
   opacity: 1;
 } */
+
+:root{
+  /* min, preferred (with vw), max */
+  --fx-header-size: clamp(14px, 1.2vw + 0.6rem, 24px);
+}
+
+.fx-header-center{
+  display:flex;
+  justify-content:center;
+  align-items:baseline;
+  gap:.5rem;
+  flex-wrap:wrap;
+  margin-bottom:.5rem;
+
+  /* responsive type */
+  font-size: var(--fx-header-size);
+  line-height: 1.25;
+}
+
+.fx-header-center b{ font-weight:700; }
+
+/* Keep the separator subtle and spaced */
+.fx-sep{ opacity:.6; margin: 0 .25em; }
+
+/* Make the link follow the header size and look tidy */
+.glossary-link{
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 1em;      /* inherits from header */
+  line-height: 1.25;
+}
+
+/* Optional: tighten spacing on very small screens */
+@media (max-width: 420px){
+  .fx-header-center{ gap:.35rem; }
+}
+
+#share_url_box{
+  font-size: 0.9em; 
+  background:#f6f8fa; 
+  border:1px solid #e1e4e8;
+  border-radius: 6px; 
+  padding: 8px 10px; 
+  white-space: normal;
+  overflow-wrap: anywhere; 
+  word-break: break-word;
+}
+
+
+
+/* === Glossary floating panel container === */
+.glossary-float{
+  /* closed by default; JS sets display:flex when opening */
+  display: none;
+
+  position: fixed;
+  right: 20px;           /* starting position */
+  top: 80px;
+  z-index: 2000;
+
+  /* look & layout */
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  overflow: hidden;
+
+  /* make header fixed and body grow */
+  display: flex;
+  flex-direction: column;
+
+  /* responsive size + font */
+  width: clamp(360px, 38vw, 780px);
+  max-height: 42vh;
+  font-size: clamp(12px, 1.4vw, 14px);
+}
+
+/* phones / small tablets */
+@media (max-width: 576px){
+  .glossary-float{
+    right: 8px;
+    top: 8px;
+    width: min(70vw, 560px);
+    /* max-height: 42vh; */
+    font-size: 10px;    /* readable on small screens */
+  }
+}
+
+/* large monitors */
+@media (min-width: 1600px){
+  .glossary-float{
+    width: 28vw;
+    max-width: 900px;
+    font-size: 16px;
+  }
+}
+
+
+
+/* === Glossary panel internals === */
+.glossary-float { /* container rules already exist; keeping for clarity */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollable body */
+.glossary-float .g-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  -webkit-overflow-scrolling: touch; /* smoother iOS scroll */
+}
+
+/* Title text */
+.glossary-float .g-title {
+  font-weight: 600;
+  font-size: clamp(14px, 2vw, 18px);
+}
+
+/* Header bar */
+.glossary-float .g-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  color: #002B5F;
+  background: #CCF0FC;
+  border-bottom: 1px solid #e5e5e5;
+  cursor: move;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Close button */
+.glossary-float .g-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Tiny “[source]” link styling */
+.glossary-float .g-body .src-link { font-size: 0.85em; opacity: 0.85; margin-left: .35rem; }
+.glossary-float .g-body a { text-decoration: none; }
+
+
+/* Open/close via class (cleaner than editing inline style) */
+.glossary-float { display: none; }
+.glossary-float.is-open { display: flex; } /* flex so .g-body can scroll */
+
+
+#staticMap1 {
+  margin-left:auto; 
+  margin-right:auto; 
+  margin-bottom:auto; 
+  max-width:97%; 
+  height:auto;}

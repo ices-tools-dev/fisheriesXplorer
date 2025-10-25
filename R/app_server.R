@@ -8,64 +8,12 @@
 # app_server.R
 
 # =========================
-# SERVER (simplified: single restore + single writer)
+# SERVER FUNCTION
 # =========================
 app_server <- function(input, output, session) {
 
   # ------------------------
-  # Helpers
-  # ------------------------
-  `%||%` <- function(a, b) if (!is.null(a) && length(a) > 0 && !is.na(a[1]) && nzchar(a[1])) a else b
-
-  .base_url <- function(session) {
-    proto <- session$clientData$url_protocol %||% "https:"
-    host  <- session$clientData$url_hostname %||% ""
-    port  <- session$clientData$url_port
-    path  <- session$clientData$url_pathname %||% "/"
-    port_part <- if (!is.null(port) && nzchar(port) &&
-                     !(proto == "https:" && port == "443") &&
-                     !(proto == "http:"  && port == "80")) paste0(":", port) else ""
-    paste0(proto, "//", host, port_part, path)
-  }
-
-  parse_nav <- function(hash, search) {
-    if (nzchar(hash)) shiny::parseQueryString(sub("^#", "", hash))
-    else if (nzchar(search)) shiny::parseQueryString(search)
-    else list()
-  }
-
-  # Map subtab input ids (read) & selectors (write)
-  SUBTAB_INPUTS <- list(
-    overview     = "overview_1-tabs_overview",
-    landings     = "landings_1-main_tabset",
-    stock_status = "stock_status_1-main_tabset"
-  )
-
-  get_current_subtab <- function(tab, input) {
-    id <- SUBTAB_INPUTS[[tab]]
-    if (is.null(id)) "" else as.character(input[[id]] %||% "")
-  }
-
-  select_subtab <- function(tab, value) {
-    if (!nzchar(value)) return(invisible(NULL))
-    if (tab == "stock_status" && requireNamespace("bslib", quietly = TRUE) &&
-        utils::packageVersion("bslib") >= "0.5.0") {
-      bslib::nav_select(id = SUBTAB_INPUTS[[tab]], selected = value, session = session)
-    } else {
-      updateTabsetPanel(session, SUBTAB_INPUTS[[tab]], selected = value)
-    }
-  }
-
-  write_hash <- function(eco, tab, sub) {
-    paste0(
-      "#eco=", utils::URLencode(eco %||% "", reserved = TRUE),
-      "&tab=", utils::URLencode(tab %||% "", reserved = TRUE),
-      if (nzchar(sub %||% "")) paste0("&subtab=", utils::URLencode(sub, reserved = TRUE)) else ""
-    )
-  }
-
-  # ------------------------
-  # Welcome (unchanged)
+  # Welcome modal (maybe we could add useful information here?)
   # ------------------------
   showModal(modalDialog(
     title = "Important message",
@@ -73,7 +21,7 @@ app_server <- function(input, output, session) {
   ))
 
   # ------------------------
-  # Date bits (unchanged)
+  # Date bits (refactor all the dates here?)
   # ------------------------
   app_date  <- strsplit(date(), " ")[[1]]
   cap_year  <- app_date[5]
@@ -120,7 +68,7 @@ app_server <- function(input, output, session) {
     if (nzchar(d$subtab) && d$tab %in% names(SUBTAB_INPUTS)) {
       # if mismatch, try selecting; we run this observe block repeatedly while restoring
       cur <- get_current_subtab(d$tab, input)
-      if (!identical(cur, d$subtab)) select_subtab(d$tab, d$subtab)
+      if (!identical(cur, d$subtab)) select_subtab(d$tab, d$subtab, session)
     }
 
     # Stop restoring only when current live state matches desired (or no subtab requested)
@@ -137,9 +85,9 @@ app_server <- function(input, output, session) {
     if (isTRUE(is_restoring())) invalidateLater(80, session)
   })
 
-  # ------------------------
-  # Data fetch (unchanged)
-  # ------------------------
+  # ----------------------------------------------------------------------------------------------
+  # Data fetch 
+  # ----------------------------------------------------------------------------------------------
   shared <- reactiveValues(SID = NULL, SAG = NULL, clean_status = NULL)
 
   fetchData <- reactive({
@@ -171,9 +119,14 @@ app_server <- function(input, output, session) {
   })
 
   # ------------------------
-  # Feature modules (unchanged; parent handles bookmarking)
+  # Feature modules (parent handles bookmarking)
   # ------------------------
-  mod_navigation_page_server("navigation_page_1", parent_session = session, selected_ecoregion = selected_ecoregion)
+  mod_navigation_page_server(
+    "navigation_page_1", 
+    parent_session = session, 
+    selected_ecoregion = selected_ecoregion,
+    bookmark_qs        = reactive(list())
+  )
 
   mod_overview_server(
     "overview_1",
@@ -201,7 +154,11 @@ app_server <- function(input, output, session) {
   # )
   # mod_vms_server("vms_1", selected_ecoregion = selected_ecoregion)
   # mod_bycatch_server("bycatch_1", selected_ecoregion = selected_ecoregion)
-  mod_resources_server("resources_1")
+  mod_resources_server(
+    "resources_1",
+    bookmark_qs        = reactive(list()),     # parent restores
+    set_subtab         = function(...) {} 
+  )
   # ------------------------
   # Single writer: keep URL hash in sync (debounced), except during restore
   # ------------------------
@@ -250,40 +207,15 @@ app_server <- function(input, output, session) {
         actionButton("copy_share_link", "Copy link", icon = icon("copy"), class = "btn btn-primary btn-sm")
       ),
       tags$p("This link reproduces this exact view:"),
-      tags$div(
-        id = "share_url_box",
-        style = paste(
-          "font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace;",
-          "font-size: 0.9em; background:#f6f8fa; border:1px solid #e1e4e8;",
-          "border-radius:6px; padding:8px 10px; white-space:normal;",
-          "overflow-wrap:anywhere; word-break:break-word;"
-        ),
-        final
-      ),
+      tags$div(id = "share_url_box", final),
       tags$div(style = "margin-top: 8px;", tags$a(href = final, target = "_blank", rel = "noopener", "Open in new tab")),
       size = "m"
     ))
   })
 
-  # Clipboard handler (unchanged)
+  # Clipboard handler 
   observeEvent(input$copy_share_link, {
-    js_text <- jsonlite::toJSON(share_url() %||% "", auto_unbox = TRUE)
-    shinyjs::runjs(sprintf("
-      (function(txt){
-        if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(txt)
-            .then(function(){ Shiny.setInputValue('share_copy_success', Math.random()); })
-            .catch(function(err){ Shiny.setInputValue('share_copy_error', String(err)); });
-        } else {
-          var ta = document.createElement('textarea');
-          ta.value = txt; document.body.appendChild(ta);
-          ta.select(); try { document.execCommand('copy');
-            Shiny.setInputValue('share_copy_success', Math.random());
-          } catch(e){ Shiny.setInputValue('share_copy_error', String(e)); }
-          document.body.removeChild(ta);
-        }
-      })(%s);
-    ", js_text))
+    session$sendCustomMessage("copyText", list(text = share_url() %||% ""))
   })
   observeEvent(input$share_copy_success, { showNotification("Link copied to clipboard", type = "message") })
   observeEvent(input$share_copy_error,   { showNotification(paste("Copy failed:", input$share_copy_error), type = "error") })
