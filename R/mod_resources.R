@@ -216,8 +216,32 @@ mod_resources_ui <- function(id) {
   )
 }
 
-mod_resources_server <- function(id) {
+mod_resources_server <- function(
+  id,
+  bookmark_qs = reactive(NULL),
+  set_subtab = function(...) {}) {
   moduleServer(id, function(input, output, session) {
+
+    # RESTORE once, defer until after first flush, then push up
+    observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+      qs <- bookmark_qs()
+      wanted <- qs$subtab
+      valid <- c("exec_summary", "introduction", "who_is_fishing")
+      if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+        session$onFlushed(function() {
+          updateTabsetPanel(session, "tabs_overview", selected = wanted)
+          isolate(set_subtab(wanted)) # one-arg setter
+        }, once = TRUE)
+      }
+    })
+    
+    # REPORT on user changes, skip initial default
+    observeEvent(input$tabs_overview,
+      {
+        set_subtab(input$tabs_overview) # one arg only
+      },
+      ignoreInit = TRUE
+    )
 
     app_cite <- build_app_citation()
 
