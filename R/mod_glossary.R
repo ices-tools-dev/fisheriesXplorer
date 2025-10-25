@@ -1,270 +1,63 @@
-# # mod_glossary_modal.R
-# mod_glossary_modal_ui <- function(id, link_text = "Glossary") {
-#   ns <- NS(id)
-#   actionLink(
-#     ns("open"),
-#     label = tagList(icon("book"), link_text),
-#     class = "glossary-link",
-#     style = "margin-left:.5rem;"
-#   )
-# }
 
-# mod_glossary_modal_server <- function(id, terms, title = "Glossary", size = "l") {
-#   moduleServer(id, function(input, output, session) {
-#     ns <- session$ns
-
-#     # Accepts: data.frame(term, definition[, source]) OR list of {term, def[, source]} OR reactive()/function
-#     resolve_df <- function(x) {
-#       if (is.function(x)) x <- x()                 # works for reactive(...)
-#       if (shiny::is.reactive(x)) x <- x()
-#       if (is.data.frame(x)) {
-#         n <- tolower(gsub("[^a-z0-9]+", "_", names(x)))
-#         names(x) <- n
-#         if (!"term" %in% names(x) || !"definition" %in% names(x)) {
-#           stop("Glossary data needs columns 'term' and 'definition'.")
-#         }
-#         if (!"source" %in% names(x)) x$source <- ""
-#         return(x[, intersect(c("term","definition","source"), names(x)), drop = FALSE])
-#       }
-#       if (is.list(x) && length(x) && !is.null(x[[1]]$term)) {
-#         # list of {term, def[, source]}
-#         term <- vapply(x, function(it) if (!is.null(it$term)) it$term else "", character(1))
-#         def  <- vapply(x, function(it) if (!is.null(it$def)) it$def else if (!is.null(it$definition)) it$definition else "", character(1))
-#         src  <- vapply(x, function(it) if (!is.null(it$source)) it$source else "", character(1))
-#         return(data.frame(term = term, definition = def, source = src, stringsAsFactors = FALSE))
-#       }
-#       data.frame(term = character(), definition = character(), source = character(), stringsAsFactors = FALSE)
-#     }
-
-#     make_table_df <- function(df) {
-#       # Append a small "[link]" after the definition when source is present
-#       add_link <- function(txt, url) {
-#         if (is.na(url) || identical(url, "") || !nzchar(url)) return(txt)
-#         paste0(
-#           txt,
-#           " <span class='src-link'><a href='", htmltools::htmlEscape(url),
-#           "' target='_blank' rel='noopener'>[source]</a></span>"
-#         )
-#       }
-#       Definition <- mapply(add_link, df$definition, df$source, USE.NAMES = FALSE)
-#       data.frame(
-#         Term = df$term,
-#         Definition = Definition,
-#         stringsAsFactors = FALSE
-#       )
-#     }
-
-#     observeEvent(input$open, {
-#       if (!requireNamespace("reactable", quietly = TRUE)) {
-#         showModal(modalDialog(
-#           title = title, easyClose = TRUE, size = size,
-#           footer = modalButton("Close"),
-#           div("Please install the 'reactable' package to show the glossary as a table: ",
-#               code("install.packages('reactable')"))
-#         ))
-#         return()
-#       }
-
-#       df_raw <- resolve_df(terms)
-#       # sort A–Z
-#       if (nrow(df_raw)) df_raw <- df_raw[order(tolower(df_raw$term)), , drop = FALSE]
-#       df_tbl <- make_table_df(df_raw)
-
-#       output$tbl <- reactable::renderReactable({
-#         reactable::reactable(
-#           df_tbl,
-#           searchable = TRUE,
-#           filterable = TRUE,
-#           striped = TRUE,
-#           compact = TRUE,
-#           highlight = TRUE,
-#           defaultSorted = list(Term = "asc"),
-#           defaultPageSize = 10,
-#           showPageSizeOptions = TRUE,
-#           minRows = 5,
-#           resizable = TRUE,
-#           columns = list(
-#             Term = reactable::colDef(minWidth = 180),
-#             Definition = reactable::colDef(
-#               html = TRUE,
-#               minWidth = 480
-#             )
-#           )
-#         )
-#       })
-
-#       showModal(
-#         modalDialog(
-#           title = title,
-#           easyClose = TRUE,
-#           size = size,
-#           footer = modalButton("Close"),
-#           tags$style(HTML(sprintf("
-#             /* small, subtle link after definitions */
-#             .glossary-reactable .src-link { font-size: 0.85em; opacity: 0.85; margin-left: .35rem; }
-#             .glossary-reactable a { text-decoration: none; }
-#             /* keep modal scrollable */
-#             #%s_tbl { max-height: 60vh; overflow-y: auto; }
-#           ", ns("tbl")))),
-#           div(class = "glossary-reactable",
-#               reactable::reactableOutput(ns("tbl"))
-#           )
-#         )
-#       )
-#     })
-#   })
-# }
-# # mod_glossary_modal.R
-# # Action link -> non-blocking right-side offcanvas with reactable table
-
-# # mod_glossary_modal.R
-# # Action link -> non-blocking right-side offcanvas with reactable table
-# # Requires Bootstrap 5 (ui theme = bslib::bs_theme(version = 5))
-
-# mod_glossary_modal_ui <- function(id, link_text = "Glossary", panel_title = "Glossary") {
-#   ns <- NS(id)
-
-#   tagList(
-#     # One-time JS handler to open the offcanvas
-#     singleton(tags$head(tags$script(HTML("
-#       (function(){
-#         if (window.__glossaryOffcanvasInit) return;
-#         window.__glossaryOffcanvasInit = true;
-#         Shiny.addCustomMessageHandler('open-offcanvas', function(x){
-#           var el = document.getElementById(x.id);
-#           if (!el) return;
-#           if (window.bootstrap && bootstrap.Offcanvas) {
-#             var inst = bootstrap.Offcanvas.getOrCreateInstance(el, { backdrop: false, scroll: true });
-#             inst.show();
-#           } else {
-#             // Fallback if Bootstrap JS isn't present
-#             el.classList.add('show');
-#             el.style.visibility = 'visible';
-#           }
-#         });
-#       })();
-#     ")))),
-#     # Trigger link (keeps your original API)
-#     actionLink(
-#       ns("open"),
-#       label = tagList(icon("book"), link_text),
-#       class = "glossary-link",
-#       style = "margin-left:.5rem;"
-#     ),
-
-#     # Offcanvas (mounted once; opened via JS message)
-#     tags$div(
-#       class = "offcanvas offcanvas-end glossary-canvas",
-#       tabindex = "-1",
-#       id = ns("panel"),
-#       `aria-labelledby` = ns("label"),
-#       `data-bs-backdrop` = "false",  # non-blocking
-#       `data-bs-scroll`   = "true",   # keep page scrollable
-#       tags$div(
-#         class = "offcanvas-header",
-#         tags$h5(class = "offcanvas-title", id = ns("label"), panel_title),
-#         tags$button(type = "button", class = "btn-close",
-#                     `data-bs-dismiss` = "offcanvas", `aria-label` = "Close")
-#       ),
-#       tags$div(
-#         class = "offcanvas-body",
-#         div(class = "glossary-body",
-#             reactable::reactableOutput(ns("tbl")))
-#       )
-#     ),
-
-#     # CSS (no sprintf; safe with %)
-#     tags$style(HTML("
-#       .offcanvas.glossary-canvas { width: min(720px, 92vw); z-index: 1045; }
-#       .offcanvas.glossary-canvas .offcanvas-body { padding: 0; }
-#       .glossary-body { padding: 12px 12px 16px 12px; max-height: calc(100vh - 58px); overflow-y: auto; }
-#       .glossary-reactable .src-link { font-size: 0.85em; opacity: 0.85; margin-left: .35rem; }
-#       .glossary-reactable a { text-decoration: none; }
-#       /* Fallback slide-in if BS5 JS is missing */
-#       .offcanvas.glossary-canvas {
-#         position: fixed; top: 0; right: 0; bottom: 0; background: #fff;
-#         visibility: hidden; transform: translateX(100%); transition: transform .25s ease, visibility .25s ease;
-#       }
-#       .offcanvas.glossary-canvas.show { visibility: visible; transform: translateX(0); }
-#     "))
-#   )
-# }
-
-# mod_glossary_modal_server <- function(id, terms, title = "Glossary", size = "l") {
-#   moduleServer(id, function(input, output, session) {
-#     ns <- session$ns
-
-#     # Normalize inputs -> data.frame(term, definition, source)
-#     resolve_df <- function(x) {
-#       if (is.function(x)) x <- x()
-#       if (shiny::is.reactive(x)) x <- x()
-#       if (is.data.frame(x)) {
-#         n <- tolower(gsub("[^a-z0-9]+", "_", names(x))); names(x) <- n
-#         if (!"term" %in% names(x) || !"definition" %in% names(x))
-#           stop("Glossary data needs columns 'term' and 'definition'.")
-#         if (!"source" %in% names(x)) x$source <- ""
-#         return(x[, intersect(c("term","definition","source"), names(x)), drop = FALSE])
-#       }
-#       if (is.list(x) && length(x) && !is.null(x[[1]]$term)) {
-#         term <- vapply(x, function(it) it$term %||% "", character(1))
-#         def  <- vapply(x, function(it) (it$def %||% it$definition) %||% "", character(1))
-#         src  <- vapply(x, function(it) it$source %||% "", character(1))
-#         return(data.frame(term = term, definition = def, source = src, stringsAsFactors = FALSE))
-#       }
-#       data.frame(term = character(), definition = character(), source = character(), stringsAsFactors = FALSE)
-#     }
-
-#     make_table_df <- function(df) {
-#       add_link <- function(txt, url) {
-#         if (is.na(url) || !nzchar(url)) return(txt)
-#         paste0(txt, " <span class='src-link'><a href='",
-#                htmltools::htmlEscape(url), "' target='_blank' rel='noopener'>[source]</a></span>")
-#       }
-#       Definition <- mapply(add_link, df$definition, df$source, USE.NAMES = FALSE)
-#       data.frame(Term = df$term, Definition = Definition, stringsAsFactors = FALSE)
-#     }
-
-#     observeEvent(input$open, {
-#       df_raw <- resolve_df(terms)
-#       if (nrow(df_raw)) df_raw <- df_raw[order(tolower(df_raw$term)), , drop = FALSE]
-#       df_tbl <- make_table_df(df_raw)
-
-#       output$tbl <- reactable::renderReactable({
-#         reactable::reactable(
-#           df_tbl,
-#           searchable = TRUE, filterable = TRUE, striped = TRUE, compact = TRUE, highlight = TRUE,
-#           defaultSorted = list(Term = "asc"), defaultPageSize = 10, showPageSizeOptions = TRUE,
-#           minRows = 5, resizable = TRUE,
-#           columns = list(
-#             Term = reactable::colDef(minWidth = 180),
-#             Definition = reactable::colDef(
-#               html = TRUE, minWidth = 520
-#               # cell = function(value) htmltools::div(
-#               #   class = "glossary-reactable",
-#               #   style = "white-space: normal;",
-#               #   htmltools::HTML(value)
-#               # )
-#             )
-#           )
-#         )
-#       })
-
-#       # Open the offcanvas (non-blocking overlay)
-#       session$sendCustomMessage("open-offcanvas", list(id = ns("panel")))
-#     })
-#   })
-# }
-
-# R/mod_glossary_overlay.R
-# Non-blocking glossary overlay without Bootstrap 5.
-# Variant "float": draggable absolutePanel
-# Variant "bottom": bottom sheet (fixed at bottom)
-# Requires: reactable
-
-# R/mod_glossary_float.R
-# Non-blocking floating popup (fixed position) with reactable glossary.
-# Works with Bootstrap 3. No offcanvas/BS5 needed.
-
+#' Floating, non-blocking glossary panel (UI)
+#'
+#' Adds a right-side **floating panel** that stays hidden until opened via a
+#' “Glossary” link. The panel overlays the app **without blocking** interaction
+#' and contains a searchable/filterable **reactable** table of glossary terms.
+#' The panel body scrolls vertically; the header remains fixed.
+#'
+#' This UI relies on CSS rules for the `.glossary-float` container
+#' (recommended to place in `www/styles.css`) to control responsive sizing and
+#' typography. By default, the panel is closed on load (`display: none`) and is
+#' opened by the inline JS in this UI (set to `display: flex`).
+#'
+#' @param id Module ID (string). Passed to \code{\link[shiny]{NS}} for namespacing.
+#' @param link_text Text shown in the trigger link (default: "Glossary").
+#' @param panel_title Title shown in the panel header (default: "Glossary").
+#'
+#' @details
+#' **Styling**
+#'
+#' Add responsive styles for the container to `www/styles.css`, e.g.:
+#' \preformatted{
+#' .glossary-float{ display:none; position:fixed; right:20px; top:80px; z-index:2000;
+#'   background:#fff; border:1px solid #ddd; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.2);
+#'   overflow:hidden; display:flex; flex-direction:column;
+#'   width:clamp(360px, 38vw, 780px); max-height:42vh; font-size:clamp(12px,1.4vw,14px);
+#' }
+#' @media (max-width:576px){ .glossary-float{ right:8px; top:8px; width:min(96vw,560px); max-height:70vh; } }
+#' }
+#'
+#' **Behavior**
+#'
+#' - Panel opens with a click on the “Glossary” link and closes with the “×” or the
+#'   Escape key.
+#' - The app remains usable, including scrolling, while the panel is open.
+#' - The panel can be repositioned by dragging the header (basic mouse-drag logic).
+#'
+#' If you prefer zero inline JS, you can switch to a small external script that toggles
+#' an `is-open` class via `data-g-open`/`data-g-close` attributes. (See notes in server docs.)
+#'
+#' @return A UI fragment (tagList) to include in your Shiny UI.
+#'
+#' @examples
+#' \dontrun{
+#' ui <- fluidPage(
+#'   mod_glossary_float_ui("gloss", link_text = "Glossary", panel_title = "Glossary")
+#' )
+#' server <- function(input, output, session) {
+#'   mod_glossary_float_server("gloss", terms = reactive({
+#'     data.frame(
+#'       term = c("Catch", "Landings"),
+#'       definition = c("Total quantity taken...", "Portion of the catch brought ashore."),
+#'       source = c("https://www.ices.dk/...", "https://www.ices.dk/...")
+#'     )
+#'   }))
+#' }
+#' shinyApp(ui, server)
+#' }
+#'
+#' @export
 mod_glossary_float_ui <- function(id, link_text = "Glossary", panel_title = "Glossary") {
   ns <- NS(id)
 
@@ -317,7 +110,64 @@ mod_glossary_float_ui <- function(id, link_text = "Glossary", panel_title = "Glo
 
 
 
-
+#' Floating, non-blocking glossary panel (server)
+#'
+#' Server logic for the floating glossary panel. Renders a searchable/filterable
+#' \pkg{reactable} with two columns: **Term** and **Definition**. If a `source`
+#' URL is present, a small \code{[source]} hyperlink is appended after the definition.
+#'
+#' @param id Module ID (string). Must match the \code{id} used in
+#'   \code{mod_glossary_float_ui()}.
+#' @param terms A glossary source. One of:
+#'   \itemize{
+#'     \item a \code{data.frame} with columns \code{term}, \code{definition}, and optional \code{source};
+#'     \item a list of items \code{list(term=..., def=..., source=...)};
+#'     \item a \code{reactive()} or \code{function()} that returns one of the above.
+#'   }
+#'
+#' @details
+#' The table is rendered even while the panel is hidden by setting:
+#' \code{outputOptions(output, "tbl", suspendWhenHidden = FALSE)}.
+#'
+#' **Expected columns**
+#'
+#' - \strong{term}: character — the glossary term (required)
+#' - \strong{definition}: character/HTML — the definition (required)
+#' - \strong{source}: character — URL to the source (optional)
+#'
+#' **External assets (recommended)**
+#'
+#' Add responsive CSS for `.glossary-float`, `.g-header`, `.g-body`, etc. to
+#' `www/styles.css` and include it globally (e.g., via
+#' `golem_add_external_resources()`). If you prefer **no inline JS**, supply
+#' a small `www/glossary.js` that toggles an `.is-open` class using
+#' `data-g-open` / `data-g-close` attributes; then remove the inline `tags$script`
+#' block from the UI and add:
+#' \preformatted{
+#' tags$script(src = "www/glossary.js")
+#' }
+#'
+#' @return None. This is called for its side effects (registers outputs).
+#'
+#' @examples
+#' \dontrun{
+#' # Minimal usage inside a Shiny app:
+#' ui <- fluidPage(mod_glossary_float_ui("gloss"))
+#' server <- function(input, output, session) {
+#'   mod_glossary_float_server("gloss", terms = reactive({
+#'     data.frame(
+#'       term = c("Catch", "Landings"),
+#'       definition = c("Total quantity taken...", "Portion of the catch brought ashore."),
+#'       source = c("https://www.ices.dk/...", "https://www.ices.dk/...")
+#'     )
+#'   }))
+#' }
+#' shinyApp(ui, server)
+#' }
+#'
+#' @importFrom htmltools htmlEscape
+#' @importFrom shiny moduleServer NS reactive
+#' @export
 mod_glossary_float_server <- function(id, terms) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns

@@ -10,7 +10,7 @@
 #' 
 mod_overview_ui <- function(id) {
   ns <- NS(id)
-  
+
   tagList(
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
     tabsetPanel(
@@ -25,14 +25,9 @@ mod_overview_ui <- function(id) {
             width = "50%",
             card(
               min_height = "50vh", height = "80vh", full_screen = TRUE,
-              tags$style(
-                type = "text/css",
-                "#staticMap1 {margin-left:auto; margin-right:auto; margin-bottom:auto; max-width:97%; height:auto;}"
-              ),
               withSpinner(uiOutput(ns("staticMap1"), width = "100%"))
             )
           ),
-          # ------ make these bookmarkable ------
           tabsetPanel(
             id = ns("tabs_overview"), # <-- NEW
             tabPanel("Executive Summary",
@@ -48,7 +43,6 @@ mod_overview_ui <- function(id) {
               card(uiOutput(ns("who_is_fishing")))
             )
           )
-          # ------------------------------------
         )
       )
     )
@@ -67,6 +61,7 @@ mod_overview_server <- function(
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    ################################## bookmarking #########################################
     # RESTORE once, defer until after first flush, then push up
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
@@ -88,7 +83,7 @@ mod_overview_server <- function(
       ignoreInit = TRUE
     )
 
-
+    ################################## header + glossary #########################################
     output$ecoregion_label <- renderUI({
       req(selected_ecoregion())
       tags$span(tags$b("Ecoregion:"), " ", selected_ecoregion())
@@ -98,8 +93,6 @@ mod_overview_server <- function(
       tagList(
         tags$span(tags$b("Last text update:"), " December 05, 2024"),
         tags$span(" \u00B7 "),
-        # mod_glossary_modal_ui(ns("app_glossary"), link_text = "Glossary")
-        # mod_glossary_modal_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
         mod_glossary_float_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
       )
     })
@@ -110,20 +103,8 @@ mod_overview_server <- function(
        df[, intersect(names(df), c("term", "definition", "source")), drop = FALSE]
      })
    )
-    # mod_glossary_modal_server(
-    #   "app_glossary",
-    #   terms = reactive({
-    #     df <- select_text(texts, "glossary", NULL) # <- no section
-    #     # keep only the columns the modal expects
-    #     df <- df[, intersect(names(df), c("term","definition","source")), drop = FALSE]
-    #     # optional: sort alphabetically
-    #     if (nrow(df)) df <- df[order(tolower(df$term)), , drop = FALSE]
-    #     df
-    #   }),
-    #   title = "Glossary",
-    #   size = "l"
-    # )
-
+    
+    #################################### Ecoregion map #########################################
     output$staticMap1 <- renderUI({
       ecoregion <- get_ecoregion_acronym(selected_ecoregion())
       file_name <- paste0(ecoregion, ".jpg")
@@ -135,7 +116,7 @@ mod_overview_server <- function(
         onclick = "toggleFullScreen(this)"
       )
     })
-
+    ################################## Text sections #########################################
     output$executive_summary <- renderUI({
       HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "executive_summary"))
     })

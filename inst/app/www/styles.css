@@ -656,7 +656,8 @@ caption {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f7f7f7;
+  color: #002B5F;
+  background: #CCF0FC;
   border-bottom: 1px solid #e5e5e5;
   cursor: move;
   user-select: none;
@@ -680,3 +681,11 @@ caption {
 /* Open/close via class (cleaner than editing inline style) */
 .glossary-float { display: none; }
 .glossary-float.is-open { display: flex; } /* flex so .g-body can scroll */
+
+
+#staticMap1 {
+  margin-left:auto; 
+  margin-right:auto; 
+  margin-bottom:auto; 
+  max-width:97%; 
+  height:auto;}

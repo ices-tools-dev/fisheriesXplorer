@@ -19,10 +19,10 @@ mod_stock_status_ui <- function(id) {
 
     # Give the navset an id; give each nav_panel a stable value
     navset_tab(
-      id = ns("main_tabset"),   # <-- NEW
+      id = ns("main_tabset"),   
 
       nav_panel(
-        "Status Summary", value = "status_summary",   # <-- NEW value
+        "Status Summary", value = "status_summary",   
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -69,7 +69,7 @@ mod_stock_status_ui <- function(id) {
       ),
 
       nav_panel(
-        "Trends by group", value = "trends_by_group",   # <-- NEW value
+        "Trends by group", value = "trends_by_group",   
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -102,7 +102,7 @@ mod_stock_status_ui <- function(id) {
       ),
 
       nav_panel(
-        "Kobe-CLD", value = "kobe_cld",   # <-- NEW value
+        "Kobe-CLD", value = "kobe_cld",  
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black", open = FALSE,
@@ -189,6 +189,7 @@ mod_stock_status_server <- function(
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    ################################## bookmarking #########################################
     # RESTORE once, defer until after first flush, then push up
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
@@ -215,27 +216,17 @@ mod_stock_status_server <- function(
     )
 
 
-    # output$ecoregion_label <- renderText({
-    #   req(selected_ecoregion())
-    #   paste("Ecoregion:", selected_ecoregion())
-    # })
+    ################################## header + glossary #########################################
     output$ecoregion_label <- renderUI({
       req(selected_ecoregion())
       tags$span(tags$b("Ecoregion:"), " ", selected_ecoregion())
     })
 
-    # output$current_date <- renderText({
-    #   paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
-    # })
+    
     output$current_date <- renderUI({
       tab <- input$main_tabset
       if (is.null(tab)) tab <- "landings"
-
-      # date_text <- switch(tab,
-      #   "landings" = "October, 2025",
-      #   "discards" = format(Sys.Date(), "%B %d, %Y"),
-      #   ""
-      # )
+      
       date_text <- format(Sys.Date(), "%B %d, %Y")
 
       tagList(
@@ -251,26 +242,13 @@ mod_stock_status_server <- function(
        df[, intersect(names(df), c("term", "definition", "source")), drop = FALSE]
      })
    )
-    # # One modal; terms switch with the sub-tab
-    #   mod_glossary_modal_server(
-    #     "status_glossary",
-    #     terms = reactive({
-    #       tab <- input$main_tabset
-    #       if (identical(tab, "stock_status")) {
-    #         glossary_for("Stock Status")
-    #       } else {
-    #         glossary_for("Stock Status")
-    #       }
-    #     }),
-    #     title = "Glossary",
-    #     size = "l"
-    #   )
+    
 
     output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       HTML(select_text(texts, "status", "sidebar"))
     })
 
-    ################# Status summary tab #####################
+    ######################### Status summary tab #################################################
 
     catch_current <- reactive({
       stockstatus_CLD_current(format_sag(shared$SAG, shared$SID))

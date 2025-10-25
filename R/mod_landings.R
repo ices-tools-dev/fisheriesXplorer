@@ -97,6 +97,7 @@ mod_landings_server <- function(
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    ################################## bookmarking #########################################
     # RESTORE once, defer until after first flush, then push up
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
@@ -124,16 +125,7 @@ mod_landings_server <- function(
       tags$span(tags$b("Ecoregion:"), " ", selected_ecoregion())
     })
 
-    # output$current_date <- renderText({
-    #   tab <- input$main_tabset
-    #   date_string <- switch(tab,
-    #     "landings" = "Last data update: October, 2025",
-    #     "discards" = paste0("Last data update: ", format(Sys.Date(), "%B %d, %Y"))
-    #     # "Last update: December 05, 2024" # default
-    #   )
-    #   date_string
-    # })
-    # RIGHT side: tab-aware date + Glossary link
+    ################################## header + glossary #########################################
     output$current_date <- renderUI({
       tab <- input$main_tabset
       if (is.null(tab)) tab <- "landings"
@@ -150,7 +142,7 @@ mod_landings_server <- function(
         mod_glossary_float_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
       )
     })
-    
+
     mod_glossary_float_server(
      "app_glossary",
      terms = reactive({
@@ -158,21 +150,7 @@ mod_landings_server <- function(
        df[, intersect(names(df), c("term", "definition", "source")), drop = FALSE]
      })
    )
-    # # One modal; terms switch with the sub-tab
-    # mod_glossary_modal_server(
-    #   "landings_glossary",
-    #   terms = reactive({
-    #     tab <- input$main_tabset
-    #     if (identical(tab, "discards")) {
-    #       glossary_for("Discards")
-    #     } else {
-    #       glossary_for("Landings")
-    #     }
-    #   }),
-    #   title = "Glossary",
-    #   size = "l"
-    # )
-
+    
     output$landings_text <- renderUI({
       HTML(select_text(texts, "landings_discards", "landings"))
     })
@@ -197,7 +175,7 @@ mod_landings_server <- function(
       rda_path <- paste0("./data/", acronym, ".rda")
       load(rda_path)
       fig <- plot_catch_trends_plotly(get(get_ecoregion_acronym(ecoregion)), type = input$landings_layer_selector, line_count = params$n, dataUpdated = "October, 2025", session = session, ecoregion = acronym) # %>%
-      # plotly::layout(legend = list(orientation = "v", title = list(text = paste0("<b>", input$landings_layer_selector, "</b>"))))
+      
 
       for (i in 1:length(fig$x$data)) {
         if (!is.null(fig$x$data[[i]]$name)) {
