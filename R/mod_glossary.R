@@ -265,102 +265,58 @@
 # Non-blocking floating popup (fixed position) with reactable glossary.
 # Works with Bootstrap 3. No offcanvas/BS5 needed.
 
-mod_glossary_float_ui <- function(id, link_text = "Glossary", panel_title = "Glossary",
-                                  width_px = 600, height_css = "30vh") {
+mod_glossary_float_ui <- function(id, link_text = "Glossary", panel_title = "Glossary") {
   ns <- NS(id)
 
   tagList(
-    # Trigger link
-    actionLink(
-      ns("open"),
-      label = tagList(icon("book"), link_text),
-      class = "glossary-link",
-      style = "margin-left:.5rem;"
-    ),
+    actionLink(ns("open"), label = tagList(icon("book"), link_text),
+               class = "glossary-link", style = "margin-left:.5rem;"),
 
-    # Floating overlay panel (initially hidden)
+    # Panel starts hidden; external CSS (.glossary-float) handles size/looks
     tags$div(
       id = ns("panel"),
       class = "glossary-float",
-      style = paste0(
-        "display:none; position:fixed; right:20px; top:80px; z-index:2000; ",
-        "width:", width_px, "px; background:#fff; border:1px solid #ddd; ",
-        "border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.2); overflow:hidden;"
-      ),
-      # Header
+      style = "display:none;",
       div(
         class = "g-header",
         span(class = "g-title", panel_title),
-        tags$button(
-          type = "button", class = "g-close-btn",
-          onclick = paste0("document.getElementById('", ns("panel"), "').style.display='none';"),
-          HTML("&times;")
-        )
+        tags$button(type = "button", class = "g-close-btn",
+                    onclick = paste0("document.getElementById('", ns("panel"), "').style.display='none';"),
+                    HTML("&times;"))
       ),
-      # Body
-      div(
-        class = "g-body",
-        style = paste0("height:", height_css, "; overflow:auto; padding:10px;"),
-        reactable::reactableOutput(ns("tbl"))
-      )
+      div(class = "g-body", reactable::reactableOutput(ns("tbl")))
     ),
 
-    # Minimal styles and click handler (pure client-side)
-    tags$style(HTML("
-      .g-header { display:flex; align-items:center; justify-content:space-between;
-                  padding:8px 12px; background:#f7f7f7; border-bottom:1px solid #e5e5e5; }
-      .g-title { font-weight:600; }
-      .g-close-btn { border:none; background:transparent; font-size:22px; line-height:1; cursor:pointer; }
-      .g-body .src-link { font-size:0.85em; opacity:0.85; margin-left:.35rem; }
-      .g-body a { text-decoration:none; }
-      /* simple 'draggable-ish': allow text selection off, cursor move on header */
-      .g-header { cursor:move; user-select:none; -webkit-user-select:none; }
-    ")),
-
-    # JS: open on click + lightweight dragging on header
+    
     tags$script(HTML(paste0("
       (function(){
         var openEl  = document.getElementById('", ns("open"), "');
         var panelEl = document.getElementById('", ns("panel"), "');
         if(openEl && panelEl){
-          openEl.addEventListener('click', function(e){
-            e.preventDefault();
-            panelEl.style.display = 'block';
-          });
-
-          // Dragging logic on header
+          openEl.addEventListener('click', function(e){ e.preventDefault(); panelEl.style.display = 'flex'; });
           var header = panelEl.querySelector('.g-header');
           var isDown=false, startX=0, startY=0, startRight=0, startTop=0;
           if(header){
             header.addEventListener('mousedown', function(ev){
-              isDown = true;
-              startX = ev.clientX; startY = ev.clientY;
-              // compute from current right/top (fixed)
-              var cs = window.getComputedStyle(panelEl);
-              startRight = parseInt(cs.right,10) || 0;
-              startTop   = parseInt(cs.top,10)   || 0;
+              isDown = true; startX = ev.clientX; startY = ev.clientY;
+              var cs = window.getComputedStyle(panelEl); startRight = parseInt(cs.right,10) || 0; startTop = parseInt(cs.top,10) || 0;
               ev.preventDefault();
             });
             document.addEventListener('mousemove', function(ev){
-              if(!isDown) return;
-              var dx = ev.clientX - startX;
-              var dy = ev.clientY - startY;
-              // moving right: decrease 'right'; moving left: increase 'right'
-              panelEl.style.right = (startRight - dx) + 'px';
-              panelEl.style.top   = (startTop   + dy) + 'px';
+              if(!isDown) return; var dx = ev.clientX - startX; var dy = ev.clientY - startY;
+              panelEl.style.right = (startRight - dx) + 'px'; panelEl.style.top = (startTop + dy) + 'px';
             });
             document.addEventListener('mouseup', function(){ isDown=false; });
           }
-
-          // Close on ESC
-          document.addEventListener('keydown', function(ev){
-            if(ev.key === 'Escape') panelEl.style.display = 'none';
-          });
+          document.addEventListener('keydown', function(ev){ if(ev.key === 'Escape') panelEl.style.display = 'none'; });
         }
       })();
     ")))
   )
 }
+
+
+
 
 mod_glossary_float_server <- function(id, terms) {
   moduleServer(id, function(input, output, session) {
@@ -414,7 +370,7 @@ mod_glossary_float_server <- function(id, terms) {
         columns = list(
           Term = reactable::colDef(minWidth = 100),
           Definition = reactable::colDef(
-            html = TRUE, minWidth = 400
+            html = TRUE, minWidth = 350
             
           )
         )

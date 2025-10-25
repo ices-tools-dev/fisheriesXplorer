@@ -241,23 +241,30 @@ mod_stock_status_server <- function(
       tagList(
         tags$span(tags$b("Last data update:"), " ", date_text),
         tags$span(" \u00B7 "),
-        mod_glossary_modal_ui(ns("status_glossary"), link_text = "Glossary")
+        mod_glossary_float_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
       )
     })
-    # One modal; terms switch with the sub-tab
-      mod_glossary_modal_server(
-        "status_glossary",
-        terms = reactive({
-          tab <- input$main_tabset
-          if (identical(tab, "stock_status")) {
-            glossary_for("Stock Status")
-          } else {
-            glossary_for("Stock Status")
-          }
-        }),
-        title = "Glossary",
-        size = "l"
-      )
+    mod_glossary_float_server(
+     "app_glossary",
+     terms = reactive({
+       df <- select_text(texts, "glossary", NULL) # your texts.rda table
+       df[, intersect(names(df), c("term", "definition", "source")), drop = FALSE]
+     })
+   )
+    # # One modal; terms switch with the sub-tab
+    #   mod_glossary_modal_server(
+    #     "status_glossary",
+    #     terms = reactive({
+    #       tab <- input$main_tabset
+    #       if (identical(tab, "stock_status")) {
+    #         glossary_for("Stock Status")
+    #       } else {
+    #         glossary_for("Stock Status")
+    #       }
+    #     }),
+    #     title = "Glossary",
+    #     size = "l"
+    #   )
 
     output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       HTML(select_text(texts, "status", "sidebar"))
