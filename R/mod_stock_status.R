@@ -86,7 +86,7 @@ mod_stock_status_ui <- function(id) {
                   choices = c(
                     "Elasmobranchs" = "elasmobranch",
                     "Benthic"       = "benthic",
-                    "Crustacean"    = "crustacean",
+                    "Shellfish"    = "shellfish",
                     "Demersal"      = "demersal",
                     "Pelagic"       = "pelagic"
                   )
@@ -119,7 +119,7 @@ mod_stock_status_ui <- function(id) {
                     choices = c(
                       "Benthic"   = "benthic",
                       "Demersal"  = "demersal",
-                      "Crustacean"= "crustacean",
+                      "Shellfish"= "shellfish",
                       "Pelagic"   = "pelagic",
                       "All Stocks"= "All"
                     ),
@@ -449,7 +449,7 @@ mod_stock_status_server <- function(
     output$status_trends <- renderPlotly({
       req(!is.null(input$status_trend_selector))
       if (input$status_trend_selector == "all_stocks") {
-        guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+        guild <- c("demersal", "pelagic", "shellfish", "benthic", "elasmobranch")
       } else {
         guild <- input$status_trend_selector
       }
@@ -525,7 +525,7 @@ mod_stock_status_server <- function(
 
     kobe_cld_data <- reactive({
       if (input$status_kobe_cld_selector == "All") {
-        guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+        guild <- c("demersal", "pelagic", "shellfish", "benthic", "elasmobranch")
         tmp <- catch_current() %>% dplyr::filter(FisheriesGuild %in% guild)
         tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, return_data = TRUE)
       } else {

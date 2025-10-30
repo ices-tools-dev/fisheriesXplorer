@@ -27,6 +27,7 @@ getSID <- function(year, EcoR) {
 
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
         # message("SID Data processing complete.")
+        stock_list_long$FisheriesGuild[stock_list_long$FisheriesGuild == "crustacean"] <- "shellfish"
         return(stock_list_long)
 } 
 
@@ -108,7 +109,8 @@ format_sag_status_new <- function(df) {
         df<- df[order(-df$year),]
         df <- df[!duplicated(df$key), ]
         df<- subset(df, select = -key)
-        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild)) #, stockComponent,adviceValue
+        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild))#, stockComponent,adviceValue
+        df$FisheriesGuild[df$FisheriesGuild == "crustacean"] <- "shellfish" 
         df<- tidyr::spread(df,type, status)
         
         df2<- dplyr::filter(df,lineDescription != "Maximum Sustainable Yield")
@@ -175,6 +177,8 @@ format_sag <- function(sag,sid){
         
         df1$FisheriesGuild <- tolower(df1$FisheriesGuild)
         
+        # replace the fisheries guild == crustacean with shellfish
+        df1$FisheriesGuild[df1$FisheriesGuild == "crustacean"] <- "shellfish"
         # df1 <- subset(df1, select = -c(FishStock))
         
         check <-unique(df1[c("StockKeyLabel", "Purpose")])
@@ -390,7 +394,7 @@ plot_status_prop_pies <- function(
 
   df2$FisheriesGuild <- factor(
     tolower(df2$FisheriesGuild),
-    levels = c("total","benthic","demersal","pelagic","crustacean","elasmobranch")
+    levels = c("total","benthic","demersal","pelagic","shellfish","elasmobranch")
   )
 
   # --- Dynamic spacing & margins (based on width and # of columns)
