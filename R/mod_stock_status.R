@@ -81,9 +81,10 @@ mod_stock_status_ui <- function(id) {
             card(
               height = "85vh", full_screen = TRUE,
               card_header(
-                radioButtons(ns("status_trend_selector"), "Select group",
+                radioButtons(ns("status_trend_selector"), "Select fisheries guild:",
                   inline = TRUE,
                   choices = c(
+                    "All guilds"   = "all_guilds",
                     "Elasmobranchs" = "elasmobranch",
                     "Benthic"       = "benthic",
                     "Crustacean"    = "crustacean",
@@ -92,7 +93,7 @@ mod_stock_status_ui <- function(id) {
                   )
                 ),
                 downloadLink(ns("download_trends_data"),
-                  HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                  HTML(paste0("<span class='hovertext' data-hover='Download status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                 )
               ),
               card_body(withSpinner(plotlyOutput(ns("status_trends"), height = "68vh")))
@@ -448,12 +449,12 @@ mod_stock_status_server <- function(
 
     output$status_trends <- renderPlotly({
       req(!is.null(input$status_trend_selector))
-      if (input$status_trend_selector == "all_stocks") {
-        guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
-      } else {
-        guild <- input$status_trend_selector
-      }
-      plot_stock_trends(trends_data(), guild, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
+      # if (input$status_trend_selector == "all_stocks") {
+      #   guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+      # } else {
+      #   guild <- input$status_trend_selector
+      # }
+      plot_stock_trends(trends_data(), input$status_trend_selector, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
     ######################### Download stock trends data ##########################################

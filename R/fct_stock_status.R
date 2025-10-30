@@ -567,200 +567,476 @@ plot_GES_pies <- function(x, y, return_data = FALSE, width_px = 800) {
   }
 }
 
-plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE, ecoregion = NULL) {
-        # --- Filter for selected guild
-        df <- dplyr::filter(x, FisheriesGuild == guild)
+# plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE, ecoregion = NULL) {
+#         # --- Filter for selected guild
+#         df <- dplyr::filter(x, FisheriesGuild == guild)
         
-        if (nrow(df) == 0) {
-                return(
-                        plotly::plot_ly() %>%
-                                plotly::layout(
-                                        xaxis = list(visible = FALSE),
-                                        yaxis = list(visible = FALSE),
-                                        annotations = list(
-                                                list(
-                                                        text = paste0("No data available for guild: ", guild),
-                                                        xref = "paper",
-                                                        yref = "paper",
-                                                        x = 0.5,
-                                                        y = 0.5, # center of plot
-                                                        showarrow = FALSE,
-                                                        font = list(size = 20)
-                                                )
-                                        )
-                                )
-                )
-        }
+#         if (nrow(df) == 0) {
+#                 return(
+#                         plotly::plot_ly() %>%
+#                                 plotly::layout(
+#                                         xaxis = list(visible = FALSE),
+#                                         yaxis = list(visible = FALSE),
+#                                         annotations = list(
+#                                                 list(
+#                                                         text = paste0("No data available for guild: ", guild),
+#                                                         xref = "paper",
+#                                                         yref = "paper",
+#                                                         x = 0.5,
+#                                                         y = 0.5, # center of plot
+#                                                         showarrow = FALSE,
+#                                                         font = list(size = 20)
+#                                                 )
+#                                         )
+#                                 )
+#                 )
+#         }
 
-        # --- Dynamic color palette for all stocks
-        adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
-        values <- grDevices::hcl.colors(length(adj_names), palette = "Temps")
-        names(values) <- adj_names
-        values <- c(values, c(MEAN = "black"))
+#         # --- Dynamic color palette for all stocks
+#         adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
+#         values <- grDevices::hcl.colors(length(adj_names), palette = "Temps")
+#         names(values) <- adj_names
+#         values <- c(values, c(MEAN = "black"))
         
        
-        # --- Keep only the two metrics of interest and rename
-        df <- df %>%
-                dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
-                dplyr::mutate(Metric = dplyr::recode(
-                        Metric,
-                        "F_FMSY"          = "F/F<sub>MSY</sub>",
-                        "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
-                ))
+#         # --- Keep only the two metrics of interest and rename
+#         df <- df %>%
+#                 dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
+#                 dplyr::mutate(Metric = dplyr::recode(
+#                         Metric,
+#                         "F_FMSY"          = "F/F<sub>MSY</sub>",
+#                         "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
+#                 ))
 
-        # --- Split mean vs stocks
-        mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+#         # --- Split mean vs stocks
+#         mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
         
-        # --- Remove any existing mean for the last year, suggestion of ADGFO 
-        last_year_FMSY <- max(mean_df$Year[mean_df$Metric == "F/F<sub>MSY</sub>"], na.rm = TRUE)
-        last_year_Btrigger <- max(mean_df$Year[mean_df$Metric == "SSB/MSY B<sub>trigger</sub>"], na.rm = TRUE)
-        idx_FMSY <- mean_df$Metric == "F/F<sub>MSY</sub>" & mean_df$Year == last_year_FMSY
-        idx_Btrigger <- mean_df$Metric == "SSB/MSY B<sub>trigger</sub>" & mean_df$Year == last_year_Btrigger        
-        mean_df$Value[idx_FMSY] <- NA_real_
-        mean_df$Value[idx_Btrigger] <- NA_real_
+#         # --- Remove any existing mean for the last year, suggestion of ADGFO 
+#         last_year_FMSY <- max(mean_df$Year[mean_df$Metric == "F/F<sub>MSY</sub>"], na.rm = TRUE)
+#         last_year_Btrigger <- max(mean_df$Year[mean_df$Metric == "SSB/MSY B<sub>trigger</sub>"], na.rm = TRUE)
+#         idx_FMSY <- mean_df$Metric == "F/F<sub>MSY</sub>" & mean_df$Year == last_year_FMSY
+#         idx_Btrigger <- mean_df$Metric == "SSB/MSY B<sub>trigger</sub>" & mean_df$Year == last_year_Btrigger        
+#         mean_df$Value[idx_FMSY] <- NA_real_
+#         mean_df$Value[idx_Btrigger] <- NA_real_
 
-        df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
+#         df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
 
-        # unique group ID per render (prevents stale highlights)
-        group_id <- paste0("stocks_", round(as.numeric(Sys.time()) * 1000))
+#         # unique group ID per render (prevents stale highlights)
+#         group_id <- paste0("stocks_", round(as.numeric(Sys.time()) * 1000))
 
 
-        # --- SharedData for all stock traces (used across both subplots)
-        sd <- crosstalk::SharedData$new(df2, key = ~StockKeyLabel, group = group_id)
+#         # --- SharedData for all stock traces (used across both subplots)
+#         sd <- crosstalk::SharedData$new(df2, key = ~StockKeyLabel, group = group_id)
 
-        # --- Helper to build one panel using a filter transform
-        make_panel <- function(metric_label, yaxis_title, show_legend = TRUE) {
-                plotly::plot_ly(
-                        data = sd,
-                        x = ~Year,
-                        y = ~Value,
-                        color = ~StockKeyLabel,
-                        colors = values,
-                        type = "scatter",
-                        mode = "lines",
-                        name = ~StockKeyLabel,
-                        legendgroup = ~StockKeyLabel,
-                        ids = ~StockKeyLabel,
-                        transforms = list(list(
-                                type      = "filter",
-                                target    = ~Metric,
-                                operation = "=",
-                                value     = metric_label
-                        )),
-                        showlegend = show_legend,
-                        line = list(width = 3)
-                ) %>%
-                        plotly::add_trace(
-                                data = dplyr::filter(mean_df, Metric == metric_label),
-                                x = ~Year,
-                                y = ~Value,
-                                name = "Mean",
-                                type = "scatter",
-                                mode = "lines",
-                                line = list(color = "black", width = 5),
-                                showlegend = show_legend,
-                                inherit = FALSE
-                        ) %>%
-                        plotly::layout(
-                                yaxis = list(
-                                        title = yaxis_title,
-                                        titlefont = list(size = 16),
-                                        tickfont = list(size = 14),
-                                        zeroline = TRUE,
-                                        zerolinecolor = "black",
-                                        zerolinewidth = 2
-                                ),
-                                shapes = list(
-                                        # horizontal reference line at y = 1
-                                        list(
-                                                type = "line",
-                                                x0 = safe_min(df$Year, 0),
-                                                x1 = safe_max(df$Year, 1),
-                                                y0 = 1,
-                                                y1 = 1,
-                                                line = list(color = "#000000", width = 1)
-                                        ),
-                                        # black border around the plot area
-                                        list(
-                                                type = "rect",
-                                                xref = "paper",
-                                                yref = "paper",
-                                                x0 = 0,
-                                                x1 = 1,
-                                                y0 = 0,
-                                                y1 = 1,
-                                                line = list(color = "black", width = 1),
-                                                fillcolor = "rgba(0,0,0,0)"
-                                        )
-                                )
-                        )
-        }
+#         # --- Helper to build one panel using a filter transform
+#         make_panel <- function(metric_label, yaxis_title, show_legend = TRUE) {
+#                 plotly::plot_ly(
+#                         data = sd,
+#                         x = ~Year,
+#                         y = ~Value,
+#                         color = ~StockKeyLabel,
+#                         colors = values,
+#                         type = "scatter",
+#                         mode = "lines",
+#                         name = ~StockKeyLabel,
+#                         legendgroup = ~StockKeyLabel,
+#                         ids = ~StockKeyLabel,
+#                         transforms = list(list(
+#                                 type      = "filter",
+#                                 target    = ~Metric,
+#                                 operation = "=",
+#                                 value     = metric_label
+#                         )),
+#                         showlegend = show_legend,
+#                         line = list(width = 3)
+#                 ) %>%
+#                         plotly::add_trace(
+#                                 data = dplyr::filter(mean_df, Metric == metric_label),
+#                                 x = ~Year,
+#                                 y = ~Value,
+#                                 name = "Mean",
+#                                 type = "scatter",
+#                                 mode = "lines",
+#                                 line = list(color = "black", width = 5),
+#                                 showlegend = show_legend,
+#                                 inherit = FALSE
+#                         ) %>%
+#                         plotly::layout(
+#                                 yaxis = list(
+#                                         title = yaxis_title,
+#                                         titlefont = list(size = 16),
+#                                         tickfont = list(size = 14),
+#                                         zeroline = TRUE,
+#                                         zerolinecolor = "black",
+#                                         zerolinewidth = 2
+#                                 ),
+#                                 shapes = list(
+#                                         # horizontal reference line at y = 1
+#                                         list(
+#                                                 type = "line",
+#                                                 x0 = safe_min(df$Year, 0),
+#                                                 x1 = safe_max(df$Year, 1),
+#                                                 y0 = 1,
+#                                                 y1 = 1,
+#                                                 line = list(color = "#000000", width = 1)
+#                                         ),
+#                                         # black border around the plot area
+#                                         list(
+#                                                 type = "rect",
+#                                                 xref = "paper",
+#                                                 yref = "paper",
+#                                                 x0 = 0,
+#                                                 x1 = 1,
+#                                                 y0 = 0,
+#                                                 y1 = 1,
+#                                                 line = list(color = "black", width = 1),
+#                                                 fillcolor = "rgba(0,0,0,0)"
+#                                         )
+#                                 )
+#                         )
+#         }
 
-        # --- Build both panels
-        plot1 <- make_panel("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
-        plot2 <- make_panel("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
+#         # --- Build both panels
+#         plot1 <- make_panel("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
+#         plot2 <- make_panel("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
 
-        # --- Combine panels and enable cross-highlighting
-        final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
-                plotly::layout(
-                        xaxis = list(
-                                title = "Year",
-                                titlefont = list(size = 16),
-                                tickfont = list(size = 14)
-                        ),
-                        margin = list(b = 100, r = 50),
-                        legend = list(
-                                title = list(text = "Stock name", font = list(size = 16)),
-                                orientation = "h",
-                                x = 0.5, y = 1.05, # center above the plot
-                                xanchor = "center",
-                                yanchor = "bottom",
-                                font = list(size = 16)
-                        ),
-                        annotations = list(
-                                list(
-                                        x = 1, y = -0.15, # relative to plotting area (0–1, left–right / bottom–top)
-                                        xref = "paper",
-                                        yref = "paper",
-                                        text = paste0("ICES Stock Assessment Database, ", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
-                                        showarrow = FALSE,
-                                        xanchor = "right",
-                                        yanchor = "bottom"
-                                ),
-                                list(
-                                        text = paste0("Status trends: ", guild, " (", ecoregion, ")"),
-                                        x = 0.01, y = 0.99, # relative to plotting area (0–1, left–right / bottom–top)
-                                        xref = "paper", yref = "paper",
-                                        showarrow = FALSE,
-                                        xanchor = "left",
-                                        yanchor = "top",
-                                        font = list(size = 18, color = "black")
-                                )
-                        )
-                ) %>%
-                plotly::highlight(
-                        on = "plotly_click",
-                        off = "plotly_doubleclick",
-                        opacityDim = 0.4, # dims non-selected lines in both panels
-                        selected = plotly::attrs_selected(line = list(width = 5))
-                ) %>% 
-                plotly::config(
-                        responsive = TRUE,
-                        toImageButtonOptions = list(
-                                filename = paste0(ecoregion, "_StatusTrends_", guild, "_", format(Sys.Date(), "%d-%b-%y")),
-                                format   = "png",
-                                scale    = 3
-                                # width  = 1600,
-                                # height = 900
-                        )
-                )
+#         # --- Combine panels and enable cross-highlighting
+#         final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+#                 plotly::layout(
+#                         xaxis = list(
+#                                 title = "Year",
+#                                 titlefont = list(size = 16),
+#                                 tickfont = list(size = 14)
+#                         ),
+#                         margin = list(b = 100, r = 50),
+#                         legend = list(
+#                                 title = list(text = "Stock name", font = list(size = 16)),
+#                                 orientation = "h",
+#                                 x = 0.5, y = 1.05, # center above the plot
+#                                 xanchor = "center",
+#                                 yanchor = "bottom",
+#                                 font = list(size = 16)
+#                         ),
+#                         annotations = list(
+#                                 list(
+#                                         x = 1, y = -0.15, # relative to plotting area (0–1, left–right / bottom–top)
+#                                         xref = "paper",
+#                                         yref = "paper",
+#                                         text = paste0("ICES Stock Assessment Database, ", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
+#                                         showarrow = FALSE,
+#                                         xanchor = "right",
+#                                         yanchor = "bottom"
+#                                 ),
+#                                 list(
+#                                         text = paste0("Status trends: ", guild, " (", ecoregion, ")"),
+#                                         x = 0.01, y = 0.99, # relative to plotting area (0–1, left–right / bottom–top)
+#                                         xref = "paper", yref = "paper",
+#                                         showarrow = FALSE,
+#                                         xanchor = "left",
+#                                         yanchor = "top",
+#                                         font = list(size = 18, color = "black")
+#                                 )
+#                         )
+#                 ) %>%
+#                 plotly::highlight(
+#                         on = "plotly_click",
+#                         off = "plotly_doubleclick",
+#                         opacityDim = 0.4, # dims non-selected lines in both panels
+#                         selected = plotly::attrs_selected(line = list(width = 5))
+#                 ) %>% 
+#                 plotly::config(
+#                         responsive = TRUE,
+#                         toImageButtonOptions = list(
+#                                 filename = paste0(ecoregion, "_StatusTrends_", guild, "_", format(Sys.Date(), "%d-%b-%y")),
+#                                 format   = "png",
+#                                 scale    = 3
+#                                 # width  = 1600,
+#                                 # height = 900
+#                         )
+#                 )
 
-        if (return_data) {
-                return(df)
-        } else {
-                return(final_plot)
-        }
+#         if (return_data) {
+#                 return(df)
+#         } else {
+#                 return(final_plot)
+#         }
+# }
+plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE, ecoregion = NULL) {
+  # --- Select data (special case: all guilds)
+  if (identical(guild, "all_guilds")) {
+    df <- x
+  } else {
+    df <- dplyr::filter(x, FisheriesGuild == guild)
+  }
+
+  if (nrow(df) == 0) {
+    return(
+      plotly::plot_ly() %>%
+        plotly::layout(
+          xaxis = list(visible = FALSE),
+          yaxis = list(visible = FALSE),
+          annotations = list(
+            list(
+              text = paste0("No data available for guild: ", guild),
+              xref = "paper", yref = "paper", x = 0.5, y = 0.5,
+              showarrow = FALSE, font = list(size = 20)
+            )
+          )
+        )
+    )
+  }
+
+  # --- Keep only the two metrics and rename (HTML labels)
+  df <- df %>%
+    dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
+    dplyr::mutate(Metric = dplyr::recode(
+      Metric,
+      "F_FMSY"          = "F/F<sub>MSY</sub>",
+      "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
+    ))
+
+  # Unique group ID for cross-highlighting
+  group_id <- paste0("stocks_", round(as.numeric(Sys.time()) * 1000))
+
+  # ... keep your function header and the single-guild branch unchanged ...
+
+# ====== ALL-GUILDS BRANCH (means only, no ghost traces) ======
+if (identical(guild, "all_guilds")) {
+
+  # Prefer provided "Mean"; else compute per guild/metric/year
+  mean_df <- df %>% dplyr::filter(StockKeyLabel == "Mean")
+  if (nrow(mean_df) == 0) {
+    mean_df <- df %>%
+      dplyr::filter(StockKeyLabel != "Mean") %>%
+      dplyr::group_by(FisheriesGuild, Metric, Year) %>%
+      dplyr::summarise(Value = mean(Value, na.rm = TRUE), .groups = "drop")
+  }
+
+  # Remove last year per guild+metric
+  mean_df <- mean_df %>%
+    dplyr::group_by(FisheriesGuild, Metric) %>%
+    dplyr::mutate(Value = ifelse(Year == max(Year, na.rm = TRUE), NA_real_, Value)) %>%
+    dplyr::ungroup()
+
+  # Split by metric
+  mean_f <- dplyr::filter(mean_df, Metric == "F/F<sub>MSY</sub>")
+  mean_b <- dplyr::filter(mean_df, Metric == "SSB/MSY B<sub>trigger</sub>")
+
+  guilds_f <- sort(unique(mean_f$FisheriesGuild))
+  guilds_b <- sort(unique(mean_b$FisheriesGuild))
+  all_g    <- sort(unique(c(guilds_f, guilds_b)))
+
+  # Palette by guild
+  pal_g <- grDevices::hcl.colors(length(all_g), palette = "Temps")
+  names(pal_g) <- all_g
+
+  # Helper: build a panel with one trace per guild, controlling showlegend per guild
+  make_panel_means_loop <- function(df_metric, yaxis_title, legend_show_for) {
+    p <- plotly::plot_ly()
+    present <- unique(df_metric$FisheriesGuild)
+
+    for (g in all_g) {
+      if (g %in% present) {
+        d_g <- df_metric[df_metric$FisheriesGuild == g, , drop = FALSE]
+        p <- p %>%
+          plotly::add_trace(
+            data = d_g,
+            x = ~Year, y = ~Value,
+            type = "scatter", mode = "lines",
+            name = g, legendgroup = g,
+            showlegend = g %in% legend_show_for,
+            line = list(width = 4, color = pal_g[[g]])
+          )
+      }
+    }
+
+    p %>%
+      plotly::layout(
+        yaxis = list(
+          title = yaxis_title, titlefont = list(size = 16), tickfont = list(size = 14),
+          zeroline = TRUE, zerolinecolor = "black", zerolinewidth = 2
+        ),
+        shapes = list(
+          list(type = "line", xref = "paper", x0 = 0, x1 = 1, y0 = 1, y1 = 1,
+               line = list(color = "#000000", width = 1)),
+          list(type = "rect", xref = "paper", yref = "paper",
+               x0 = 0, x1 = 1, y0 = 0, y1 = 1,
+               line = list(color = "black", width = 1),
+               fillcolor = "rgba(0,0,0,0)")
+        )
+      )
+  }
+
+  # Legend logic:
+  #  - Top (F/FMSY) shows legend for guilds that have F data
+  #  - Bottom (SSB trigger) shows legend only for guilds missing in top
+  plot1 <- make_panel_means_loop(
+    mean_f, "F/F<sub>MSY</sub>",
+    legend_show_for = guilds_f
+  )
+  plot2 <- make_panel_means_loop(
+    mean_b, "SSB/MSY B<sub>trigger</sub>",
+    legend_show_for = setdiff(guilds_b, guilds_f)
+  )
+
+  final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+    plotly::layout(
+      xaxis = list(title = "Year", titlefont = list(size = 16), tickfont = list(size = 14)),
+      margin = list(b = 100, r = 50),
+      legend = list(
+        title = list(text = "<b>Fisheries guild:</b>", font = list(size = 16)),
+        orientation = "h",
+        x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom",
+        font = list(size = 16)
+      ),
+      annotations = list(
+        list(
+          x = 1, y = -0.15, xref = "paper", yref = "paper",
+          text = paste0("ICES Stock Assessment Database, ", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
+          showarrow = FALSE, xanchor = "right", yanchor = "bottom"
+        ),
+        list(
+          text = paste0("Status trends: All guilds (", ecoregion, ")"),
+          x = 0.01, y = 0.99, xref = "paper", yref = "paper",
+          showarrow = FALSE, xanchor = "left", yanchor = "top",
+          font = list(size = 18, color = "black")
+        )
+      )
+    ) %>%
+    plotly::highlight(
+      on = "plotly_click",
+      off = "plotly_doubleclick",
+      opacityDim = 0.4,
+      selected = plotly::attrs_selected(line = list(width = 6))
+    ) %>%
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = paste0(ecoregion, "_StatusTrends_AllGuilds_", format(Sys.Date(), "%d-%b-%y")),
+        format   = "png",
+        scale    = 3
+      )
+    )
+
+  if (return_data) return(mean_df) else return(final_plot)
 }
+
+
+
+  # =========================
+  # DEFAULT PATH (single guild: stocks + mean per metric)
+  # =========================
+
+  # Palette for stocks (exclude "Mean"; black for mean)
+  adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
+  values <- grDevices::hcl.colors(length(adj_names), palette = "Temps")
+  names(values) <- adj_names
+  values <- c(values, c(MEAN = "black"))
+
+  # Split mean vs stocks
+  mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
+
+  # Remove last-year mean separately per metric
+  last_year_FMSY     <- max(mean_df$Year[mean_df$Metric == "F/F<sub>MSY</sub>"], na.rm = TRUE)
+  last_year_Btrigger <- max(mean_df$Year[mean_df$Metric == "SSB/MSY B<sub>trigger</sub>"], na.rm = TRUE)
+  idx_FMSY     <- mean_df$Metric == "F/F<sub>MSY</sub>"           & mean_df$Year == last_year_FMSY
+  idx_Btrigger <- mean_df$Metric == "SSB/MSY B<sub>trigger</sub>" & mean_df$Year == last_year_Btrigger
+  mean_df$Value[idx_FMSY]     <- NA_real_
+  mean_df$Value[idx_Btrigger] <- NA_real_
+
+  df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
+
+  sd <- crosstalk::SharedData$new(df2, key = ~StockKeyLabel, group = group_id)
+
+  make_panel <- function(metric_label, yaxis_title, show_legend = TRUE) {
+    plotly::plot_ly(
+      data = sd,
+      x = ~Year, y = ~Value,
+      color = ~StockKeyLabel, colors = values,
+      type = "scatter", mode = "lines",
+      name = ~StockKeyLabel, legendgroup = ~StockKeyLabel, ids = ~StockKeyLabel,
+      transforms = list(list(
+        type = "filter", target = ~Metric, operation = "=", value = metric_label
+      )),
+      showlegend = show_legend,
+      line = list(width = 3)
+    ) %>%
+      plotly::add_trace(
+        data = dplyr::filter(mean_df, Metric == metric_label),
+        x = ~Year, y = ~Value, name = "Mean",
+        type = "scatter", mode = "lines",
+        line = list(color = "black", width = 5),
+        showlegend = show_legend,
+        inherit = FALSE
+      ) %>%
+      plotly::layout(
+        yaxis = list(
+          title = yaxis_title, titlefont = list(size = 16), tickfont = list(size = 14),
+          zeroline = TRUE, zerolinecolor = "black", zerolinewidth = 2
+        ),
+        shapes = list(
+          list(
+            type = "line",
+            x0 = safe_min(df$Year, 0), x1 = safe_max(df$Year, 1),
+            y0 = 1, y1 = 1,
+            line = list(color = "#000000", width = 1)
+          ),
+          list(
+            type = "rect", xref = "paper", yref = "paper",
+            x0 = 0, x1 = 1, y0 = 0, y1 = 1,
+            line = list(color = "black", width = 1),
+            fillcolor = "rgba(0,0,0,0)"
+          )
+        )
+      )
+  }
+
+  plot1 <- make_panel("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
+  plot2 <- make_panel("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
+
+  final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
+    plotly::layout(
+      xaxis = list(title = "Year", titlefont = list(size = 16), tickfont = list(size = 14)),
+      margin = list(b = 100, r = 50),
+      legend = list(
+        title = list(text = "<b>Stock name:</b>", font = list(size = 16)),
+        orientation = "h",
+        x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom",
+        font = list(size = 16)
+      ),
+      annotations = list(
+        list(
+          x = 1, y = -0.15, xref = "paper", yref = "paper",
+          text = paste0("ICES Stock Assessment Database, ", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
+          showarrow = FALSE, xanchor = "right", yanchor = "bottom"
+        ),
+        list(
+          text = paste0("Status trends: ", guild, " (", ecoregion, ")"),
+          x = 0.01, y = 0.99, xref = "paper", yref = "paper",
+          showarrow = FALSE, xanchor = "left", yanchor = "top",
+          font = list(size = 18, color = "black")
+        )
+      )
+    ) %>%
+    plotly::highlight(
+      on = "plotly_click",
+      off = "plotly_doubleclick",
+      opacityDim = 0.4,
+      selected = plotly::attrs_selected(line = list(width = 5))
+    ) %>%
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = paste0(ecoregion, "_StatusTrends_", guild, "_", format(Sys.Date(), "%d-%b-%y")),
+        format   = "png",
+        scale    = 3
+      )
+    )
+
+  if (return_data) return(df) else return(final_plot)
+}
+
+
 
 plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
   # --- Filter by guild
