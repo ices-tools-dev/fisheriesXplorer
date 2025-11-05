@@ -443,7 +443,7 @@ mod_stock_status_server <- function(
 
     ##################### Stock trends tab ###############################################
     trends_data <- reactive({
-      stock_trends(format_sag(shared$SAG, shared$SID))
+      stock_trends(add_proxyRefPoints(format_sag(shared$SAG, shared$SID)))
     })
 
     output$status_trends <- renderPlotly({

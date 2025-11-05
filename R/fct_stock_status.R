@@ -161,7 +161,7 @@ format_annex_table <- function(status, year, sid, sag) {
 
 
 
-format_sag <- function(sag,sid){
+format_sag <- function(sag, sid){
         # sid <- load_sid(year)
         sid <- dplyr::filter(sid,!is.na(YearOfLastAssessment))
         sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
@@ -171,7 +171,7 @@ format_sag <- function(sag,sid){
         # df1 <- left_join(x, y, by = c("StockKeyLabel", "AssessmentYear"))
         df1 <-as.data.frame(df1)
         
-        df1 <- df1[, colSums(is.na(df1)) < nrow(df1)]
+        # df1 <- df1[, colSums(is.na(df1)) < nrow(df1)]
         
         df1$FisheriesGuild <- tolower(df1$FisheriesGuild)
         
@@ -181,6 +181,80 @@ format_sag <- function(sag,sid){
         check <- check[duplicated(check$StockKeyLabel),]
         # check <-unique(df1[c("StockKeyLabel", "FisheriesGuild")])
         out <- dplyr::anti_join(df1, check)
+}
+
+add_proxyRefPoints <- function(sag_formatted) {
+        
+        custom_RefPoints <- read.table("data/custom_refpoints_2025.csv",
+                sep = ",",
+                header = TRUE,
+                stringsAsFactors = FALSE
+        )
+
+        # 1) One choice per AssessmentKey for each chart (3 = FMSY, 4 = MSYBtrigger)
+        cust_choice <- custom_RefPoints %>%
+                filter(SAGChartKey %in% c(3, 4)) %>%
+                dplyr::group_by(AssessmentKey, SAGChartKey) %>%
+                dplyr::summarise(settingValue = dplyr::first(settingValue), .groups = "drop") %>%
+                tidyr::pivot_wider(
+                        names_from = SAGChartKey,
+                        values_from = settingValue,
+                        names_prefix = "choice_"
+                )
+        # -> columns: AssessmentKey, choice_3 (1..4), choice_4 (1..4)
+        # 2) Join once, add flags/names, and overwrite values where a proxy is chosen
+        sag_final <- sag_formatted %>%
+                dplyr::left_join(cust_choice, by = "AssessmentKey") %>%
+                # ensure numeric for safety (in case they came as character)
+                dplyr::mutate(
+                        across(
+                                c(FMSY, MSYBtrigger, starts_with("CustomRefPointValue")),
+                                ~ suppressWarnings(as.numeric(.x))
+                        )
+                ) %>%
+                dplyr::mutate(
+                        # flags + proxy names
+                        FMSY_is_proxy = !is.na(choice_3),
+                        FMSY_proxy_name = dplyr::case_when(
+                                choice_3 == 1 ~ CustomRefPointName1,
+                                choice_3 == 2 ~ CustomRefPointName2,
+                                choice_3 == 3 ~ CustomRefPointName3,
+                                choice_3 == 4 ~ CustomRefPointName4,
+                                TRUE ~ NA_character_
+                        ),
+                        MSYB_is_proxy = !is.na(choice_4),
+                        MSYB_proxy_name = dplyr::case_when(
+                                choice_4 == 1 ~ CustomRefPointName1,
+                                choice_4 == 2 ~ CustomRefPointName2,
+                                choice_4 == 3 ~ CustomRefPointName3,
+                                choice_4 == 4 ~ CustomRefPointName4,
+                                TRUE ~ NA_character_
+                        ),
+
+                        # assign chosen custom VALUES; keep official when no choice exists
+                        FMSY = dplyr::coalesce(
+                                dplyr::case_when(
+                                        choice_3 == 1 ~ CustomRefPointValue1,
+                                        choice_3 == 2 ~ CustomRefPointValue2,
+                                        choice_3 == 3 ~ CustomRefPointValue3,
+                                        choice_3 == 4 ~ CustomRefPointValue4,
+                                        TRUE ~ NA_real_
+                                ),
+                                FMSY
+                        ),
+                        MSYBtrigger = dplyr::coalesce(
+                                dplyr::case_when(
+                                        choice_4 == 1 ~ CustomRefPointValue1,
+                                        choice_4 == 2 ~ CustomRefPointValue2,
+                                        choice_4 == 3 ~ CustomRefPointValue3,
+                                        choice_4 == 4 ~ CustomRefPointValue4,
+                                        TRUE ~ NA_real_
+                                ),
+                                MSYBtrigger
+                        )
+                ) %>%
+                dplyr::select(-starts_with("choice_"))
+        return(sag_final)
 }
 
 stockstatus_CLD_current <- function(x) {
