@@ -52,7 +52,7 @@ app_ui <- function(request) {
       tabPanel("Home", value = "home", mod_navigation_page_ui("navigation_page_1")),
       tabPanel("Overview", value = "overview", mod_overview_ui("overview_1")),
       tabPanel("Landings", value = "landings", mod_landings_ui("landings_1")),
-      tabPanel("Stock Status", value = "stock_status", mod_stock_status_ui("stock_status_1")),
+      tabPanel("Stock status", value = "stock_status", mod_stock_status_ui("stock_status_1")),
       # tabPanel(
       #   "Mixed Fisheries",
       #   value = "mixed_fisheries",
