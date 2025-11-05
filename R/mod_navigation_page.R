@@ -108,7 +108,7 @@ mod_navigation_page_ui <- function(id) {
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("stockStatusBtn"), label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/stock_status.svg');",
+                      style = "background-image: url('www/icons/Stock Status.svg');",
                       title = "Stock status", `aria-label` = "Stock status"
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Stock status</strong><br><br>Relative to MSY &amp; PA reference points, and MSFD descriptors"))
