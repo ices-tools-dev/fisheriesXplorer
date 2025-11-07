@@ -453,7 +453,7 @@ mod_stock_status_server <- function(
       } else {
         guild <- input$status_trend_selector
       }
-      plot_stock_trends(trends_data(), guild, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
+      plot_stock_trends(trends_data(), guild,  return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
     ######################### Download stock trends data ##########################################
