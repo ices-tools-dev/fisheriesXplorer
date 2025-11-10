@@ -251,7 +251,7 @@ mod_stock_status_server <- function(
     ######################### Status summary tab #################################################
 
     catch_current <- reactive({
-      stockstatus_CLD_current(add_proxyRefPoints(format_sag(shared$SAG, shared$SID)))
+      stockstatus_CLD_current_proxy(add_proxyRefPoints(format_sag(shared$SAG, shared$SID)))
     })
 
     output$status_summary_ices <- renderPlot({

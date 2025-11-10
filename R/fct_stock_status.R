@@ -55,7 +55,7 @@ getStatusWebService <- function(Ecoregion, sid) {
 
         df_status <- merge(sid, status_long, by = "AssessmentKey", all.x = TRUE)
         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
-
+        
         return(df_status)
 }
 
@@ -257,66 +257,136 @@ add_proxyRefPoints <- function(sag_formatted) {
         return(sag_final)
 }
 
-stockstatus_CLD_current <- function(x) {
-        df<- dplyr::select(x,Year,
-                           StockKeyLabel,
-                           FisheriesGuild,
-                           FishingPressure,
-                           AssessmentYear,
-                           FMSY,
-                           StockSize,
-                           MSYBtrigger,
-                           Catches,
-                           Landings,
-                           Discards)
-        df$FishingPressure <- as.numeric(df$FishingPressure)
-        df$StockSize <- as.numeric(df$StockSize)
-        df$FMSY <- as.numeric(df$FMSY)
-        df$MSYBtrigger <- as.numeric(df$MSYBtrigger)
-        df$AssessmentYear <- as.numeric(df$AssessmentYear)
-        df$Catches <- as.numeric(df$Catches)
-        df$Landings <- as.numeric(df$Landings)
-        df$Discards <- as.numeric(df$Discards)
-        df$Year <- as.numeric(df$Year)
+# stockstatus_CLD_current <- function(x) {
+#         browser()
+#         df<- dplyr::select(x,Year,
+#                            StockKeyLabel,
+#                            FisheriesGuild,
+#                            FishingPressure,
+#                            AssessmentYear,
+#                            FMSY,
+#                            StockSize,
+#                            MSYBtrigger,
+#                            Catches,
+#                            Landings,
+#                            Discards)
+#         df$FishingPressure <- as.numeric(df$FishingPressure)
+#         df$StockSize <- as.numeric(df$StockSize)
+#         df$FMSY <- as.numeric(df$FMSY)
+#         df$MSYBtrigger <- as.numeric(df$MSYBtrigger)
+#         df$AssessmentYear <- as.numeric(df$AssessmentYear)
+#         df$Catches <- as.numeric(df$Catches)
+#         df$Landings <- as.numeric(df$Landings)
+#         df$Discards <- as.numeric(df$Discards)
+#         df$Year <- as.numeric(df$Year)
 
-        df2 <- dplyr::group_by(df,StockKeyLabel)
-        df2 <- dplyr::filter(df2,Year == AssessmentYear - 1)
-        df2 <- dplyr::mutate(df2,F_FMSY =  ifelse(!is.na(FMSY),
-                                                                FishingPressure / FMSY,
-                                                                NA))
-        df2 <- dplyr::select(df2,StockKeyLabel,
-                                               FisheriesGuild,
-                                               F_FMSY,
-                                               Catches,
-                                               Landings,
-                                               Discards,
-                                               FMSY,
-                                               FishingPressure)
-        df3 <- dplyr::group_by(df,StockKeyLabel)
-        df3 <- dplyr::filter(df3, Year %in% c(AssessmentYear, (AssessmentYear - 1)))
-        df3 <- dplyr::mutate(df3, SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger),
-                                                                        StockSize / MSYBtrigger,
-                                                                        NA))
-        df3 <- dplyr::select(df3, StockKeyLabel,Year,
-                                               FisheriesGuild,
-                                               SSB_MSYBtrigger,
-                                               StockSize,
-                                               MSYBtrigger)
-        check <- unique(df3[c("StockKeyLabel", "Year", "MSYBtrigger")])
-        check <- check[order(-check$Year),]
-        check2 <- check[duplicated(check$StockKeyLabel),]
-        df3 <- dplyr::anti_join(df3,check2)
-        df4 <- dplyr::full_join(df2, df3)
-        df4 <- dplyr::mutate(df4, Status = ifelse(is.na(F_FMSY) | is.na(SSB_MSYBtrigger),
-                                      "GREY",
-                                      if_else(F_FMSY < 1 & SSB_MSYBtrigger >= 1,
-                                              "GREEN",
-                                              "RED",
-                                              "GREY")))
-        df4
+#         df2 <- dplyr::group_by(df,StockKeyLabel)
+#         df2 <- dplyr::filter(df2,Year == AssessmentYear - 1)
+#         df2 <- dplyr::mutate(df2,F_FMSY =  ifelse(!is.na(FMSY),
+#                                                                 FishingPressure / FMSY,
+#                                                                 NA))
+#         df2 <- dplyr::select(df2,StockKeyLabel,
+#                                                FisheriesGuild,
+#                                                F_FMSY,
+#                                                Catches,
+#                                                Landings,
+#                                                Discards,
+#                                                FMSY,
+#                                                FishingPressure)
+#         df3 <- dplyr::group_by(df,StockKeyLabel)
+#         df3 <- dplyr::filter(df3, Year %in% c(AssessmentYear, (AssessmentYear - 1)))
+#         df3 <- dplyr::mutate(df3, SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger),
+#                                                                         StockSize / MSYBtrigger,
+#                                                                         NA))
+#         df3 <- dplyr::select(df3, StockKeyLabel,Year,
+#                                                FisheriesGuild,
+#                                                SSB_MSYBtrigger,
+#                                                StockSize,
+#                                                MSYBtrigger)
+#         check <- unique(df3[c("StockKeyLabel", "Year", "MSYBtrigger")])
+#         check <- check[order(-check$Year),]
+#         check2 <- check[duplicated(check$StockKeyLabel),]
+#         df3 <- dplyr::anti_join(df3,check2)
+#         df4 <- dplyr::full_join(df2, df3)
+#         df4 <- dplyr::mutate(df4, Status = ifelse(is.na(F_FMSY) | is.na(SSB_MSYBtrigger),
+#                                       "GREY",
+#                                       if_else(F_FMSY < 1 & SSB_MSYBtrigger >= 1,
+#                                               "GREEN",
+#                                               "RED",
+#                                               "GREY")))
+#         df4
+# }
+stockstatus_CLD_current_proxy <- function(x) {
+
+  # --- Ensure proxy columns exist
+  for (nm in c("FMSY_is_proxy","FMSY_proxy_name","MSYB_is_proxy","MSYB_proxy_name")) {
+    if (!nm %in% names(x)) x[[nm]] <- NA
+  }
+
+  # --- Coerce numerics safely
+  num_cols <- c("Year","FishingPressure","StockSize","FMSY","MSYBtrigger",
+                "AssessmentYear","Catches","Landings","Discards")
+  for (nm in intersect(num_cols, names(x))) {
+    x[[nm]] <- suppressWarnings(as.numeric(x[[nm]]))
+  }
+
+  # --- Latest assessment year per stock
+  x <- x %>%
+    dplyr::group_by(StockKeyLabel) %>%
+    dplyr::mutate(AY_latest = suppressWarnings(max(AssessmentYear, na.rm = TRUE))) %>%
+    dplyr::ungroup()
+
+  # ---------- F side: use Year == AY_latest - 1 ----------
+  df_F <- x %>%
+    dplyr::filter(Year == AY_latest - 1) %>%
+    dplyr::mutate(
+      F_FMSY = ifelse(!is.na(FMSY), FishingPressure / FMSY, NA_real_)
+    ) %>%
+    # if more than one row per stock remains, keep the last (most recent) one
+    dplyr::arrange(StockKeyLabel, dplyr::desc(Year)) %>%
+    dplyr::group_by(StockKeyLabel) %>%
+    dplyr::slice_head(n = 1) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(
+      StockKeyLabel, FisheriesGuild, F_FMSY,
+      Catches, Landings, Discards, FMSY, FishingPressure,
+      F_proxy = FMSY_is_proxy, F_proxy_name = FMSY_proxy_name
+    )
+
+  # ---------- B side: choose latest of AY_latest or AY_latest - 1 with MSYBtrigger ----------
+  df_B <- x %>%
+    dplyr::filter(Year %in% c(AY_latest, AY_latest - 1)) %>%
+    dplyr::arrange(StockKeyLabel, dplyr::desc(Year)) %>%
+    dplyr::group_by(StockKeyLabel) %>%
+    # keep the latest row that actually has MSYBtrigger
+    dplyr::filter(!is.na(MSYBtrigger)) %>%
+    dplyr::slice_head(n = 1) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(
+      SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger), StockSize / MSYBtrigger, NA_real_)
+    ) %>%
+    dplyr::select(
+      StockKeyLabel, Year, FisheriesGuild,
+      SSB_MSYBtrigger, StockSize, MSYBtrigger,
+      B_proxy = MSYB_is_proxy, B_proxy_name = MSYB_proxy_name
+    )
+
+  # ---------- Join F and B sides ----------
+  df4 <- dplyr::full_join(df_F, df_B, by = c("StockKeyLabel","FisheriesGuild"))
+
+  # ---------- Status classification ----------
+  df4 <- df4 %>%
+    dplyr::mutate(
+      Status = dplyr::case_when(
+        is.na(F_FMSY) | is.na(SSB_MSYBtrigger) ~ "GREY",
+        F_FMSY < 1 & SSB_MSYBtrigger >= 1       ~ "GREEN",
+        TRUE                                    ~ "RED"
+      )
+    )
+
+  df4
 }
-
-
+### this one works without proxy
 # stock_trends <- function(x) {
         
 #         x$FishingPressure <- as.numeric(x$FishingPressure)
@@ -1206,23 +1276,92 @@ plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
 
 
 
+# plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
+#   # --- Filter by guild
+#   if (identical(guild, "All")) {
+#     df <- x
+#   } else {
+#     df <- dplyr::filter(x, FisheriesGuild %in% guild)
+#   }
+
+#   # --- Build 'total' per stock (max of Catches/Landings across time)
+#   df <- df %>%
+#     dplyr::group_by(StockKeyLabel) %>%
+#     dplyr::mutate(
+#       total = ifelse(
+#         all(is.na(Catches) & is.na(Landings)),
+#         NA,
+#         max(Catches, Landings, na.rm = TRUE)
+#       )
+#     ) %>%
+#     dplyr::ungroup() %>%
+#     dplyr::filter(!is.na(total))
+
+#   # Order stocks by total (smallest at bottom after coord_flip)
+#   df <- dplyr::mutate(df, StockKeyLabel = forcats::fct_reorder(StockKeyLabel, total))
+
+#   # --- Caption
+#   cap_lab <- ggplot2::labs(caption = paste0("ICES Stock Assessment Database, ",
+#                      format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"))
+
+#   # --- Plot
+#   p <- ggplot2::ggplot(df, ggplot2::aes(x = StockKeyLabel, y = Catches / 1000)) +
+#     ggplot2::geom_segment(
+#       ggplot2::aes(xend = StockKeyLabel, yend = 0, color = Status),
+#       size = 2, na.rm = TRUE
+#     ) +
+#     ggplot2::geom_segment(
+#       ggplot2::aes(y = Landings / 1000, xend = StockKeyLabel, yend = 0, color = Status),
+#       size = 2, na.rm = TRUE
+#     ) +
+#     ggplot2::geom_point(
+#       ggplot2::aes(y = Catches / 1000, fill = Status),
+#       color = "grey50", shape = 24, size = 7, alpha = 0.8, na.rm = TRUE
+#     ) +
+#     ggplot2::geom_point(
+#       ggplot2::aes(y = Landings / 1000, fill = Status),
+#       color = "grey50", shape = 21, size = 7, alpha = 0.8, na.rm = TRUE
+#     ) +
+#     ggplot2::scale_fill_manual(values = c(
+#       "GREEN" = "#4daf4a",
+#       "RED"   = "#e41a1c",
+#       "GREY"  = "#d3d3d3"
+#     )) +
+#     ggplot2::scale_color_manual(values = c(
+#       "GREEN" = "#4daf4a",
+#       "RED"   = "#e41a1c",
+#       "GREY"  = "#d3d3d3"
+#     )) +
+#     ggplot2::coord_equal() +
+#     ggplot2::coord_flip() +
+#     ggplot2::theme_bw(base_size = 20) +
+#     ggplot2::labs(x = expression("Stock name"), y = expression("Catch and Landings (thousand tonnes)")) +
+#     ggplot2::theme(
+#       legend.position      = "none",
+#       plot.caption         = ggplot2::element_text(size = 12),
+#       panel.grid.minor     = ggplot2::element_blank(),
+#       panel.grid.major.y   = ggplot2::element_blank(),
+#       panel.grid.major.x   = ggplot2::element_line(size = 0.1, color = "grey80")
+#     ) +
+#     cap_lab
+
+#   if (isTRUE(return_data)) df else p
+# }
+
 plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
   # --- Filter by guild
-  if (identical(guild, "All")) {
-    df <- x
-  } else {
-    df <- dplyr::filter(x, FisheriesGuild %in% guild)
-  }
+  df <- if (identical(guild, "All")) x else dplyr::filter(x, FisheriesGuild %in% guild)
+
+  # --- Ensure proxy flags exist
+  if (!"F_proxy" %in% names(df)) df$F_proxy <- FALSE
+  if (!"B_proxy" %in% names(df)) df$B_proxy <- FALSE
 
   # --- Build 'total' per stock (max of Catches/Landings across time)
   df <- df %>%
     dplyr::group_by(StockKeyLabel) %>%
     dplyr::mutate(
-      total = ifelse(
-        all(is.na(Catches) & is.na(Landings)),
-        NA,
-        max(Catches, Landings, na.rm = TRUE)
-      )
+      total = ifelse(all(is.na(Catches) & is.na(Landings)), NA,
+                     max(Catches, Landings, na.rm = TRUE))
     ) %>%
     dplyr::ungroup() %>%
     dplyr::filter(!is.na(total))
@@ -1230,97 +1369,293 @@ plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
   # Order stocks by total (smallest at bottom after coord_flip)
   df <- dplyr::mutate(df, StockKeyLabel = forcats::fct_reorder(StockKeyLabel, total))
 
-  # --- Caption
-  cap_lab <- ggplot2::labs(caption = paste0("ICES Stock Assessment Database, ",
-                     format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"))
+  # Flag if any reference point is proxy
+  df <- df %>% dplyr::mutate(ProxyFlag = (F_proxy %in% TRUE) | (B_proxy %in% TRUE))
 
-  # --- Plot
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = StockKeyLabel, y = Catches / 1000)) +
+  # Status palette
+  status_pal <- c(GREEN = "#4daf4a", RED = "#e41a1c", GREY = "#d3d3d3")
+
+  # Caption
+  cap_lab <- ggplot2::labs(
+    caption = paste0("ICES Stock Assessment Database, ",
+                     format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen")
+  )
+
+  proxy_stroke <- 2.5
+
+  # --- Base plot (segments; color by Status, no legend)
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = StockKeyLabel)) +
     ggplot2::geom_segment(
-      ggplot2::aes(xend = StockKeyLabel, yend = 0, color = Status),
-      size = 2, na.rm = TRUE
+      ggplot2::aes(xend = StockKeyLabel, y = 0, yend = Catches/1000, colour = Status),
+      size = 2, na.rm = TRUE, show.legend = FALSE
     ) +
     ggplot2::geom_segment(
-      ggplot2::aes(y = Landings / 1000, xend = StockKeyLabel, yend = 0, color = Status),
-      size = 2, na.rm = TRUE
+      ggplot2::aes(y = Landings/1000, xend = StockKeyLabel, yend = 0, colour = Status),
+      size = 2, na.rm = TRUE, show.legend = FALSE
+    )
+
+  # --- Points (NORMAL refpoints: filled; no legend)
+  p <- p +
+    ggplot2::geom_point(
+      data = dplyr::filter(df, !ProxyFlag),
+      ggplot2::aes(y = Catches/1000, fill = Status),
+      shape = 24, colour = "grey35", size = 7, alpha = 0.85,
+      na.rm = TRUE, show.legend = FALSE
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(y = Catches / 1000, fill = Status),
-      color = "grey50", shape = 24, size = 7, alpha = 0.8, na.rm = TRUE
+      data = dplyr::filter(df, !ProxyFlag),
+      ggplot2::aes(y = Landings/1000, fill = Status),
+      shape = 21, colour = "grey35", size = 7, alpha = 0.85,
+      na.rm = TRUE, show.legend = FALSE
+    )
+
+  # --- Points (PROXY refpoints: hollow with Status-colored outline; no legend)
+  p <- p +
+    ggplot2::geom_point(
+      data = dplyr::filter(df, ProxyFlag),
+      ggplot2::aes(y = Catches/1000, colour = Status),
+      shape = 24, fill = NA, size = 7, alpha = 1, stroke = proxy_stroke,
+      na.rm = TRUE, show.legend = FALSE
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(y = Landings / 1000, fill = Status),
-      color = "grey50", shape = 21, size = 7, alpha = 0.8, na.rm = TRUE
-    ) +
-    ggplot2::scale_fill_manual(values = c(
-      "GREEN" = "#4daf4a",
-      "RED"   = "#e41a1c",
-      "GREY"  = "#d3d3d3"
-    )) +
-    ggplot2::scale_color_manual(values = c(
-      "GREEN" = "#4daf4a",
-      "RED"   = "#e41a1c",
-      "GREY"  = "#d3d3d3"
-    )) +
+      data = dplyr::filter(df, ProxyFlag),
+      ggplot2::aes(y = Landings/1000, colour = Status),
+      shape = 21, fill = NA, size = 7, alpha = 1, stroke = proxy_stroke,
+      na.rm = TRUE, show.legend = FALSE
+    )
+
+  # --- Scales (suppress Status legends)
+  p <- p +
+    ggplot2::scale_fill_manual(values = status_pal, guide = "none") +
+    ggplot2::scale_colour_manual(values = status_pal, guide = "none")
+
+  # --- Axes, theme
+  p <- p +
     ggplot2::coord_equal() +
     ggplot2::coord_flip() +
     ggplot2::theme_bw(base_size = 20) +
-    ggplot2::labs(x = expression("Stock code"), y = expression("Catch and Landings (thousand tonnes)")) +
+    ggplot2::labs(x = "Stock name", y = "Catch and Landings (thousand tonnes)") +
     ggplot2::theme(
-      legend.position      = "none",
-      plot.caption         = ggplot2::element_text(size = 12),
-      panel.grid.minor     = ggplot2::element_blank(),
-      panel.grid.major.y   = ggplot2::element_blank(),
-      panel.grid.major.x   = ggplot2::element_line(size = 0.1, color = "grey80")
+      plot.caption       = ggplot2::element_text(size = 14),
+      panel.grid.minor   = ggplot2::element_blank(),
+      panel.grid.major.y = ggplot2::element_blank(),
+      panel.grid.major.x = ggplot2::element_line(size = 0.1, colour = "grey80")
     ) +
     cap_lab
+
+  # --- Legend (bottom-right): build only entries present in data
+  has_land_norm   <- any(!is.na(df$Landings) & !df$ProxyFlag, na.rm = TRUE)
+  has_land_proxy  <- any(!is.na(df$Landings) &  df$ProxyFlag,  na.rm = TRUE)
+  has_catch_norm  <- any(!is.na(df$Catches)  & !df$ProxyFlag,  na.rm = TRUE)
+  has_catch_proxy <- any(!is.na(df$Catches)  &  df$ProxyFlag,   na.rm = TRUE)
+
+  legend_keys <- c(
+    "Landings"        = 21,
+    "Landings (proxy)"= 21,
+    "Catches"         = 24,
+    "Catches (proxy)" = 24
+  )
+  present <- c(has_land_norm, has_land_proxy, has_catch_norm, has_catch_proxy)
+  legend_keys <- legend_keys[present]
+  legend_labels <- names(legend_keys)
+
+  if (length(legend_keys) > 0) {
+    # Dummy layer to host the legend (alpha=0 so it won't plot; legend uses override.aes)
+    p <- p +
+      ggplot2::geom_point(
+        data = data.frame(Legend = factor(legend_labels, levels = legend_labels)),
+        ggplot2::aes(x = 0, y = 0, shape = Legend),
+        inherit.aes = FALSE, alpha = 0, show.legend = TRUE
+      ) +
+      ggplot2::scale_shape_manual(
+        name   = NULL,
+        breaks = legend_labels,
+        values = legend_keys,
+        labels = legend_labels
+      ) +
+      ggplot2::guides(
+        shape = ggplot2::guide_legend(
+          override.aes = list(
+            size   = 6,
+            # per-key aesthetics matching 'legend_labels' order:
+            fill   = c("Landings"         = "grey60",
+                       "Landings (proxy)" = NA,
+                       "Catches"          = "grey60",
+                       "Catches (proxy)"  = NA)[legend_labels],
+            colour = c("Landings"         = "grey25",
+                       "Landings (proxy)" = "grey25",
+                       "Catches"          = "grey25",
+                       "Catches (proxy)"  = "grey25")[legend_labels],
+            stroke = c("Landings"         = 1.0,
+                       "Landings (proxy)" = 2,
+                       "Catches"          = 1.0,
+                       "Catches (proxy)"  = 2)[legend_labels],
+            alpha  = 1
+          ),
+          keyheight = ggplot2::unit(18, "pt"),
+          keywidth  = ggplot2::unit(26, "pt"),
+          byrow = TRUE
+        )
+      ) +
+      ggplot2::theme(
+        legend.position      = c(0.98, 0.02),  # bottom-right inside
+        legend.justification = c(1, 0),
+        legend.background    = ggplot2::element_rect(fill = ggplot2::alpha("white", 0.9),
+                                                     colour = "grey85"),
+        legend.spacing.y  = ggplot2::unit(10, "pt"),
+        legend.key.height    = ggplot2::unit(20, "pt"),
+        legend.key.width     = ggplot2::unit(20, "pt")
+      )
+  } else {
+    p <- p + ggplot2::theme(legend.position = "none")
+  }
 
   if (isTRUE(return_data)) df else p
 }
 
 
 
-plot_kobe_app <- function(x, guild, return_data = FALSE){
-        cap_lab <- ggplot2::labs(caption = paste0("ICES Stock Assessment Database, ",
-                     format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"))
+# plot_kobe_app <- function(x, guild, return_data = FALSE){
+#         cap_lab <- ggplot2::labs(caption = paste0("ICES Stock Assessment Database, ",
+#                      format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"))
 
-        if(guild == "All"){
-                df <-x
-        }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
-        xmax = max(df$F_FMSY, na.rm = TRUE)
-        ifelse(xmax < 3, xmax2 <- 3, xmax2 <- (xmax + 0.5))
-        ymax = max(df$SSB_MSYBtrigger, na.rm = TRUE)
-        ifelse(ymax < 3, ymax2 <- 3, ymax2 <- (ymax + 0.5))
-        kobe <- ggplot2::ggplot(df, ggplot2::aes(x = F_FMSY, y = SSB_MSYBtrigger,
-                                         data_id = StockKeyLabel)) +
-                ggplot2::coord_cartesian(xlim = c(0, xmax2), ylim = c(0, ymax2))+
-                ggplot2::geom_point(ggplot2::aes(color = Status), size = 13,
-                           alpha = 0.7, na.rm = TRUE) +
-                ggplot2::geom_hline(yintercept = 1, color = "grey60", linetype = "dashed") +
-                ggplot2::geom_vline(xintercept = 1, color = "grey60", linetype = "dashed") +
-                ggrepel::geom_text_repel(ggplot2::aes(label = StockKeyLabel),
-                                         segment.size = .25,
-                                         force = 5,
-                                         size = 5) +
-                ggplot2::scale_color_manual(values = c("GREEN" = "#4daf4a",
-                                              "RED" = "#e41a1c",
-                                              "GREY" = "#d3d3d3")) +
-                ggplot2::labs(x = expression(F/F[MSY]),
-                     y = expression(SSB/MSY~B[trigger]),
-                     caption = "") +
-                ggplot2::theme_bw(base_size = 20) +
-                ggplot2::theme(legend.position = 'none',
-                      panel.grid.minor = ggplot2::element_blank(),
-                      panel.grid.major = ggplot2::element_blank(),
-                      plot.caption = ggplot2::element_text(size = 10)) +
-                      cap_lab
+#         if(guild == "All"){
+#                 df <-x
+#         }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
+#         xmax = max(df$F_FMSY, na.rm = TRUE)
+#         ifelse(xmax < 3, xmax2 <- 3, xmax2 <- (xmax + 0.5))
+#         ymax = max(df$SSB_MSYBtrigger, na.rm = TRUE)
+#         ifelse(ymax < 3, ymax2 <- 3, ymax2 <- (ymax + 0.5))
+#         kobe <- ggplot2::ggplot(df, ggplot2::aes(x = F_FMSY, y = SSB_MSYBtrigger,
+#                                          data_id = StockKeyLabel)) +
+#                 ggplot2::coord_cartesian(xlim = c(0, xmax2), ylim = c(0, ymax2))+
+#                 ggplot2::geom_point(ggplot2::aes(color = Status), size = 13,
+#                            alpha = 0.7, na.rm = TRUE) +
+#                 ggplot2::geom_hline(yintercept = 1, color = "grey60", linetype = "dashed") +
+#                 ggplot2::geom_vline(xintercept = 1, color = "grey60", linetype = "dashed") +
+#                 ggrepel::geom_text_repel(ggplot2::aes(label = StockKeyLabel),
+#                                          segment.size = .25,
+#                                          force = 5,
+#                                          size = 5) +
+#                 ggplot2::scale_color_manual(values = c("GREEN" = "#4daf4a",
+#                                               "RED" = "#e41a1c",
+#                                               "GREY" = "#d3d3d3")) +
+#                 ggplot2::labs(x = expression(F/F[MSY]),
+#                      y = expression(SSB/MSY~B[trigger]),
+#                      caption = "") +
+#                 ggplot2::theme_bw(base_size = 20) +
+#                 ggplot2::theme(legend.position = 'none',
+#                       panel.grid.minor = ggplot2::element_blank(),
+#                       panel.grid.major = ggplot2::element_blank(),
+#                       plot.caption = ggplot2::element_text(size = 10)) +
+#                       cap_lab
       
         
-        if(return_data == T){
-                df
-        }else{
-                kobe
-        }
+#         if(return_data == T){
+#                 df
+#         }else{
+#                 kobe
+#         }
+# }
+
+plot_kobe_app <- function(x, guild, return_data = FALSE){
+
+  cap_lab <- ggplot2::labs(
+    caption = paste0("ICES Stock Assessment Database, ",
+                     format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen")
+  )
+
+  # Filter by guild
+  df <- if (identical(guild, "All")) x else dplyr::filter(x, FisheriesGuild %in% guild)
+
+  # Be robust if proxy flags aren't present
+  if (!"F_proxy" %in% names(df)) df$F_proxy <- FALSE
+  if (!"B_proxy" %in% names(df)) df$B_proxy <- FALSE
+
+  # Flag proxy if either reference point is proxy
+  df <- df %>%
+    dplyr::mutate(
+      ProxyFlag = dplyr::if_else((F_proxy %in% TRUE) | (B_proxy %in% TRUE),
+                                 "Proxy refpoint", "Normal refpoint")
+    )
+
+  # Axes limits
+  xmax  <- suppressWarnings(max(df$F_FMSY, na.rm = TRUE))
+  xmax2 <- if (is.finite(xmax) && xmax < 3) 3 else xmax + 0.5
+  ymax  <- suppressWarnings(max(df$SSB_MSYBtrigger, na.rm = TRUE))
+  ymax2 <- if (is.finite(ymax) && ymax < 3) 3 else ymax + 0.5
+
+  # Symbol sizes
+  pt_size   <- 10
+  proxy_stroke <- 1.8  # <-- thicker outline for empty circle
+
+  kobe <-
+    ggplot2::ggplot(df, ggplot2::aes(x = F_FMSY, y = SSB_MSYBtrigger, data_id = StockKeyLabel)) +
+    ggplot2::coord_cartesian(xlim = c(0, xmax2), ylim = c(0, ymax2)) +
+
+    # ---- Normal refpoint (filled circle) ----
+    ggplot2::geom_point(
+      data = dplyr::filter(df, ProxyFlag == "Normal refpoint"),
+      ggplot2::aes(color = Status, shape = ProxyFlag),
+      size = pt_size, alpha = 0.7, na.rm = TRUE
+    ) +
+
+    # ---- Proxy refpoint (empty circle with thicker outline) ----
+    ggplot2::geom_point(
+      data = dplyr::filter(df, ProxyFlag == "Proxy refpoint"),
+      ggplot2::aes(color = Status, shape = ProxyFlag),
+      size = pt_size, alpha = 0.9, na.rm = TRUE,
+      fill = NA, stroke = proxy_stroke
+    ) +
+
+    ggplot2::geom_hline(yintercept = 1, color = "grey60", linetype = "dashed") +
+    ggplot2::geom_vline(xintercept = 1, color = "grey60", linetype = "dashed") +
+
+    ggrepel::geom_text_repel(
+      ggplot2::aes(label = StockKeyLabel),
+      segment.size = .25, force = 5, size = 5
+    ) +
+
+    # Color by status (no color legend)
+    ggplot2::scale_color_manual(
+      values = c(GREEN = "#4daf4a", RED = "#e41a1c", GREY = "#d3d3d3"),
+      guide = "none"
+    ) +
+
+    # Shape legend (auto-drops “Proxy refpoint” if not present)
+    ggplot2::scale_shape_manual(
+      name   = "Reference point",
+      values = c("Normal refpoint" = 16,  # filled circle
+                 "Proxy refpoint"  = 21), # circle with border (uses stroke)
+      drop = TRUE
+    ) +
+
+    ggplot2::labs(
+      x = expression(F/F[MSY]),
+      y = expression(SSB/MSY~B[trigger]),
+      caption = ""
+    ) +
+    ggplot2::theme_bw(base_size = 20) +
+    ggplot2::theme(
+      panel.grid.minor   = ggplot2::element_blank(),
+      panel.grid.major   = ggplot2::element_blank(),
+      plot.caption       = ggplot2::element_text(size = 14),
+      legend.position    = c(0.98, 0.98),  # top-right inside plot
+      legend.justification = c(1, 1),
+      legend.background  = ggplot2::element_rect(fill = ggplot2::alpha("white", 0.85),
+                                                 color = "grey85"),
+      legend.key.height  = ggplot2::unit(12, "pt"),
+      legend.key.width   = ggplot2::unit(18, "pt")
+    ) +
+    # Make legend symbols neutral (single color) and readable
+    ggplot2::guides(
+      shape = ggplot2::guide_legend(
+        override.aes = list(size = 4, alpha = 1, colour = "grey20", fill = NA, stroke = proxy_stroke)
+      )
+    ) +
+    cap_lab
+
+  if (isTRUE(return_data)) df else kobe
 }
 
 
