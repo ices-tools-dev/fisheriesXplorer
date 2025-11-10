@@ -374,7 +374,9 @@ stockstatus_CLD_current <- function(x) {
 
 #         return(df4)
 # }
-stock_trends <- function(x) {
+
+#### this works with proxy
+stock_trends_proxy <- function(x) {
 
   # --- Ensure proxy columns exist (in case some sources don't carry them)
   for (nm in c("FMSY_is_proxy", "FMSY_proxy_name", "MSYB_is_proxy", "MSYB_proxy_name")) {
