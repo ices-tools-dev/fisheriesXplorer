@@ -24,7 +24,7 @@ getSID <- function(year, EcoR) {
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
 
-
+        stock_list_long <- add_keys(stock_list_long, "cod.27.46a7d20", c(19661,19662))
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
         # message("SID Data processing complete.")
         stock_list_long$FisheriesGuild[stock_list_long$FisheriesGuild == "crustacean"] <- "shellfish"
@@ -53,7 +53,7 @@ getStatusWebService <- function(Ecoregion, sid) {
         )
         status_long <- status %>%
                 tidyr::unnest(YearStatus)
-
+      
         df_status <- merge(sid, status_long, by = "AssessmentKey", all.x = TRUE)
         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
 
