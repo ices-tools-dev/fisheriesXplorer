@@ -24,9 +24,12 @@ getSID <- function(year, EcoR) {
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
 
+        ############ Hard coded for some stocks with assessmentComponents
         stock_list_long <- add_keys(stock_list_long, "cod.27.46a7d20", c(19661,19662))
+        stock_list_long <- add_keys(stock_list_long, "cod.21.1.isc", c(19605))
+        
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
-        # message("SID Data processing complete.")
+        
         stock_list_long$FisheriesGuild[stock_list_long$FisheriesGuild == "crustacean"] <- "shellfish"
         return(stock_list_long)
 } 
@@ -40,9 +43,6 @@ getSAG_ecoregion_new <- function(Ecoregion) {
                         sprintf("https://sag.ices.dk/test_api/LatestStocks/Download?ecoregion=%s", EcoregionCode)
                 )
         )
-
-        # sag$StockKeyLabel <- ifelse(is.na(sag$AssessmentComponent) | sag$AssessmentComponent == "", sag$StockKeyLabel, paste0(sag$StockKeyLabel, "_", sag$AssessmentComponent))
-        # sag$StockKeyLabel <- gsub("\\s*Substock\\b", "", sag$StockKeyLabel, ignore.case = TRUE)
         return(sag)
 }
 
@@ -65,12 +65,10 @@ getStatusWebService <- function(Ecoregion, sid) {
 
 
 format_sag_status_new <- function(df,sag) {
-        
-        
+
         df$AssessmentComponent <- sag$AssessmentComponent[ match(df$AssessmentKey, sag$AssessmentKey) ]
         df$StockKeyLabel <- ifelse(is.na(df$AssessmentComponent) |df$AssessmentComponent == "", df$StockKeyLabel, paste0(df$StockKeyLabel, "_", df$AssessmentComponent))
         df$StockKeyLabel <- gsub("\\s*Substock\\b", "", df$StockKeyLabel, ignore.case = TRUE)
-        # tast <- dplyr::filter(df,StockKeyLabel == "cod.27.46a7d20_Viking")
         
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "GREY",
                                                   status == 1 ~ "GREEN",
@@ -174,19 +172,13 @@ format_annex_table <- function(status, year, sid, sag) {
 
 
 format_sag <- function(sag,sid){
-        # sid <- load_sid(year)
-
-        # browser()
-        # head(sag)
-        # head(sid)
-        # test <- dplyr::filter(df1, StockKeyLabel == "cod.27.46a7d20")
+        
         sid <- dplyr::filter(sid,!is.na(YearOfLastAssessment))
         # sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
         sid <- dplyr::select(sid,AssessmentKey, FisheriesGuild)
-        # sag <- dplyr::mutate(sag, StockKeyLabel=FishStock)
+        
         df1 <- merge(sag, sid, all.x = T, all.y = F)
-        # df1 <- left_join(x, y)
-        # df1 <- left_join(x, y, by = c("StockKeyLabel", "AssessmentYear"))
+        
         df1 <-as.data.frame(df1)
         
         df1 <- df1[, colSums(is.na(df1)) < nrow(df1)]
@@ -195,15 +187,15 @@ format_sag <- function(sag,sid){
         
         # replace the fisheries guild == crustacean with shellfish
         df1$FisheriesGuild[df1$FisheriesGuild == "crustacean"] <- "shellfish"
-        # df1 <- subset(df1, select = -c(FishStock))
         
         check <-unique(df1[c("StockKeyLabel", "Purpose")])
         check <- check[duplicated(check$StockKeyLabel),]
-        # check <-unique(df1[c("StockKeyLabel", "FisheriesGuild")])
+        
         out <- dplyr::anti_join(df1, check)
 
         out$StockKeyLabel <- ifelse(is.na(out$AssessmentComponent) | out$AssessmentComponent == "", out$StockKeyLabel, paste0(out$StockKeyLabel, "_", out$AssessmentComponent))
         out$StockKeyLabel <- gsub("\\s*Substock\\b", "", out$StockKeyLabel, ignore.case = TRUE)
+        
         return(out)
 }
 
