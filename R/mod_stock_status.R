@@ -673,7 +673,9 @@ mod_stock_status_server <- function(
 
     processed_data_reactable <- reactive({
       annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
-
+      # browser()
+      # head(annex_data,30)
+      # test <- annex_data %>% dplyr::filter(StockKeyLabel == "cod.27.47d20-24")
       annex_data_cleaned <- annex_data %>%
         dplyr::mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),

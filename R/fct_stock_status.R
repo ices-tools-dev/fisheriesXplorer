@@ -133,15 +133,19 @@ format_sag_status_new <- function(df,sag) {
 }
 
 format_annex_table <- function(status, year, sid, sag) {
-        
+        # browser()
+        # test <- sid %>% dplyr::filter(StockKeyLabel == "cod.27.46a7d20")
+        # unique(status$StockKeyLabel)
+        # unique(sag$StockKeyLabel)
+        # unique(sid$StockKeyLabel)
         # add AssessmentComponent from SAG to SID by assessment key
         sid <- merge(sag %>% dplyr::select(StockKeyLabel, AssessmentKey, AssessmentComponent), sid, by = "StockKeyLabel")
-       
+        # head(sid,30)       
         sid <- sid %>%
                 dplyr::distinct() %>%
                 dplyr::rename(AssessmentKey = AssessmentKey.x) %>%
                 dplyr::select(-AssessmentKey.y) %>%
-                dplyr::filter(StockKeyLabel %in% status$StockKeyLabel)
+                dplyr::filter(StockKeyLabel %in% sub("_.*$", "", status$StockKeyLabel))
         
         
         df <- dplyr::left_join(status, sid, by = "StockKeyLabel")
