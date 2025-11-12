@@ -40,6 +40,9 @@ getSAG_ecoregion_new <- function(Ecoregion) {
                         sprintf("https://sag.ices.dk/test_api/LatestStocks/Download?ecoregion=%s", EcoregionCode)
                 )
         )
+
+        # sag$StockKeyLabel <- ifelse(is.na(sag$AssessmentComponent) | sag$AssessmentComponent == "", sag$StockKeyLabel, paste0(sag$StockKeyLabel, "_", sag$AssessmentComponent))
+        # sag$StockKeyLabel <- gsub("\\s*Substock\\b", "", sag$StockKeyLabel, ignore.case = TRUE)
         return(sag)
 }
 
@@ -56,13 +59,19 @@ getStatusWebService <- function(Ecoregion, sid) {
       
         df_status <- merge(sid, status_long, by = "AssessmentKey", all.x = TRUE)
         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
-
+        
         return(df_status)
 }
 
 
-format_sag_status_new <- function(df) {
-     
+format_sag_status_new <- function(df,sag) {
+        
+        
+        df$AssessmentComponent <- sag$AssessmentComponent[ match(df$AssessmentKey, sag$AssessmentKey) ]
+        df$StockKeyLabel <- ifelse(is.na(df$AssessmentComponent) |df$AssessmentComponent == "", df$StockKeyLabel, paste0(df$StockKeyLabel, "_", df$AssessmentComponent))
+        df$StockKeyLabel <- gsub("\\s*Substock\\b", "", df$StockKeyLabel, ignore.case = TRUE)
+        # tast <- dplyr::filter(df,StockKeyLabel == "cod.27.46a7d20_Viking")
+        
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "GREY",
                                                   status == 1 ~ "GREEN",
                                                   status == 2 ~ "GREEN", #qualitative green
@@ -121,6 +130,7 @@ format_sag_status_new <- function(df) {
       
         df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
         df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
+        
         return(df)
 }
 
@@ -165,8 +175,14 @@ format_annex_table <- function(status, year, sid, sag) {
 
 format_sag <- function(sag,sid){
         # sid <- load_sid(year)
+
+        # browser()
+        # head(sag)
+        # head(sid)
+        # test <- dplyr::filter(df1, StockKeyLabel == "cod.27.46a7d20")
         sid <- dplyr::filter(sid,!is.na(YearOfLastAssessment))
-        sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
+        # sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
+        sid <- dplyr::select(sid,AssessmentKey, FisheriesGuild)
         # sag <- dplyr::mutate(sag, StockKeyLabel=FishStock)
         df1 <- merge(sag, sid, all.x = T, all.y = F)
         # df1 <- left_join(x, y)
@@ -185,6 +201,10 @@ format_sag <- function(sag,sid){
         check <- check[duplicated(check$StockKeyLabel),]
         # check <-unique(df1[c("StockKeyLabel", "FisheriesGuild")])
         out <- dplyr::anti_join(df1, check)
+
+        out$StockKeyLabel <- ifelse(is.na(out$AssessmentComponent) | out$AssessmentComponent == "", out$StockKeyLabel, paste0(out$StockKeyLabel, "_", out$AssessmentComponent))
+        out$StockKeyLabel <- gsub("\\s*Substock\\b", "", out$StockKeyLabel, ignore.case = TRUE)
+        return(out)
 }
 
 stockstatus_CLD_current <- function(x) {
