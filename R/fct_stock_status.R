@@ -165,7 +165,7 @@ format_annex_table <- function(status, year, sid, sag) {
         )
 
         df$StockKeyDescription <- gsub("\\s*\\([^\\)]+\\)", "", df$StockKeyDescription, perl = TRUE)
-        
+
         return(df)
 }
 
