@@ -132,7 +132,7 @@ plot_catch_trends_plotly <- function(
   # ----------------------------
   if (type == "Common name") {
     guilds <- df %>%
-      dplyr::filter(!is.na(`Fisheries guild`) & `Fisheries guild` != "") %>%
+      dplyr::filter(!is.na(`Fisheries guild`) & `Fisheries guild` != "" & `Fisheries guild` != "undefined") %>%
       dplyr::pull(`Fisheries guild`) %>%
       unique() %>%
       sort()

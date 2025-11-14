@@ -446,30 +446,42 @@ caption {
     display: inline-block;
   }
 
-.image-button-link {
-  display: block;
-  width: 140px;
-  height: 140px;
+
+ .image-button-link{
+  --btn-size: clamp(110px, 18vw, 200px);
+  width: var(--btn-size);
+  height: var(--btn-size);
+
   background-size: contain;
+  background-position: center;
   background-repeat: no-repeat;
+  display: block;
   cursor: pointer;
   outline: 0;
   text-decoration: none;
+  transition: transform .12s ease;
 }
+
+.image-button-link:hover,
+.image-button-link:focus-visible{
+  transform: scale(1.03);
+}
+
 
 .image-button-wrap .fx-tooltip {
   position: absolute;
+  top: calc(100% + 8px);  
+  bottom: auto;           
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  bottom: -6px;
+  transform: translate(-50%, 4px);  
   background: rgba(0, 0, 0, 0.85);
   color: #fff;
   padding: 8px 10px;
   border-radius: 6px;
   white-space: normal;
-  width: 240px;
-  max-width: 260px;
-  font-size: 1rem;
+  width: min(82vw, 240px);
+  max-width: 240px;
+  font-size: 1.5rem;
   line-height: 1.25;
   opacity: 0;
   pointer-events: none;
@@ -478,58 +490,33 @@ caption {
   box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
 }
 
+
 .image-button-wrap:hover .fx-tooltip,
 .image-button-wrap:focus-within .fx-tooltip {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, 0);
 }
 
-/* .hovertext {
-  position: relative;
-  cursor: pointer;
+@media (max-width: 575.98px){
+  .image-button-link{ --btn-size: clamp(140px, 60vw, 240px); }
+  .image-button-wrap .fx-tooltip{
+    width: min(86vw, 320px);
+    font-size: 0.95rem;
+  }
 }
 
-.hover-left::before {
-  content: attr(data-hover);
-  position: absolute;
-  right: 100%;
-  
-  top: 50%;
-  transform: translateY(-50%);
-  background: #111;
-  color: #fff;
-  padding: 6px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  margin-right: 8px;
-  z-index: 9999;
-  transition: opacity .15s ease-in-out;
+@media (min-width: 992px) and (max-width: 1399.98px){
+  .image-button-link{ --btn-size: clamp(120px, 13vw, 170px); }
+  .image-button-wrap .fx-tooltip{
+    width: min(86vw, 170px);
+    font-size: 1.2rem;
+  }
 }
 
-.hover-left::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: auto;
-  right: 100%;
-  
-  transform: translate(6px, -50%);
-  
-  border-width: 6px;
-  border-style: solid;
-  border-color: transparent transparent transparent #111;
-  
-  opacity: 0;
-  z-index: 10000;
-  transition: opacity .15s ease-in-out;
+@media (min-width: 1400px){
+  .image-button-link{ --btn-size: clamp(180px, 12vw, 260px); }
 }
 
-.hover-left:hover::before,
-.hover-left:hover::after {
-  opacity: 1;
-} */
 
 :root{
   /* min, preferred (with vw), max */

@@ -24,9 +24,13 @@ getSID <- function(year, EcoR) {
         stock_list_long <- stock_list_long %>%
                 filter(EcoRegion == EcoR)
 
-
+        ############ Hard coded for some stocks with assessmentComponents
+        stock_list_long <- add_keys(stock_list_long, "cod.27.46a7d20", c(19661,19662))
+        stock_list_long <- add_keys(stock_list_long, "cod.21.1.isc", c(19605))
+        
         stock_list_long <- stock_list_long[!is.na(stock_list_long$AssessmentKey), ]
-        # message("SID Data processing complete.")
+        
+        stock_list_long$FisheriesGuild[stock_list_long$FisheriesGuild == "crustacean"] <- "shellfish"
         return(stock_list_long)
 } 
 
@@ -52,7 +56,7 @@ getStatusWebService <- function(Ecoregion, sid) {
         )
         status_long <- status %>%
                 tidyr::unnest(YearStatus)
-
+      
         df_status <- merge(sid, status_long, by = "AssessmentKey", all.x = TRUE)
         df_status$FisheriesGuild <- tolower(df_status$FisheriesGuild)
         
@@ -60,8 +64,12 @@ getStatusWebService <- function(Ecoregion, sid) {
 }
 
 
-format_sag_status_new <- function(df) {
-     
+format_sag_status_new <- function(df,sag) {
+
+        df$AssessmentComponent <- sag$AssessmentComponent[ match(df$AssessmentKey, sag$AssessmentKey) ]
+        df$StockKeyLabel <- ifelse(is.na(df$AssessmentComponent) |df$AssessmentComponent == "", df$StockKeyLabel, paste0(df$StockKeyLabel, "_", df$AssessmentComponent))
+        df$StockKeyLabel <- gsub("\\s*Substock\\b", "", df$StockKeyLabel, ignore.case = TRUE)
+        
         df <- dplyr::mutate(df,status = dplyr::case_when(status == 0 ~ "GREY",
                                                   status == 1 ~ "GREEN",
                                                   status == 2 ~ "GREEN", #qualitative green
@@ -108,7 +116,8 @@ format_sag_status_new <- function(df) {
         df<- df[order(-df$year),]
         df <- df[!duplicated(df$key), ]
         df<- subset(df, select = -key)
-        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild)) #, stockComponent,adviceValue
+        df<- subset(df, select = c(StockKeyLabel, AssessmentKey,lineDescription, type, status, FisheriesGuild))#, stockComponent,adviceValue
+        df$FisheriesGuild[df$FisheriesGuild == "crustacean"] <- "shellfish" 
         df<- tidyr::spread(df,type, status)
         
         df2<- dplyr::filter(df,lineDescription != "Maximum Sustainable Yield")
@@ -119,23 +128,26 @@ format_sag_status_new <- function(df) {
       
         df$lineDescription <- gsub("Maximum Sustainable Yield", "Maximum sustainable yield", df$lineDescription)
         df$lineDescription <- gsub("Precautionary Approach", "Precautionary approach", df$lineDescription)
+        
         return(df)
 }
 
 format_annex_table <- function(status, year, sid, sag) {
         
-        # add AssessmentComponent from SAG to SID by assessment key
         sid <- merge(sag %>% dplyr::select(StockKeyLabel, AssessmentKey, AssessmentComponent), sid, by = "StockKeyLabel")
-       
+              
         sid <- sid %>%
                 dplyr::distinct() %>%
                 dplyr::rename(AssessmentKey = AssessmentKey.x) %>%
                 dplyr::select(-AssessmentKey.y) %>%
-                dplyr::filter(StockKeyLabel %in% status$StockKeyLabel)
+                dplyr::filter(StockKeyLabel %in% sub("_.*$", "", status$StockKeyLabel))
         
-        
+        # need this step to make stocks with substocks match between sid and status
+        sid$StockKeyLabel <- ifelse(is.na(sid$AssessmentComponent) |sid$AssessmentComponent == "", sid$StockKeyLabel, paste0(sid$StockKeyLabel, "_", sid$AssessmentComponent))
+        sid$StockKeyLabel <- gsub("\\s*Substock\\b", "", sid$StockKeyLabel, ignore.case = TRUE)
+
         df <- dplyr::left_join(status, sid, by = "StockKeyLabel")
-        
+      
         df <- dplyr::rename(df,                
                 AssessmentKey = AssessmentKey.y,                
                 FisheriesGuild = FisheriesGuild.x )  %>% 
@@ -155,7 +167,7 @@ format_annex_table <- function(status, year, sid, sag) {
         )
 
         df$StockKeyDescription <- gsub("\\s*\\([^\\)]+\\)", "", df$StockKeyDescription, perl = TRUE)
-        
+
         return(df)
 }
 
@@ -164,23 +176,29 @@ format_annex_table <- function(status, year, sid, sag) {
 format_sag <- function(sag, sid){
         # sid <- load_sid(year)
         sid <- dplyr::filter(sid,!is.na(YearOfLastAssessment))
-        sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
-        # sag <- dplyr::mutate(sag, StockKeyLabel=FishStock)
+        # sid <- dplyr::select(sid,StockKeyLabel,FisheriesGuild)
+        sid <- dplyr::select(sid,AssessmentKey, FisheriesGuild)
+        
         df1 <- merge(sag, sid, all.x = T, all.y = F)
-        # df1 <- left_join(x, y)
-        # df1 <- left_join(x, y, by = c("StockKeyLabel", "AssessmentYear"))
+        
         df1 <-as.data.frame(df1)
         
         # df1 <- df1[, colSums(is.na(df1)) < nrow(df1)]
         
         df1$FisheriesGuild <- tolower(df1$FisheriesGuild)
         
-        # df1 <- subset(df1, select = -c(FishStock))
+        # replace the fisheries guild == crustacean with shellfish
+        df1$FisheriesGuild[df1$FisheriesGuild == "crustacean"] <- "shellfish"
         
         check <-unique(df1[c("StockKeyLabel", "Purpose")])
         check <- check[duplicated(check$StockKeyLabel),]
-        # check <-unique(df1[c("StockKeyLabel", "FisheriesGuild")])
+        
         out <- dplyr::anti_join(df1, check)
+
+        out$StockKeyLabel <- ifelse(is.na(out$AssessmentComponent) | out$AssessmentComponent == "", out$StockKeyLabel, paste0(out$StockKeyLabel, "_", out$AssessmentComponent))
+        out$StockKeyLabel <- gsub("\\s*Substock\\b", "", out$StockKeyLabel, ignore.case = TRUE)
+        
+        return(out)
 }
 
 add_proxyRefPoints <- function(sag_formatted, custom_refpoints_path) {
@@ -648,7 +666,7 @@ plot_status_prop_pies <- function(
 
   df2$FisheriesGuild <- factor(
     tolower(df2$FisheriesGuild),
-    levels = c("total","benthic","demersal","pelagic","crustacean","elasmobranch")
+    levels = c("total","benthic","demersal","pelagic","shellfish","elasmobranch")
   )
 
   # --- Dynamic spacing & margins (based on width and # of columns)

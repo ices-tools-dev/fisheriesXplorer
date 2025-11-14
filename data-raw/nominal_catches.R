@@ -460,6 +460,7 @@ for (ecoregion in ecoregions) {
         catch_dat$GUILD[which(catch_dat$COMMON_NAME == "Pacific cupped oyster")] <- "crustacean"
 
         catch_dat$GUILD <- tolower(catch_dat$GUILD)
+        catch_dat$GUILD[catch_dat$GUILD == "crustacean"] <- "shellfish"
 
         catch_dat <- unique(catch_dat)
 

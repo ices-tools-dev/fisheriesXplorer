@@ -207,3 +207,13 @@ mod_flex_header_ui <- function(ns, left_id, right_id) {
       if (nzchar(sub %||% "")) paste0("&subtab=", utils::URLencode(sub, reserved = TRUE)) else ""
     )
   }
+
+
+add_keys <- function(df, stock_label, keys, key_col = "AssessmentKey") {
+          template <- df %>%
+            dplyr::filter(StockKeyLabel == stock_label) %>%
+            dplyr::slice(1)
+          additions <- template[rep(1, length(keys)), ]
+          additions[[key_col]] <- keys
+          dplyr::bind_rows(df, additions)
+        }

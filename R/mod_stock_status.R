@@ -86,7 +86,7 @@ mod_stock_status_ui <- function(id) {
                   choices = c(
                     "Elasmobranchs" = "elasmobranch",
                     "Benthic"       = "benthic",
-                    "Crustacean"    = "crustacean",
+                    "Shellfish"    = "shellfish",
                     "Demersal"      = "demersal",
                     "Pelagic"       = "pelagic"
                   )
@@ -119,7 +119,7 @@ mod_stock_status_ui <- function(id) {
                     choices = c(
                       "Benthic"   = "benthic",
                       "Demersal"  = "demersal",
-                      "Crustacean"= "crustacean",
+                      "Shellfish"= "shellfish",
                       "Pelagic"   = "pelagic",
                       "All Stocks"= "All"
                     ),
@@ -449,7 +449,7 @@ mod_stock_status_server <- function(
     output$status_trends <- renderPlotly({
       req(!is.null(input$status_trend_selector))
       if (input$status_trend_selector == "all_stocks") {
-        guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+        guild <- c("demersal", "pelagic", "shellfish", "benthic", "elasmobranch")
       } else {
         guild <- input$status_trend_selector
       }
@@ -525,7 +525,7 @@ mod_stock_status_server <- function(
 
     kobe_cld_data <- reactive({
       if (input$status_kobe_cld_selector == "All") {
-        guild <- c("demersal", "pelagic", "crustacean", "benthic", "elasmobranch")
+        guild <- c("demersal", "pelagic", "shellfish", "benthic", "elasmobranch")
         tmp <- catch_current() %>% dplyr::filter(FisheriesGuild %in% guild)
         tmp <- plot_CLD_bar_app(tmp, guild = input$status_kobe_cld_selector, return_data = TRUE)
       } else {
@@ -673,14 +673,14 @@ mod_stock_status_server <- function(
 
     processed_data_reactable <- reactive({
       annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
-
+      
       annex_data_cleaned <- annex_data %>%
         dplyr::mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),
-          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent, "' target='_blank'>", StockKeyLabel, ifelse(is.na(AssessmentComponent), "", paste0(" (", AssessmentComponent, ")")), "</a>")
+          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent, "' target='_blank'>", StockKeyLabel, "</a>")
         ) %>%
         dplyr::select(
-          "Stock code (component)" = StockKeyLabel,
+          "Stock code (_component)" = StockKeyLabel,
           " " = icon,
           "Stock Description" = StockKeyDescription,
           "Scientific Name" = SpeciesScientificName,
@@ -722,7 +722,7 @@ mod_stock_status_server <- function(
         wrap = TRUE,
         bordered = TRUE,
         columns = list(
-          "Stock code (component)" = reactable::colDef(html = TRUE, filterable = TRUE),
+          "Stock code (_component)" = reactable::colDef(html = TRUE, filterable = TRUE),
           " " = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
           "MSY Fishing Pressure" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
           "MSY Stock Size" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
