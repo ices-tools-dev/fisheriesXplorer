@@ -251,7 +251,7 @@ mod_stock_status_server <- function(
     ######################### Status summary tab #################################################
 
     catch_current <- reactive({
-      stockstatus_CLD_current(format_sag(shared$SAG, shared$SID))
+      stockstatus_CLD_current_proxy(add_proxyRefPoints(format_sag(shared$SAG, shared$SID), custom_refpoints_path = "data/custom_refpoints_2025.csv"))
     })
 
     output$status_summary_ices <- renderPlot({
@@ -443,7 +443,7 @@ mod_stock_status_server <- function(
 
     ##################### Stock trends tab ###############################################
     trends_data <- reactive({
-      stock_trends(format_sag(shared$SAG, shared$SID))
+      stock_trends_proxy(add_proxyRefPoints(format_sag(shared$SAG, shared$SID), custom_refpoints_path = "data/custom_refpoints_2025.csv"))
     })
 
     output$status_trends <- renderPlotly({
@@ -453,7 +453,7 @@ mod_stock_status_server <- function(
       } else {
         guild <- input$status_trend_selector
       }
-      plot_stock_trends(trends_data(), guild, cap_year, cap_month, return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
+      plot_stock_trends(trends_data(), guild,  return_data = FALSE, ecoregion = get_ecoregion_acronym(selected_ecoregion()))
     })
 
     ######################### Download stock trends data ##########################################
