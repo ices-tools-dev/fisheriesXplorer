@@ -40,6 +40,31 @@ select_text <- function(list_object, tab, section) {
   df_sub
 }
 
+get_ecoregion_acronym <- function(ecoregion) {
+  switch(ecoregion,
+         "Baltic Sea" = "BtS",
+         "Bay of Biscay and the Iberian Coast" = "BI",
+         "Bay of Biscay" = "BoB",
+         "Iberian Waters" = "IW",
+         "Celtic Seas" = "CS",
+         "Celtic Sea" = "CSx",
+         "Irish Sea" = "IrS",
+         "Greater North Sea" = "NrS",
+         "Norwegian Sea" = "NwS",
+         "Icelandic Waters" = "IS",
+         "Barents Sea" = "BrS",
+         "Greenland Sea" = "GS",
+         "Faroes" = "FO",
+         "Oceanic Northeast Atlantic" = "ONA",
+         "Azores" = "AZ",
+         stop("Unknown ecoregion")
+  )
+}
+
+get_active_region_acronym <- function(subregion, ecoregion) {
+  region <- if (!is.null(subregion)) subregion else ecoregion
+  get_ecoregion_acronym(region)
+}
 
 icon_mapping <- function(value) {
   
