@@ -133,23 +133,21 @@ format_sag_status_new <- function(df,sag) {
 }
 
 format_annex_table <- function(status, year, sid, sag) {
-        # browser()
-        # test <- sid %>% dplyr::filter(StockKeyLabel == "cod.27.46a7d20")
-        # unique(status$StockKeyLabel)
-        # unique(sag$StockKeyLabel)
-        # unique(sid$StockKeyLabel)
-        # add AssessmentComponent from SAG to SID by assessment key
+        
         sid <- merge(sag %>% dplyr::select(StockKeyLabel, AssessmentKey, AssessmentComponent), sid, by = "StockKeyLabel")
-        # head(sid,30)       
+              
         sid <- sid %>%
                 dplyr::distinct() %>%
                 dplyr::rename(AssessmentKey = AssessmentKey.x) %>%
                 dplyr::select(-AssessmentKey.y) %>%
                 dplyr::filter(StockKeyLabel %in% sub("_.*$", "", status$StockKeyLabel))
         
-        
+        # need this step to make stocks with substocks match between sid and status
+        sid$StockKeyLabel <- ifelse(is.na(sid$AssessmentComponent) |sid$AssessmentComponent == "", sid$StockKeyLabel, paste0(sid$StockKeyLabel, "_", sid$AssessmentComponent))
+        sid$StockKeyLabel <- gsub("\\s*Substock\\b", "", sid$StockKeyLabel, ignore.case = TRUE)
+
         df <- dplyr::left_join(status, sid, by = "StockKeyLabel")
-        
+      
         df <- dplyr::rename(df,                
                 AssessmentKey = AssessmentKey.y,                
                 FisheriesGuild = FisheriesGuild.x )  %>% 
@@ -730,7 +728,7 @@ plot_stock_trends <- function(x, guild, cap_year, cap_month, return_data = FALSE
                         ),
                         margin = list(b = 100, r = 50),
                         legend = list(
-                                title = list(text = "Stock name", font = list(size = 16)),
+                                title = list(text = paste0("<b>Stock code:</b>"), font = list(size = 16)),
                                 orientation = "h",
                                 x = 0.5, y = 1.05, # center above the plot
                                 xanchor = "center",

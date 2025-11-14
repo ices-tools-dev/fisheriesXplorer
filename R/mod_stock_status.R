@@ -673,16 +673,14 @@ mod_stock_status_server <- function(
 
     processed_data_reactable <- reactive({
       annex_data <- format_annex_table(shared$clean_status, as.integer(format(Sys.Date(), "%Y")), shared$SID, shared$SAG)
-      # browser()
-      # head(annex_data,30)
-      # test <- annex_data %>% dplyr::filter(StockKeyLabel == "cod.27.47d20-24")
+      
       annex_data_cleaned <- annex_data %>%
         dplyr::mutate(
           icon = paste0("<img src='", paste0("www/fish/", match_stockcode_to_illustration(StockKeyLabel, .)), "' height=30>"),
-          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent, "' target='_blank'>", StockKeyLabel, ifelse(is.na(AssessmentComponent), "", paste0(" (", AssessmentComponent, ")")), "</a>")
+          StockKeyLabel = paste0("<a href='https://ices-taf.shinyapps.io/advicexplorer/?assessmentkey=", AssessmentKey, "&assessmentcomponent=", AssessmentComponent, "' target='_blank'>", StockKeyLabel, "</a>")
         ) %>%
         dplyr::select(
-          "Stock code (component)" = StockKeyLabel,
+          "Stock code (_component)" = StockKeyLabel,
           " " = icon,
           "Stock Description" = StockKeyDescription,
           "Scientific Name" = SpeciesScientificName,
@@ -724,7 +722,7 @@ mod_stock_status_server <- function(
         wrap = TRUE,
         bordered = TRUE,
         columns = list(
-          "Stock code (component)" = reactable::colDef(html = TRUE, filterable = TRUE),
+          "Stock code (_component)" = reactable::colDef(html = TRUE, filterable = TRUE),
           " " = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
           "MSY Fishing Pressure" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
           "MSY Stock Size" = reactable::colDef(html = TRUE, filterable = FALSE, style = list(textAlign = "center")),
