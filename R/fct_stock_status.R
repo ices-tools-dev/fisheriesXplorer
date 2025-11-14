@@ -36,7 +36,7 @@ getSAG_ecoregion_new <- function(Ecoregion) {
         
         sag <- jsonlite::fromJSON(
                 URLencode(
-                        sprintf("https://sag.ices.dk/test_api/LatestStocks/Download?ecoregion=%s", EcoregionCode)
+                        sprintf("https://sag.ices.dk/SAG_API/LatestStocks/Download?ecoregion=%s", EcoregionCode)
                 )
         )
         return(sag)
@@ -47,7 +47,7 @@ getStatusWebService <- function(Ecoregion, sid) {
         
         status <- jsonlite::fromJSON(
                 URLencode(
-                        sprintf("https://sag.ices.dk/test_api/LatestStocks/Status?ecoregion=%s", EcoregionCode)
+                        sprintf("https://sag.ices.dk/SAG_API/LatestStocks/Status?ecoregion=%s", EcoregionCode)
                 )
         )
         status_long <- status %>%
@@ -333,7 +333,7 @@ plot_status_prop_pies <- function(
     "RED" = "#d93b1c", "qual_RED" = "#d93b1c", "qual_GREEN" = "#00B26D",
     "UNDEFINED" = "#006aff"
   )
-
+  browser()
   # --- Prep
   df_stock <- dplyr::select(
     df, StockKeyLabel, FisheriesGuild, lineDescription, FishingPressure, StockSize
