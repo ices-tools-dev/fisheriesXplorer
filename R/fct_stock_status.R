@@ -591,7 +591,7 @@ plot_status_prop_pies <- function(
     "RED" = "#d93b1c", "qual_RED" = "#d93b1c", "qual_GREEN" = "#00B26D",
     "UNDEFINED" = "#006aff"
   )
-  browser()
+  
   # --- Prep
   df_stock <- dplyr::select(
     df, StockKeyLabel, FisheriesGuild, lineDescription, FishingPressure, StockSize
