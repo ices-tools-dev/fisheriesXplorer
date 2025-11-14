@@ -183,9 +183,9 @@ format_sag <- function(sag, sid){
         out <- dplyr::anti_join(df1, check)
 }
 
-add_proxyRefPoints <- function(sag_formatted) {
+add_proxyRefPoints <- function(sag_formatted, custom_refpoints_path) {
         
-        custom_RefPoints <- read.table("data/custom_refpoints_2025.csv",
+        custom_RefPoints <- read.table(custom_refpoints_path,
                 sep = ",",
                 header = TRUE,
                 stringsAsFactors = FALSE
@@ -1352,9 +1352,10 @@ plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
   # --- Filter by guild
   df <- if (identical(guild, "All")) x else dplyr::filter(x, FisheriesGuild %in% guild)
 
-  # --- Ensure proxy flags exist
-  if (!"F_proxy" %in% names(df)) df$F_proxy <- FALSE
-  if (!"B_proxy" %in% names(df)) df$B_proxy <- FALSE
+   # --- Ensure proxy flags exist  
+  if (!"F_proxy" %in% names(df)) warning("Missing 'F_proxy' column in input data. This may indicate an upstream data issue.")  
+  if (!"B_proxy" %in% names(df)) warning("Missing 'B_proxy' column in input data. This may indicate an upstream data issue.")  
+
 
   # --- Build 'total' per stock (max of Catches/Landings across time)
   df <- df %>%
