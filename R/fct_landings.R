@@ -132,7 +132,7 @@ plot_catch_trends_plotly <- function(
   # ----------------------------
   if (type == "Common name") {
     guilds <- df %>%
-      dplyr::filter(!is.na(`Fisheries guild`) & `Fisheries guild` != "") %>%
+      dplyr::filter(!is.na(`Fisheries guild`) & `Fisheries guild` != "" & `Fisheries guild` != "undefined") %>%
       dplyr::pull(`Fisheries guild`) %>%
       unique() %>%
       sort()
@@ -306,13 +306,6 @@ plot_catch_trends_plotly <- function(
 }
 
 
-
-
-
-
-
-
-
 plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregion = NULL) {
   # Check for non-numeric Year values and warn if any NAs are introduced
 
@@ -330,7 +323,7 @@ plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregi
   title_annot_size  <- max(12, min(22, round(w / 40)))
   caption_size      <- max(8,  min(14, round(w / 70)))
 
-
+  
   year_numeric <- suppressWarnings(as.numeric(x$Year))
   if (any(is.na(year_numeric) & !is.na(x$Year))) {
     warning("Non-numeric values detected in 'Year' column. These rows will be removed.")
@@ -481,7 +474,10 @@ plot_discard_current_plotly <- function(x, year, position_letter = NULL, return_
                        Landings = as.numeric(Landings),
                        Catches = as.numeric(Catches),
                        Discards = as.numeric(Discards))
-  df5[is.na(df5)] <- 0
+  
+  df5 <- df5 %>%
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ tidyr::replace_na(., 0)))
+
   
   df5 <- df5 %>%
     dplyr::group_by(Year, FisheriesGuild) %>%

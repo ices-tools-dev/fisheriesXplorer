@@ -15,37 +15,6 @@
 mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    # --- Safe tooltip CSS (no BS5 clash) ---
-    # tags$style(HTML("
-    #   .image-button-wrap { position: relative; display: inline-block; }
-    #   .image-button-link { display:block; width:140px; height:140px; background-size:contain; background-repeat:no-repeat; cursor:pointer; outline:0; text-decoration:none; }
-    #   .image-button-wrap .fx-tooltip {
-    #     position: absolute;
-    #     left: 50%;
-    #     transform: translateX(-50%) translateY(6px);
-    #     bottom: -6px;
-    #     background: rgba(0,0,0,0.85);
-    #     color: #fff;
-    #     padding: 8px 10px;
-    #     border-radius: 6px;
-    #     white-space: normal;
-    #     width: 240px;
-    #     max-width: 260px;
-    #     font-size: 0.9rem;
-    #     line-height: 1.25;
-    #     opacity: 0;
-    #     pointer-events: none;
-    #     transition: opacity .15s ease, transform .15s ease;
-    #     z-index: 9999;
-    #     box-shadow: 0 4px 16px rgba(0,0,0,.2);
-    #   }
-    #   .image-button-wrap:hover .fx-tooltip,
-    #   .image-button-wrap:focus-within .fx-tooltip {
-    #     opacity: 1;
-    #     transform: translateX(-50%) translateY(0);
-    #   }
-    # ")),
-
     tags$img(id = "logo", class = "center-block", src = "www/fisheriesxplorer_blue.png"),
     br(), br(),
     tabsetPanel(
@@ -108,7 +77,7 @@ mod_navigation_page_ui <- function(id) {
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("stockStatusBtn"), label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/stock_status.svg');",
+                      style = "background-image: url('www/icons/Stock Status.svg');",
                       title = "Stock status", `aria-label` = "Stock status"
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Stock status</strong><br><br>Relative to MSY &amp; PA reference points, and MSFD descriptors"))
