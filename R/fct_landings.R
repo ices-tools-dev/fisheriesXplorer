@@ -323,7 +323,7 @@ plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregi
   title_annot_size  <- max(12, min(22, round(w / 40)))
   caption_size      <- max(8,  min(14, round(w / 70)))
 
-
+  
   year_numeric <- suppressWarnings(as.numeric(x$Year))
   if (any(is.na(year_numeric) & !is.na(x$Year))) {
     warning("Non-numeric values detected in 'Year' column. These rows will be removed.")
