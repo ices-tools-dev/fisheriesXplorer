@@ -306,13 +306,6 @@ plot_catch_trends_plotly <- function(
 }
 
 
-
-
-
-
-
-
-
 plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregion = NULL) {
   # Check for non-numeric Year values and warn if any NAs are introduced
 
