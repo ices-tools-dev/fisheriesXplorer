@@ -481,7 +481,10 @@ plot_discard_current_plotly <- function(x, year, position_letter = NULL, return_
                        Landings = as.numeric(Landings),
                        Catches = as.numeric(Catches),
                        Discards = as.numeric(Discards))
-  df5[is.na(df5)] <- 0
+  
+  df5 <- df5 %>%
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ tidyr::replace_na(., 0)))
+
   
   df5 <- df5 %>%
     dplyr::group_by(Year, FisheriesGuild) %>%
