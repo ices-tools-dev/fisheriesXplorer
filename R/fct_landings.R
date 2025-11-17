@@ -1,3 +1,28 @@
+#' Get acronym for an ICES ecoregion
+#'
+#' Translates a full ICES ecoregion name into the corresponding
+#' three-letter acronym used in the app (e.g. `"Baltic Sea"` → `"BtS"`).
+#'
+#' @param ecoregion A single character string giving the full
+#'   ecoregion name. Must be one of:
+#'   `"Baltic Sea"`, `"Bay of Biscay and the Iberian Coast"`,
+#'   `"Celtic Seas"`, `"Greater North Sea"`, `"Norwegian Sea"`,
+#'   `"Icelandic Waters"`, `"Barents Sea"`, `"Greenland Sea"`,
+#'   `"Faroes"`, `"Oceanic Northeast Atlantic"`, or `"Azores"`.
+#'
+#' @return A character string with the corresponding acronym:
+#'   `"BtS"`, `"BI"`, `"CS"`, `"NrS"`, `"NwS"`, `"IS"`, `"BrS"`,
+#'   `"GS"`, `"FO"`, `"ONA"`, or `"AZ"`.
+#'
+#' @details
+#' If `ecoregion` does not match any of the supported names,
+#' the function raises an error via [base::stop()].
+#'
+#' @examples
+#' get_ecoregion_acronym("Baltic Sea")
+#' get_ecoregion_acronym("Greater North Sea")
+#'
+#' @export
 get_ecoregion_acronym <- function(ecoregion) {
   switch(ecoregion,
          "Baltic Sea" = "BtS",
@@ -19,13 +44,79 @@ get_ecoregion_acronym <- function(ecoregion) {
   )
 }
 
+#' Get active region acronym from subregion or ecoregion
+#'
+#' Returns the ecoregion acronym for the active region, preferring
+#' \code{subregion} when it is not \code{NULL}, otherwise falling back
+#' to \code{ecoregion}.
+#'
+#' @param subregion Optional character scalar giving the active
+#'   subregion name. If non-\code{NULL}, this is used as the region
+#'   passed to [get_ecoregion_acronym()].
+#' @param ecoregion Character scalar giving the fallback ecoregion name
+#'   to use when \code{subregion} is \code{NULL}.
+#'
+#' @return
+#' A character scalar with the ecoregion acronym returned by
+#' [get_ecoregion_acronym()].
+#'
+#' @details
+#' This is a small convenience wrapper around [get_ecoregion_acronym()]
+#' that encapsulates the logic of “use subregion if set, otherwise use
+#' ecoregion” when determining which region is active in the UI.
+#'
+#' @examples
+#' get_active_region_acronym(subregion = NULL, ecoregion = "Baltic Sea")
+#' get_active_region_acronym(subregion = "Celtic Seas", ecoregion = "Baltic Sea")
+#'
+#' @export
 get_active_region_acronym <- function(subregion, ecoregion) {
   region <- if (!is.null(subregion)) subregion else ecoregion
   get_ecoregion_acronym(region)
 }
 
 
-
+#' Prepare catch, landings and discards (CLD) data for trend plots
+#'
+#' Selects a subset of columns from an input data frame and replaces
+#' zeros in the \code{Catches}, \code{Landings}, and \code{Discards}
+#' columns with \code{NA}, making them easier to handle in trend plots
+#' (e.g. avoiding plotting zeros where data are effectively missing).
+#'
+#' @param x A data frame containing at least the columns:
+#'   \code{Year}, \code{StockKeyLabel}, \code{FisheriesGuild},
+#'   \code{FishingPressure}, \code{FMSY}, \code{StockSize},
+#'   \code{MSYBtrigger}, \code{Catches}, \code{Landings},
+#'   and \code{Discards}.
+#'
+#' @return
+#' A data frame with the columns:
+#' \describe{
+#'   \item{Year}{Year of the assessment or value.}
+#'   \item{StockKeyLabel}{ICES stock identifier.}
+#'   \item{FisheriesGuild}{Guild/category for the stock.}
+#'   \item{FishingPressure}{Fishing pressure indicator.}
+#'   \item{FMSY}{Fishing mortality at MSY.}
+#'   \item{StockSize}{Stock size indicator.}
+#'   \item{MSYBtrigger}{Biomass trigger reference point.}
+#'   \item{Catches}{Catches, with zeros converted to \code{NA}.}
+#'   \item{Landings}{Landings, with zeros converted to \code{NA}.}
+#'   \item{Discards}{Discards, with zeros converted to \code{NA}.}
+#' }
+#'
+#' @details
+#' The function is mainly intended as a small preprocessing helper
+#' before visualising CLD trends. Zero values in \code{Catches},
+#' \code{Landings}, and \code{Discards} are interpreted as “no data” or
+#' non-informative and replaced with \code{NA}; all other values are
+#' left unchanged.
+#'
+#' @examples
+#' \dontrun{
+#' cld_df <- CLD_trends(sag_status_df)
+#' }
+#'
+#' @export
 CLD_trends <- function(x){
         df<- dplyr::select(x,Year,
                        StockKeyLabel,
@@ -44,8 +135,89 @@ CLD_trends <- function(x){
         return(df)
 }
 
+################################################### plot functions ##########################################
 
-
+#' Plot landings (catch) trends with plotly
+#'
+#' Creates interactive landings trend plots using \pkg{plotly}, either as:
+#' \itemize{
+#'   \item a set of small-multiple plots (one per fisheries guild) when
+#'     \code{type = "Common name"}, or
+#'   \item a single plot stratified by \code{type} (e.g. country or guild).
+#' }
+#' The function ranks categories by total landings, keeps the top
+#' \code{line_count}, and aggregates the rest into an \code{"other"} group.
+#'
+#' @param x A data frame with columns in the following order:
+#'   \code{Year}, \code{Country}, \code{iso3}, \code{Fisheries guild},
+#'   \code{Ecoregion}, \code{Species name}, \code{Species code},
+#'   \code{Common name}, \code{Value}. These are renamed internally and
+#' interpreted as landings (in tonnes).
+#' @param type Character scalar, one of \code{"Common name"},
+#'   \code{"Country"}, or \code{"Fisheries guild"}. Determines the
+#'   grouping variable for the lines.
+#' @param line_count Integer; maximum number of categories (within each
+#'   grouping) to show as separate lines. Remaining categories are
+#'   aggregated into \code{"other"}. Default is \code{10}.
+#' @param dataUpdated Optional character string appended to the caption
+#'   (e.g. a “data updated” date or note).
+#' @param return_data Logical; if \code{TRUE}, the function returns the
+#'   processed data used for plotting instead of the plotly object(s).
+#'   When \code{type = "Common name"}, this is the combined data across
+#'   fisheries guilds. Default is \code{FALSE}.
+#' @param session Optional Shiny session object. If provided, the
+#'   function reads \code{session$clientData[["output_landings_1-landings_layer_width"]]}
+#'   to adapt font sizes to the available plot width. If \code{NULL}, a
+#'   default width of 800px is assumed.
+#' @param per_panel_height Numeric; height (in pixels) used for each
+#'   panel when \code{type = "Common name"} and multiple guild plots are
+#'   produced. Default is \code{380}.
+#' @param ecoregion Optional character scalar used in plot titles and
+#'   image file names (e.g. \code{"Greater North Sea"} or an acronym).
+#'
+#' @return
+#' If \code{return_data = TRUE}, a data frame with yearly aggregated
+#' landings (in thousand tonnes) by grouping variable is returned.
+#'
+#' If \code{return_data = FALSE}:
+#' \itemize{
+#'   \item for \code{type = "Common name"}, an \code{htmltools::tagList}
+#'     of \pkg{plotly} objects (one per fisheries guild) is returned;
+#'   \item for other \code{type} values, a single \pkg{plotly} object is
+#'     returned.
+#' }
+#'
+#' @details
+#' For \code{type = "Common name"}, the function:
+#' \enumerate{
+#'   \item Normalises common names (e.g. collapsing variants such as
+#'     “Sandeels …” to \code{"sandeel"}).
+#'   \item Splits the data by \code{Fisheries guild}.
+#'   \item Within each guild, ranks common names by total landings and
+#'     keeps the top \code{line_count}, aggregating the rest into an
+#'     \code{"other"} category.
+#'   \item Aggregates landings by \code{Year} and \code{type_var} and
+#'     converts them to thousand tonnes.
+#'   \item Produces one plotly line chart per guild, using a discrete
+#'     \code{hcl.colors(..., "Temps")} palette and a common caption that
+#'     distinguishes historical (1950–2006) and official (2006–2023)
+#'     catches.
+#' }
+#'
+#' For other \code{type} values (e.g. \code{"Country"}, \code{"Fisheries guild"}),
+#' the function aggregates across all guilds into a single data set and
+#' produces one multi-line plot.
+#'
+#' In both cases, the y-axis shows landings in thousand tonnes, and the
+#' plots are configured with a download-to-image button whose filename
+#' includes \code{ecoregion} and the current date.
+#'
+#' @importFrom dplyr rename all_of filter group_by summarise arrange desc
+#'   mutate inner_join pull
+#' @importFrom grDevices hcl.colors
+#' @importFrom plotly plot_ly add_trace layout highlight config attrs_selected
+#' @importFrom htmltools tagList
+#' @export
 plot_catch_trends_plotly <- function(
   x,
   type = c("Common name", "Country", "Fisheries guild"),
@@ -305,7 +477,64 @@ plot_catch_trends_plotly <- function(
     )
 }
 
-
+#' Plot discard rate trends by fisheries guild (plotly)
+#'
+#' Computes and visualises discard rates over time, aggregated by
+#' \code{FisheriesGuild}, using \pkg{plotly}. The discard rate is defined
+#' as guild discards divided by the sum of guild landings and discards.
+#'
+#' @param x A data frame containing at least the columns:
+#'   \code{Year}, \code{StockKeyLabel}, \code{FisheriesGuild},
+#'   \code{Discards}, and \code{Landings}. Additional columns are
+#'   ignored.
+#' @param year Numeric scalar giving the last assessment year to
+#'   include. Years are filtered to \code{2011:(year - 1)}.
+#' @param return_data Logical; if \code{TRUE}, the function returns the
+#'   processed data used for plotting (one row per year–guild) instead
+#'   of a plotly object. Default is \code{FALSE}.
+#' @param ecoregion Optional character scalar used in the plot title and
+#'   in the filename for downloaded images.
+#'
+#' @return
+#' If \code{return_data = TRUE}, a data frame with columns:
+#' \describe{
+#'   \item{Year}{Year (numeric).}
+#'   \item{FisheriesGuild}{Fisheries guild.}
+#'   \item{variable}{Currently always \code{"guildRate"}.}
+#'   \item{value}{Discard rate (between 0 and 1).}
+#' }
+#'
+#' If \code{return_data = FALSE}, a \pkg{plotly} object showing discard
+#' rate trends by fisheries guild is returned, configured with a download
+#' button whose filename includes \code{ecoregion} and the current date.
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Converts \code{Year} to numeric, warning and dropping rows
+#'     with non-numeric year values.
+#'   \item Restricts the data to years from 2011 up to \code{year - 1}.
+#'   \item Expands the data so that all year–stock–guild combinations
+#'     are present, filling missing entries.
+#'   \item Computes total landings and discards per year and guild (in
+#'     thousand tonnes).
+#'   \item Derives the discard rate as
+#'     \code{guildDiscards / (guildLandings + guildDiscards)}.
+#'   \item Plots the discard rate over time for each guild as a line
+#'     chart, with hover text showing guild, year, and formatted rate.
+#' }
+#'
+#' Font sizes are adjusted heuristically based on the available plot
+#' width (if accessible via
+#' \code{session$clientData[["output_landings_1-discard_trends_width"]]}),
+#' with a fallback width of 800px when not available.
+#'
+#' @importFrom dplyr mutate filter select distinct group_by summarize left_join
+#' @importFrom tidyr expand nesting spread gather pivot_longer
+#' @importFrom tibble rowid_to_column
+#' @importFrom plotly plot_ly layout config
+#' @importFrom scales percent
+#' @export
 plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregion = NULL) {
   # Check for non-numeric Year values and warn if any NAs are introduced
 
@@ -446,6 +675,74 @@ plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregi
 }
 
 
+#' Plot current landings and discards by fisheries guild (plotly)
+#'
+#' Aggregates recent landings and discards by \code{FisheriesGuild} and
+#' produces a horizontal stacked bar chart for the most recent year
+#' (\code{year - 1}). This is intended as a “current snapshot” view,
+#' optionally ordered to match an external guild ordering.
+#'
+#' @param x A data frame containing at least the columns:
+#'   \code{Year}, \code{StockKeyLabel}, \code{FisheriesGuild},
+#'   \code{Landings}, \code{Catches}, and \code{Discards}. Additional
+#'   columns such as \code{FMSY} and \code{MSYBtrigger} are coerced to
+#'   numeric but not used directly in the plotting.
+#' @param year Numeric scalar giving the assessment year. Data are
+#'   restricted to the last five years, \code{seq(year - 5, year - 1)},
+#'   and the plot shows only \code{year - 1}.
+#' @param position_letter Optional character label (e.g. \code{"A"},
+#'   \code{"B"}) used as the panel title, for multi-panel layouts.
+#' @param return_data Logical; if \code{TRUE}, the function returns the
+#'   processed data (in tonnes) used for the plot instead of a plotly
+#'   object. Default is \code{FALSE}.
+#' @param order_df Optional data frame used to control the ordering of
+#'   \code{FisheriesGuild} on the y-axis. It must contain a
+#'   \code{FisheriesGuild} column; its unique values define the factor
+#'   level order. Any additional \code{value} column is discarded after
+#'   joining.
+#' @param ecoregion Optional character scalar used in the filename of
+#'   downloaded images (e.g. \code{"Greater North Sea"} or an acronym).
+#'
+#' @return
+#' If \code{return_data = TRUE}, a data frame with columns:
+#' \describe{
+#'   \item{Year}{Year (numeric).}
+#'   \item{FisheriesGuild}{Fisheries guild.}
+#'   \item{variable}{Either \code{"guildLandings"} or \code{"guildDiscards"}.}
+#'   \item{value}{Landings or discards in tonnes (not thousand tonnes).}
+#' }
+#'
+#' If \code{return_data = FALSE}, a \pkg{plotly} object showing a
+#' horizontal stacked bar chart of landings and discards (in thousand
+#' tonnes) by fisheries guild for \code{year - 1} is returned. The plot
+#' is configured with a download-to-image button whose filename includes
+#' \code{ecoregion}, \code{position_letter}, and the current date.
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Filters data to the last five years (\code{year - 5} to
+#'     \code{year - 1}) and expands all year–stock–guild combinations.
+#'   \item For each stock/year, keeps the record with the highest sum of
+#'     \code{Landings + Catches + Discards}, treating \code{NA} as zero.
+#'   \item Aggregates landings and discards by \code{Year} and
+#'     \code{FisheriesGuild} and converts them to thousand tonnes.
+#'   \item For the most recent year (\code{year - 1}), reshapes to a
+#'     long format and labels the variables as \code{"Landings"} and
+#'     \code{"Discards"} for plotting.
+#'   \item Optionally reorders guilds according to \code{order_df}.
+#' }
+#'
+#' Landings and discards are shown in green (\code{"#1d9e76"}) and
+#' orange (\code{"#d86003"}), respectively. A caption referencing the
+#' ICES Stock Assessment Database is added below the x-axis.
+#'
+#' @importFrom dplyr mutate filter group_by summarise select left_join top_n
+#'   ungroup across
+#' @importFrom tidyr expand nesting spread gather
+#' @importFrom tibble rowid_to_column
+#' @importFrom plotly plot_ly layout config
+#' @export
 plot_discard_current_plotly <- function(x, year, position_letter = NULL, return_data = FALSE, order_df = NULL, ecoregion = NULL) {
   df <- x %>% dplyr::mutate(Year = as.numeric(Year),
                             FMSY = as.numeric(FMSY),

@@ -1,20 +1,49 @@
 #' The application server-side
 #'
-#' @param input,output,session Internal parameters for {shiny}.
-#'     DO NOT REMOVE.
+#' Main server function for the \code{fisheriesXplorer} Shiny application.
+#' It initialises shared reactive state, handles URL-based bookmarking and
+#' share links, coordinates data fetching for the selected ecoregion, and
+#' wires together the feature modules (navigation, overview, landings,
+#' stock status, resources, etc.).
+#'
+#' @param input Internal list of reactive inputs provided by Shiny.
+#' @param output Internal list of reactive outputs provided by Shiny.
+#' @param session Shiny session object, used to access client data,
+#'   send custom messages, and update UI elements.
+#'
+#' @return
+#' This function is called for its side effects and does not return a
+#' meaningful value.
+#'
+#' @details
+#' The server logic includes:
+#' \itemize{
+#'   \item Displaying a welcome modal with an important notice.
+#'   \item Deriving capture year and month from the current date.
+#'   \item Managing a shared \code{selected_ecoregion} reactive and
+#'     associated data (SID, SAG, and formatted status).
+#'   \item Parsing and restoring navigation state from the URL hash or
+#'     query string via \code{parse_nav()}, \code{get_current_subtab()},
+#'     and \code{select_subtab()}.
+#'   \item Keeping the URL hash in sync with the current app state
+#'     using debounced observers and \code{write_hash()}.
+#'   \item Initialising and calling the feature module server functions
+#'     (navigation, overview, landings, stock status, resources).
+#'   \item Implementing a share-link modal and clipboard copy logic
+#'     using \code{.base_url()} and a custom \code{copyText} message.
+#' }
+#'
+#' This function is intended to be registered as the main server
+#' function in \code{shinyApp()} or a similar entry point.
+#'
 #' @import shiny
 #' @importFrom stringr str_split
 #' @noRd
-# app_server.R
-
-# =========================
-# SERVER FUNCTION
-# =========================
 app_server <- function(input, output, session) {
 
-  # ------------------------
-  # Welcome modal (maybe we could add useful information here?)
-  # ------------------------
+  
+  ######################## Welcome modal (maybe we could add useful information here?) ########################
+  
   showModal(modalDialog(
     title = "Important message",
     HTML("Welcome to the development version of the fisheriesXplorer application. <u>The contents are indicative and should not be quoted or used elsewhere</u>.")
@@ -85,9 +114,9 @@ app_server <- function(input, output, session) {
     if (isTRUE(is_restoring())) invalidateLater(80, session)
   })
 
-  # ----------------------------------------------------------------------------------------------
-  # Data fetch 
-  # ----------------------------------------------------------------------------------------------
+  
+  ##################################### Data fetching #####################################
+  
   shared <- reactiveValues(SID = NULL, SAG = NULL, clean_status = NULL)
 
   fetchData <- reactive({
@@ -118,9 +147,7 @@ app_server <- function(input, output, session) {
     shared$clean_status <- data$clean_status
   })
 
-  # ------------------------
-  # Feature modules (parent handles bookmarking)
-  # ------------------------
+  ##################################### Feature modules (parent handles bookmarking) #####################################
   mod_navigation_page_server(
     "navigation_page_1", 
     parent_session = session, 
@@ -146,22 +173,13 @@ app_server <- function(input, output, session) {
     bookmark_qs        = reactive(list()),     # parent restores
     set_subtab         = function(...) {}
   )
-  # sel_mixfish <- mod_mixfish_plot_selection_server("mixfish_selection_1", selected_ecoregion = selected_ecoregion)
-  # mod_mixfish_plot_display_server("mixfish_viz_1",
-  #   plot_name          = sel_mixfish$plot_choice,
-  #   selected_ecoregion = selected_ecoregion,
-  #   selected_subRegion = sel_mixfish$sub_region
-  # )
-  # mod_vms_server("vms_1", selected_ecoregion = selected_ecoregion)
-  # mod_bycatch_server("bycatch_1", selected_ecoregion = selected_ecoregion)
   mod_resources_server(
     "resources_1",
     bookmark_qs        = reactive(list()),     # parent restores
     set_subtab         = function(...) {} 
   )
-  # ------------------------
-  # Single writer: keep URL hash in sync (debounced), except during restore
-  # ------------------------
+  
+  ##################################### Single writer: keep URL hash in sync (debounced), except during restore #####################################
   current_state <- reactive({
     list(
       eco    = selected_ecoregion() %||% "",
@@ -191,9 +209,8 @@ app_server <- function(input, output, session) {
     ))
   }, ignoreInit = TRUE)
 
-  # ------------------------
-  # Share button (uses the same writer)
-  # ------------------------
+  ##################################### Share link modal and clipboard #####################################    
+   
   share_url <- reactiveVal(NULL)
   observeEvent(input$share_btn, {
     st <- current_state()
@@ -213,7 +230,7 @@ app_server <- function(input, output, session) {
     ))
   })
 
-  # Clipboard handler 
+  ########################################## Clipboard handler ##########################################
   observeEvent(input$copy_share_link, {
     session$sendCustomMessage("copyText", list(text = share_url() %||% ""))
   })
