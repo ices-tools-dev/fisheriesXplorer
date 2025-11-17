@@ -1,3 +1,5 @@
+################# Data processing ################################################
+
 #' Get acronym for an ICES ecoregion
 #'
 #' Translates a full ICES ecoregion name into the corresponding
