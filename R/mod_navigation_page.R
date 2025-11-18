@@ -16,7 +16,7 @@ mod_navigation_page_ui <- function(id) {
   ns <- NS(id)
   tagList(
     tags$img(id = "logo", class = "center-block", src = "www/fisheriesxplorer_blue.png"),
-    br(),br(),
+    br(), br(),
     tabsetPanel(
       type = "hidden",
       id = ns("landing_page"),
@@ -27,10 +27,8 @@ mod_navigation_page_ui <- function(id) {
           card(
             full_screen = FALSE,
             card_header("Select an ICES ecoregion"),
-            tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
-            withSpinner(
-              leafletOutput(ns("map"), width = "90%")
-            ),
+            tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
+            withSpinner(leafletOutput(ns("map"), width = "90%")),
             tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
             card_body(
               min_height = 400,
@@ -48,65 +46,79 @@ mod_navigation_page_ui <- function(id) {
           ),
           card(
             card_header("Select a topic:"),
+            # Let tooltips overflow outside the card body
             card_body(
+              style = "overflow: visible;",
               fluidRow(
                 column(
-                  4,
-                  align = "center",
-                  div(
-                    class = "image-button", id = ns("overviewBtn"),
-                    style = "background-image: url('www/icons/overview.svg');",
-                    div(class = "tooltip", HTML("<strong>Overview</strong><br><br>Key signals and detailed <br> catch-by-country <br> information<br><br>"))
+                  4, align = "center",
+                  div(class = "image-button-wrap",
+                    actionLink(
+                      ns("overviewBtn"), label = NULL, class = "image-button-link",
+                      style = "background-image: url('www/icons/overview.svg');",
+                      title = "Overview", `aria-label` = "Overview"
+                    ),
+                    div(class = "fx-tooltip", HTML("<strong>Overview</strong><br><br>Key signals and detailed <br>catch-by-country information"))
                   )
                 ),
                 column(
-                  4,
-                  align = "center",
-                  div(
-                    class = "image-button", id = ns("landingsBtn"),
-                    style = "background-image: url('www/icons/landings.svg');",
-                    div(class = "tooltip", HTML("<strong>Landings</strong><br><br>Landings over time:<br> by country, species, fish guild, and gear type<br><br>"))
+                  4, align = "center",
+                  div(class = "image-button-wrap",
+                    actionLink(
+                      ns("landingsBtn"), label = NULL, class = "image-button-link",
+                      style = "background-image: url('www/icons/landings.svg');",
+                      title = "Landings", `aria-label` = "Landings"
+                    ),
+                    div(class = "fx-tooltip", HTML("<strong>Landings</strong><br><br>Landings over time:<br>by country, species, fish guild, and gear type"))
                   )
                 ),
                 column(
-                  4,
-                  align = "center",
-                  div(
-                    class = "image-button", id = ns("stockStatusBtn"),
-                    style = "background-image: url('www/icons/stock_status.svg');",
-                    div(class = "tooltip", HTML("<strong>Stock status</strong><br><br>Stock status relative to MSY and PA reference points, and MSFD descriptors<br><br>"))
+                  4, align = "center",
+                  div(class = "image-button-wrap",
+                    actionLink(
+                      ns("stockStatusBtn"), label = NULL, class = "image-button-link",
+                      style = "background-image: url('www/icons/Stock Status.svg');",
+                      title = "Stock status", `aria-label` = "Stock status"
+                    ),
+                    div(class = "fx-tooltip", HTML("<strong>Stock status</strong><br><br>Relative to MSY &amp; PA reference points, and MSFD descriptors"))
                   )
                 )
               ),
-              fluidRow(
-                column(
-                  4,
-                  align = "center",
-                  div(
-                    class = "image-button", id = ns("mixfishBtn"),
-                    style = "background-image: url('www/icons/mix_fishieries.svg');",
-                    div(class = "tooltip", HTML("<strong>Mixed Fisheries</strong><br><br>Overview of the Technical Interactions across the main fisheries<br><br>"))
-                  )
-                ),
-                column(
-                  4,
-                  align = "center",
-                  div(
-                    class = "image-button", id = ns("VMS"),
-                    style = "background-image: url('www/icons/vms.svg');",
-                    div(class = "tooltip", HTML("<strong>VMS</strong><br><br>Spatial distribution of fishing effort, and maps of the physical disturbance of benthic habitats by fishing gear<br><br>"))
-                  )
-                ),
-                column(
-                  4,
-                  align = "center",
-                  div(
-                    class = "image-button", id = ns("bycatchBtn"),
-                    style = "background-image: url('www/icons/bycatch.svg');",
-                    div(class = "tooltip", HTML("<strong>Bycatch</strong><br><br>Bycatch of protected, endangered, and threatened species<br><br>"))
-                  )
-                )
-              )
+              # fluidRow(
+              #   column(
+              #     4, align = "center",
+              #     div(class = "image-button-wrap",
+              #       actionLink(
+              #         ns("mixfishBtn"), label = NULL, class = "image-button-link",
+              #         style = "background-image: url('www/icons/mix_fishieries.svg');",
+              #         title = "Mixed Fisheries", `aria-label` = "Mixed Fisheries"
+              #       ),
+              #       div(class = "fx-tooltip", HTML("<strong>Mixed Fisheries</strong><br><br>Technical interactions across the main fisheries"))
+              #     )
+              #   ),
+              #   column(
+              #     4, align = "center",
+              #     div(class = "image-button-wrap",
+              #       actionLink(
+              #         ns("VMS"), label = NULL, class = "image-button-link",
+              #         style = "background-image: url('www/icons/vms.svg');",
+              #         title = "VMS", `aria-label` = "VMS"
+              #       ),
+              #       div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Effort distribution and physical disturbance of benthic habitats"))
+              #     )
+              #   ),
+              #   column(
+              #     4, align = "center",
+              #     div(class = "image-button-wrap",
+              #       actionLink(
+              #         ns("bycatchBtn"), label = NULL, class = "image-button-link",
+              #         style = "background-image: url('www/icons/bycatch.svg');",
+              #         title = "Bycatch", `aria-label` = "Bycatch"
+              #       ),
+              #       div(class = "fx-tooltip", HTML("<strong>Bycatch</strong><br><br>Protected, endangered, and threatened species"))
+              #     )
+              #   )
+              # )
             )
           )
         )
@@ -114,78 +126,79 @@ mod_navigation_page_ui <- function(id) {
     )
   )
 }
+
+
+
     
 #' landing_page Server Functions
 #'
 #' @noRd 
-mod_navigation_page_server <- function(id, parent_session, selected_ecoregion) {
+mod_navigation_page_server <- function(
+  id, 
+  parent_session, 
+  selected_ecoregion,
+  bookmark_qs = reactive(NULL)) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+
+    # RESTORE once, defer until after first flush, then push up
+    observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+      qs <- bookmark_qs()
+      wanted <- qs$subtab
+      valid <- c("exec_summary", "introduction", "who_is_fishing")
+      if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+        session$onFlushed(function() {
+          updateTabsetPanel(session, "tabs_overview", selected = wanted)
+          isolate(set_subtab(wanted)) # one-arg setter
+        }, once = TRUE)
+      }
+    })
 
     output$map <- leaflet::renderLeaflet({
       map_ecoregion(eco_shape, map_shape)
     })
-    proxy_map <- leafletProxy("map")
 
-    # create empty character vector to hold map selected locations
+    
+    proxy_map <- leaflet::leafletProxy("map", session = session)
+
     selected_map <- reactiveValues(groups = character())
 
     observeEvent(input$map_shape_click, {
       req(!is.null(input$map_shape_click$id))
 
-      if (input$map_shape_click$group == "Eco_regions") {
+      if (identical(input$map_shape_click$group, "Eco_regions")) {
         selected_map$groups <- c(selected_map$groups, input$map_shape_click$id)
       }
 
+      
       updateVirtualSelect(
         inputId = "selected_locations",
         choices = eco_shape$Ecoregion,
-        selected = input$map_shape_click$id
+        selected = input$map_shape_click$id,
+        session = session
       )
     })
 
-    observeEvent(input$selected_locations,
-      {
-        removed <- setdiff(selected_map$groups, input$selected_locations)
-        selected_map$groups <- input$selected_locations
+    observeEvent(input$selected_locations, {
+      removed <- setdiff(selected_map$groups, input$selected_locations)
+      selected_map$groups <- input$selected_locations
 
-        proxy_map %>%
-          hideGroup(removed) %>%
-          showGroup(input$selected_locations)
-      },
-      ignoreNULL = FALSE
-    )
+      proxy_map %>%
+        leaflet::hideGroup(removed) %>%
+        leaflet::showGroup(input$selected_locations)
+    }, ignoreNULL = FALSE)
 
     observeEvent(input$selected_locations, {
-      # temp_location <- input$selected_locations
-      # temp_location <- str_replace_all(temp_location, " ", "_")
       selected_ecoregion(input$selected_locations)
-
     })
 
-    onclick("overviewBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Overview")
-    })
-    onclick("landingsBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Landings")
-    })
-    onclick("stockStatusBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Stock Status")
-    })
-    onclick("mixfishBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Mixed Fisheries")
-    })
-    onclick("VMS", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "VMS")
-    })
-    onclick("bycatchBtn", expr = {
-      updateNavbarPage(session = parent_session, "nav-page", selected = "Bycatch")
-    })
+    # Top-tab switches via actionLinks (by tab values)
+    observeEvent(input$overviewBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "overview") })
+    observeEvent(input$landingsBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "landings") })
+    observeEvent(input$stockStatusBtn,{ updateNavbarPage(parent_session, "nav-page", selected = "stock_status") })
+    # observeEvent(input$mixfishBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "mixed_fisheries") })
+    # observeEvent(input$VMS,           { updateNavbarPage(parent_session, "nav-page", selected = "vms") })
+    # observeEvent(input$bycatchBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "bycatch") })
   })
 }
-    
-## To be copied in the UI
-# mod_navigation_page_ui("navigation_page_1")
-    
-## To be copied in the server
-# mod_navigation_page_server("navigation_page_1")
+

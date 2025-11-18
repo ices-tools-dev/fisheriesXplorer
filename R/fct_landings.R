@@ -40,138 +40,299 @@ CLD_trends <- function(x){
         df["Discards"][df["Discards"] == 0] <- NA
         df["Catches"][df["Catches"] == 0] <- NA
         df["Landings"][df["Landings"] == 0] <- NA
-        # df <- dplyr::bind_rows(
-        #                 # all present and accounted for
-        #                dplyr::filter(df,!is.na(Catches),
-        #                                !is.na(Landings),
-        #                                !is.na(Discards)), 
-        #                  # Missing discards, but catches == landings
-        #                dplyr::filter(df, is.na(Discards),
-        #                                Catches == Landings),
-        #                  dplyr::mutate(df, Discards = 0), 
-        #                # Missing catches, but have landings and discards
-        #                dplyr::filter(df,is.na(Catches),
-        #                                !is.na(Landings),
-        #                                !is.na(Discards)), 
-        #                dplyr::mutate(df,Catches = Landings + Discards), 
-        #                 # missing catches, but have landings
-        #                dplyr::filter(df, is.na(Catches),
-        #                                !is.na(Landings),
-        #                                is.na(Discards)),
-        #                dplyr::mutate(df,Catches = NA,
-        #                                Discards = NA),
-        #                 # missing everything
-        #                dplyr::filter(df, is.na(Catches),
-        #                                is.na(Landings),
-        #                                is.na(Discards)), 
-        #                dplyr::mutate(df,Catches = NA,
-        #                                Discards = NA,
-        #                                Landings = NA),
-        #                 # missing landings and discards
-        #                dplyr::filter(df, !is.na(Catches),
-        #                                is.na(Landings),
-        #                                is.na(Discards)),
-        #                dplyr::mutate(df,Landings = NA,
-        #                                Discards = NA),
-        #                 # landings and catches
-        #                dplyr::filter(df, is.na(Catches),
-        #                                is.na(Landings),
-        #                                !is.na(Discards)),
-        #                dplyr::mutate(df,Catches = NA,
-        #                                Landings = NA),
-        #                 # Missing discards, but have landings and catches
-        #                dplyr::filter(df, !is.na(Catches),
-        #                                !is.na(Landings),
-        #                                is.na(Discards),
-        #                                Landings != Catches),
-        #                dplyr::mutate(df,Discards = Catches - Landings),
-        #                 # Missing landings, but have catches and discards
-        #                dplyr::filter(df, !is.na(Catches),
-        #                                is.na(Landings),
-        #                                !is.na(Discards)),
-        #                dplyr::mutate(df,Landings = Catches - Discards)
-        #         )
+      
         return(df)
 }
 
-plot_catch_trends_plotly <- function(x, type = c("Common name", "Country", "Fisheries guild"),
-                                      line_count = 10,
-                                      plot_type = c("line", "area"),
-                                      official_catches_year = NULL,
-                                      return_data = FALSE) {
-    
-    names(x) <- c("Year", "Country", "iso3", "Fisheries guild", "Ecoregion", "Species name", "Species code", "Common name", "Value")
-    capyear <- official_catches_year - 1
-    cap_text <- sprintf("Historical Nominal Catches 1950-2010,\nOfficial Nominal Catches 2006-%s\nPreliminary Catches %s\nICES, Copenhagen.", capyear, official_catches_year)
 
-    df <- dplyr::rename(x, type_var = dplyr::all_of(type))
-    
-    if (type == "Common name") {
-        df$type_var <- gsub("European ", "", df$type_var)
-        df$type_var <- gsub("Sandeels.*", "sandeel", df$type_var)
-        df$type_var <- gsub("Finfishes nei", "undefined finfish", df$type_var)
-        df$type_var <- gsub("Blue whiting.*", "blue whiting", df$type_var)
-        df$type_var <- gsub("Saithe.*", "saithe", df$type_var)
-        df$type_var <- ifelse(grepl("Norway", df$type_var), df$type_var, tolower(df$type_var))
-    }
-    
-    plot <- df %>%
-        dplyr::group_by(type_var) %>%
-        dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE)) %>%
-        dplyr::arrange(dplyr::desc(typeTotal)) %>%
-        dplyr::filter(typeTotal >= 1) %>%
-        dplyr::mutate(RANK = dplyr::min_rank(dplyr::desc(typeTotal))) %>%
-        dplyr::inner_join(df, by = "type_var") %>%
-        dplyr::mutate(type_var = ifelse(RANK > line_count, "other", type_var)) %>%
-        dplyr::group_by(type_var, Year) %>%
-        dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE) / 1000) %>%
-        dplyr::ungroup() %>%
-        dplyr::filter(!is.na(Year))
 
-    unique_types <- unique(plot$type_var)
+plot_catch_trends_plotly <- function(
+  x,
+  type = c("Common name", "Country", "Fisheries guild"),
+  line_count = 10,
+  dataUpdated = NULL,
+  return_data = FALSE,
+  session = NULL,
+  per_panel_height = 380,
+  ecoregion = NULL
+) {
+  type <- match.arg(type)
 
-# Create a highlight key
-    plot <- plotly::highlight_key(plot, key = ~type_var)    
-    p <- plotly::plot_ly(plot, x = ~Year, y = ~typeTotal, color = ~type_var)
-    
-    if (plot_type == "area") {
-        p <- p %>% plotly::add_trace(type = 'scatter', mode = 'none', stackgroup = 'one')
+  # --- Responsive font sizes (fallback to 800px)
+  w <- tryCatch({
+    if (!is.null(session)) session$clientData[["output_landings_1-landings_layer_width"]] else NA_real_
+  }, error = function(e) NA_real_)
+  if (is.na(w) || is.null(w)) w <- 800
+
+  base_size         <- max(9,  min(18, round(w / 55)))
+  axis_title_size   <- max(10, min(20, round(w / 50)))
+  tick_size         <- max(9,  min(16, round(w / 55)))
+  legend_title_size <- max(10, min(18, round(w / 55)))
+  legend_text_size  <- max(9,  min(16, round(w / 65)))
+  title_annot_size  <- max(12, min(22, round(w / 40)))
+  caption_size      <- max(8,  min(14, round(w / 70)))
+
+  # --- Expected columns in this order
+  names(x) <- c("Year", "Country", "iso3", "Fisheries guild", "Ecoregion",
+                "Species name", "Species code", "Common name", "Value")
+
+  cap_text <- paste0(
+    "Historical Nominal Catches 1950–2006.\n",
+    "Official Nominal Catches 2006–2023.\n",
+    dataUpdated, ", ICES, Copenhagen."
+  )
+
+  # --- Helpers
+  sanitize_stub <- function(s) gsub("[^A-Za-z0-9]+", "_", s)
+  date_stamp <- format(Sys.Date(), "%d-%b-%y")
+
+  df <- dplyr::rename(x, type_var = dplyr::all_of(type))
+
+  if (type == "Common name") {
+    df$type_var <- gsub("European ", "", df$type_var)
+    df$type_var <- gsub("Sandeels.*", "sandeel", df$type_var)
+    df$type_var <- gsub("Finfishes nei", "undefined finfish", df$type_var)
+    df$type_var <- gsub("Blue whiting.*", "blue whiting", df$type_var)
+    df$type_var <- gsub("Saithe.*", "saithe", df$type_var)
+    df$type_var <- ifelse(grepl("Norway", df$type_var), df$type_var, tolower(df$type_var))
+  }
+
+  # --- Palette helper: Temps
+  palette_vec <- function(n) grDevices::hcl.colors(max(n, 1), palette = "Temps")
+
+  # Prep per-guild dataset (rank within guild; keep top 'line_count', others -> "other")
+  prep_one_guild <- function(.g) {
+    df_g <- df %>% dplyr::filter(`Fisheries guild` == .g)
+
+    ranks <- df_g %>%
+      dplyr::group_by(type_var) %>%
+      dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE), .groups = "drop") %>%
+      dplyr::arrange(dplyr::desc(typeTotal)) %>%
+      dplyr::filter(typeTotal >= 1) %>%
+      dplyr::mutate(RANK = dplyr::min_rank(dplyr::desc(typeTotal)))
+
+    df_g2 <- df_g %>%
+      dplyr::inner_join(ranks, by = "type_var") %>%
+      dplyr::mutate(type_var = ifelse(RANK > line_count, "other", type_var)) %>%
+      dplyr::group_by(`Fisheries guild`, type_var, Year) %>%
+      dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE) / 1000, .groups = "drop") %>%
+      dplyr::filter(!is.na(Year))
+
+    levels_i <- df_g2 %>%
+      dplyr::group_by(type_var) %>%
+      dplyr::summarise(tt = sum(typeTotal), .groups = "drop") %>%
+      dplyr::arrange(dplyr::desc(tt)) %>%
+      dplyr::pull(type_var)
+
+    transform(df_g2, type_var = factor(type_var, levels = levels_i))
+  }
+
+  # ----------------------------
+  # FORCED STACKED MODE when type == "Common name"
+  # ----------------------------
+  if (type == "Common name") {
+    guilds <- df %>%
+      dplyr::filter(!is.na(`Fisheries guild`) & `Fisheries guild` != "" & `Fisheries guild` != "undefined") %>%
+      dplyr::pull(`Fisheries guild`) %>%
+      unique() %>%
+      sort()
+
+    if (length(guilds) == 0) {
+      # fall back to single-plot below
     } else {
-        p <- p %>% plotly::add_trace(type = "scatter", mode = "lines", line = list(width = 3))
-    }
-    
-    p <- p %>% plotly::layout(
-        title = "Landings Trends",
-        xaxis = list(title = "Year"),
-        yaxis = list(title = "Landings (thousand tonnes)"),
-        margin = list(b = 100),
-        annotations = list(
-            list(
-                x = 1, y = -0.38, text = cap_text,
-                showarrow = FALSE, xref = "paper", yref = "paper",
-                xanchor = "right", yanchor = "bottom"
+      guild_dfs <- lapply(guilds, prep_one_guild)
+      if (return_data) return(dplyr::bind_rows(guild_dfs))
+
+      x_rng <- range(df$Year, na.rm = TRUE)
+
+      plot_list <- vector("list", length(guilds))
+      for (i in seq_along(guilds)) {
+        gname  <- guilds[i]
+        plot_i <- guild_dfs[[i]]
+        n_types_i <- length(levels(plot_i$type_var))
+        pal_i <- palette_vec(n_types_i)
+
+        file_stub <- paste0(ecoregion, "_landings_", sanitize_stub(gname), "_", date_stamp)
+
+        p_i <- plotly::plot_ly(
+          plot_i, x = ~Year, y = ~typeTotal,
+          color = ~type_var, colors = pal_i, showlegend = TRUE
+        ) %>%
+          plotly::add_trace(type = "scatter", mode = "lines", line = list(width = 3)) %>%
+          plotly::layout(
+            height = per_panel_height,
+            font = list(size = base_size),
+            xaxis = list(
+              title = list(text = "Year", font = list(size = axis_title_size)),
+              tickfont = list(size = tick_size),
+              range = x_rng,
+              automargin = TRUE
+            ),
+            yaxis = list(
+              title = list(text = "Landings (thousand tonnes)",
+                           font = list(size = axis_title_size), standoff = 18),
+              tickfont = list(size = tick_size),
+              automargin = TRUE
+            ),
+            margin = list(l = 80, r = 20, t = 110, b = 90),
+            annotations = list(
+              list(
+                text = paste0("Landings trends: ", gname, " (", ecoregion, ")"),
+                x = 0.01, y = 0.98,
+                xref = "paper", yref = "paper",
+                showarrow = FALSE,
+                xanchor = "left", yanchor = "top",
+                font = list(size = title_annot_size, color = "black")
+              ),
+              list(
+                x = 1, y = -0.42,
+                text = cap_text,
+                showarrow = FALSE,
+                xref = "paper", yref = "paper",
+                xanchor = "right", yanchor = "bottom",
+                font = list(size = caption_size, color = "black")
+              )
+            ),
+            legend = list(
+              title = list(text = "<b>Common name</b>", font = list(size = legend_title_size)),
+              orientation = "h",
+              y = 1.12, x = 0, xanchor = "left", yanchor = "bottom",
+              font = list(size = legend_text_size),
+              itemwidth = 50
+            ),
+            hoverlabel = list(font = list(size = base_size))
+          ) %>%
+          plotly::highlight(
+            on = "plotly_hover",
+            off = "plotly_doubleclick",
+            selected = plotly::attrs_selected(opacity = 0.7, line = list(width = 5))
+          ) %>%
+          plotly::config(
+            responsive = TRUE,
+            toImageButtonOptions = list(
+              filename = file_stub,
+              format   = "png",
+              scale    = 3
+              # width  = 1600,
+              # height = 900
             )
-        )
-    )
-    p <- p %>% plotly::highlight(
-                                on = 'plotly_hover',
-                                off = 'plotly_doubleclick',
-                                selected = plotly::attrs_selected(
-                                        opacity = 0.7,
-                                        showlegend = TRUE,
-                                        line = list(width = 5) 
-                                )
-                        )
-    
-    if (return_data) {
-        return(plot)
-    } else {
-        return(p)
+          )
+
+        plot_list[[i]] <- p_i
+      }
+
+      return(htmltools::tagList(plot_list))
     }
+  }
+
+  # ----------------------------
+  # SINGLE-PLOT path for other 'type' values
+  # ----------------------------
+  plot_df <- df %>%
+    dplyr::group_by(type_var) %>%
+    dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::arrange(dplyr::desc(typeTotal)) %>%
+    dplyr::filter(typeTotal >= 1) %>%
+    dplyr::mutate(RANK = dplyr::min_rank(dplyr::desc(typeTotal))) %>%
+    dplyr::inner_join(df, by = "type_var") %>%
+    dplyr::mutate(type_var = ifelse(RANK > line_count, "other", type_var)) %>%
+    dplyr::group_by(type_var, Year) %>%
+    dplyr::summarise(typeTotal = sum(Value, na.rm = TRUE) / 1000, .groups = "drop") %>%
+    dplyr::filter(!is.na(Year))
+
+  if (return_data) return(plot_df)
+
+  n_types <- length(unique(plot_df$type_var))
+  pal <- palette_vec(n_types)
+
+  file_stub <- paste0("landings_", sanitize_stub(type), "_", date_stamp)
+
+  plotly::plot_ly(plot_df, x = ~Year, y = ~typeTotal, color = ~type_var, colors = pal) %>%
+    plotly::add_trace(type = "scatter", mode = "lines", line = list(width = 3)) %>%
+    plotly::layout(
+      font = list(size = base_size),
+      xaxis = list(
+        title = list(text = "Year", font = list(size = axis_title_size)),
+        tickfont = list(size = tick_size),
+        automargin = TRUE
+      ),
+      yaxis = list(
+        title = list(text = "Landings (thousand tonnes)",
+                     font = list(size = axis_title_size), standoff = 18),
+        tickfont = list(size = tick_size),
+        automargin = TRUE
+      ),
+      margin = list(l = 80, r = 20, t = 60, b = 90),
+      annotations = list(
+        list(
+          x = 1, y = -0.3,
+          text = cap_text,
+          showarrow = FALSE,
+          xref = "paper", yref = "paper",
+          xanchor = "right", yanchor = "bottom",
+          font = list(size = caption_size, color = "black")
+        ),
+        list(
+          text = paste0("Landings Trends (", ecoregion, ")"),
+          x = 0.01, y = 0.99,
+          xref = "paper", yref = "paper",
+          showarrow = FALSE,
+          xanchor = "left", yanchor = "top",
+          font = list(size = title_annot_size, color = "black")
+        )
+      ),
+      legend = list(
+        title = list(text = paste0("<b>", type, "</b>"), font = list(size = legend_title_size)),
+        orientation = "h",
+        x = 0.5, y = 1.08, xanchor = "center", yanchor = "bottom",
+        font = list(size = legend_text_size),
+        itemwidth = 50
+      ),
+      hoverlabel = list(font = list(size = base_size))
+    ) %>%
+    plotly::highlight(
+      on = "plotly_hover",
+      off = "plotly_doubleclick",
+      selected = plotly::attrs_selected(opacity = 0.7, line = list(width = 5))
+    ) %>%
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = file_stub,
+        format   = "png",
+        scale    = 3
+      )
+    )
 }
 
-plot_discard_trends_app_plotly <- function(x, year, caption = FALSE, cap_year, cap_month, return_data = FALSE) {
-  df <- dplyr::filter(x, Year %in% seq(2011, year - 1))
+
+plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregion = NULL) {
+  # Check for non-numeric Year values and warn if any NAs are introduced
+
+    # --- Responsive font sizes (fallback to 800px)
+  w <- tryCatch({
+    if (!is.null(session)) session$clientData[["output_landings_1-discard_trends_width"]] else NA_real_
+  }, error = function(e) NA_real_)
+  if (is.na(w) || is.null(w)) w <- 800
+
+  base_size         <- max(9,  min(18, round(w / 55)))
+  axis_title_size   <- max(10, min(20, round(w / 50)))
+  tick_size         <- max(9,  min(16, round(w / 55)))
+  legend_title_size <- max(10, min(18, round(w / 55)))
+  legend_text_size  <- max(9,  min(16, round(w / 65)))
+  title_annot_size  <- max(12, min(22, round(w / 40)))
+  caption_size      <- max(8,  min(14, round(w / 70)))
+
+  
+  year_numeric <- suppressWarnings(as.numeric(x$Year))
+  if (any(is.na(year_numeric) & !is.na(x$Year))) {
+    warning("Non-numeric values detected in 'Year' column. These rows will be removed.")
+  }
+  df <- x %>%
+    dplyr::mutate(Year = year_numeric) %>%
+    dplyr::filter(!is.na(Year)) %>%
+    dplyr::filter(Year %in% seq(2011, year - 1))
+
   df2 <- tidyr::expand(df, Year, tidyr::nesting(StockKeyLabel, FisheriesGuild))
   df <- dplyr::left_join(df, df2, by = c("Year", "StockKeyLabel", "FisheriesGuild"))
 
@@ -238,39 +399,58 @@ plot_discard_trends_app_plotly <- function(x, year, caption = FALSE, cap_year, c
     yaxis = list(
       title = "Discard rate",
       tickformat = ".0%",
-      font = list(size = 14),
-      tickfont = list(size = 13)
+      font = list(size = axis_title_size),
+      tickfont = list(size = tick_size)
     ),
     xaxis = list(
       title = "Year",
       dtick = 1,
-      font = list(size = 14),
-      tickfont = list(size = 13)
+      font = list(size = axis_title_size),
+      tickfont = list(size = tick_size)
     ),
     legend = list(title = list(text = "<b>Fisheries Guild</b>")),
-    margin = list(t = ifelse(caption, 80, 50)),
-    annotations = if (caption) {
+    margin = list(b = 100),
+    annotations = list(
       list(
-        list(
-          xref = "paper", yref = "paper",
-          x = 0, y = 1.1, showarrow = FALSE,
-          text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
-          font = list(size = 12)
-        )
+        xref = "paper",
+        yref = "paper",
+        xanchor = "right",
+        yanchor = "bottom",
+        x = 1, y = -0.2,
+        showarrow = FALSE,
+        text = paste0("ICES Stock Assessment Database,", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
+        font = list(size = caption_size)
+      ),
+      list(
+        text = paste0("Discard trends ", " (", ecoregion, ")"),
+        x = 0.01, y = 0.98,
+        xref = "paper", yref = "paper",
+        showarrow = FALSE,
+        xanchor = "left", yanchor = "top",
+        font = list(size = title_annot_size, color = "black")
       )
-    } else {
-      NULL
-    }
-  )
+    )
+  ) %>%
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = paste0(ecoregion, "_DiscardTrends_", format(Sys.Date(), "%d-%b-%y")),
+        format   = "png",
+        scale    = 3
+        # width  = 1600,
+        # height = 900
+      )
+    )
 
   return(p)
 }
 
 
-plot_discard_current_plotly <- function(x, year, position_letter = NULL,
-                                        caption = FALSE, cap_year, cap_month,
-                                        return_data = FALSE, order_df = NULL) {
-  df <- dplyr::filter(x, Year %in% seq(year - 5, year - 1))
+plot_discard_current_plotly <- function(x, year, position_letter = NULL, return_data = FALSE, order_df = NULL, ecoregion = NULL) {
+  df <- x %>% dplyr::mutate(Year = as.numeric(Year),
+                            FMSY = as.numeric(FMSY),
+                            MSYBtrigger = as.numeric(MSYBtrigger)) %>% dplyr::filter(Year %in% seq(year - 5, year - 1))
+  
   df2 <- tidyr::expand(df, Year, tidyr::nesting(StockKeyLabel, FisheriesGuild))
   df <- dplyr::left_join(df, df2, by = c("Year", "StockKeyLabel", "FisheriesGuild"))
   
@@ -294,7 +474,10 @@ plot_discard_current_plotly <- function(x, year, position_letter = NULL,
                        Landings = as.numeric(Landings),
                        Catches = as.numeric(Catches),
                        Discards = as.numeric(Discards))
-  df5[is.na(df5)] <- 0
+  
+  df5 <- df5 %>%
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ tidyr::replace_na(., 0)))
+
   
   df5 <- df5 %>%
     dplyr::group_by(Year, FisheriesGuild) %>%
@@ -346,19 +529,33 @@ plot_discard_current_plotly <- function(x, year, position_letter = NULL,
         title = "Discards and Landings (thousand tonnes)", 
         font = list(size = 14),
         tickfont = list(size = 13)), 
-      yaxis = list(title = "", 
+      yaxis = list(title = "Fisheries Guild", 
         # font = list(size = 13),
         tickfont = list(size = 13)),
       showlegend = TRUE,
-      margin = list(l = 100),
-      annotations = if (caption) list(
+      margin = list(l = 20, r = 20, t = 50, b = 120),
+      annotations = list(
         list(
-          text = sprintf("ICES Stock Assessment Database, %s/%s. ICES, Copenhagen", cap_month, cap_year),
-          xref = "paper", yref = "paper",
-          x = 0, y = -0.1, showarrow = FALSE,
-          font = list(size = 10), align = "left"
+          xref = "paper", 
+          yref = "paper",
+          xanchor = "right", 
+          yanchor = "bottom",
+          x = 1, y = -0.4, 
+          showarrow = FALSE,
+          text = paste0("ICES Stock Assessment Database,", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
+          font = list(size = 12)
         )
-      ) else NULL
+      )  
+    ) %>% 
+    plotly::config(
+      responsive = TRUE,
+      toImageButtonOptions = list(
+        filename = paste0(ecoregion, "_CurrentDiscards_", position_letter, "_", format(Sys.Date(), "%d-%b-%y")),
+        format   = "png",
+        scale    = 3
+        # width  = 1600,
+        # height = 900
+      )
     )
 
   return(plot)

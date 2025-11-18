@@ -132,7 +132,7 @@ table.dataTable tbody tr:nth-child(odd) {background-color: #E6E7E8 !important;}
 
 .nav-tabs {
   border-bottom: 1px solid #ddd;
-  margin-top: 20px;
+  /* margin-top: 0px; */
 }
 
 
@@ -213,7 +213,7 @@ input[type=radio]:checked {
   padding: 5px 0;
   transition: opacity 0.5s ease-in-out;
 
-  position: absolute;
+  position: left;
   z-index: 1;
   /*left: 0;
   top: 110%;*/
@@ -298,9 +298,14 @@ caption {
   color: #002B5F;
   font-size: large;
   background-color: #CCF0FC;
-  padding-left: 10px;
+  /* padding-left: 10px; */
   border-width: 1px 1px 1px 1px;
   border-radius: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 16px; /* left/right padding inside header */
 }
 
 .bslib-card .card-body{
@@ -382,3 +387,292 @@ caption {
   text-align: center;
   vertical-align: middle;
 }
+
+.shiny-notification {
+  position: fixed;
+  top: 40% !important;  /* vertical center-ish */
+  left: 50% !important;  /* start from center */
+  transform: translate(-50%, -50%) !important;  /* true centering */
+
+  width: 50% !important;  /* take half the screen width */
+  max-width: 600px;  /* optional cap on very wide screens */
+
+  font-size: 16px;  /* larger text */
+  padding: 20px;  /* more spacing */
+}
+
+
+.bslib-sidebar-layout>.collapse-toggle {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background-color: #00B6F1;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+.bslib-sidebar-layout>.collapse-toggle .collapse-icon {
+      width: 15px;
+      height: 15px;
+      stroke: white;
+    }
+.bslib-sidebar-layout>.collapse-toggle:hover {
+      background-color: #99AABF;
+    }
+
+@media (max-width: 500px) {
+  .js-plotly-plot .xtick text,
+  .js-plotly-plot .ytick text,
+  .js-plotly-plot .legend text {
+    font-size: 8px !important;
+  }
+}
+@media (min-width: 501px) {
+  .js-plotly-plot .xtick text,
+  .js-plotly-plot .ytick text,
+  .js-plotly-plot .legend text {
+    font-size: 12px !important;
+  }
+}
+
+
+  /* .js-plotly-plot .g-xtitle text,  
+  .js-plotly-plot .g-ytitle text,  
+  .js-plotly-plot .annotation text { */
+
+.image-button-wrap {
+    position: relative;
+    display: inline-block;
+  }
+
+
+ .image-button-link{
+  --btn-size: clamp(110px, 18vw, 200px);
+  width: var(--btn-size);
+  height: var(--btn-size);
+
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: block;
+  cursor: pointer;
+  outline: 0;
+  text-decoration: none;
+  transition: transform .12s ease;
+}
+
+.image-button-link:hover,
+.image-button-link:focus-visible{
+  transform: scale(1.03);
+}
+
+
+.image-button-wrap .fx-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);  
+  bottom: auto;           
+  left: 50%;
+  transform: translate(-50%, 4px);  
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  width: min(82vw, 240px);
+  max-width: 240px;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+}
+
+
+.image-button-wrap:hover .fx-tooltip,
+.image-button-wrap:focus-within .fx-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 575.98px){
+  .image-button-link{ --btn-size: clamp(140px, 60vw, 240px); }
+  .image-button-wrap .fx-tooltip{
+    width: min(86vw, 320px);
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1399.98px){
+  .image-button-link{ --btn-size: clamp(120px, 13vw, 170px); }
+  .image-button-wrap .fx-tooltip{
+    width: min(86vw, 170px);
+    font-size: 1.2rem;
+  }
+}
+
+@media (min-width: 1400px){
+  .image-button-link{ --btn-size: clamp(180px, 12vw, 260px); }
+}
+
+
+:root{
+  /* min, preferred (with vw), max */
+  --fx-header-size: clamp(14px, 1.2vw + 0.6rem, 24px);
+}
+
+.fx-header-center{
+  display:flex;
+  justify-content:center;
+  align-items:baseline;
+  gap:.5rem;
+  flex-wrap:wrap;
+  margin-bottom:.5rem;
+
+  /* responsive type */
+  font-size: var(--fx-header-size);
+  line-height: 1.25;
+}
+
+.fx-header-center b{ font-weight:700; }
+
+/* Keep the separator subtle and spaced */
+.fx-sep{ opacity:.6; margin: 0 .25em; }
+
+/* Make the link follow the header size and look tidy */
+.glossary-link{
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 1em;      /* inherits from header */
+  line-height: 1.25;
+}
+
+/* Optional: tighten spacing on very small screens */
+@media (max-width: 420px){
+  .fx-header-center{ gap:.35rem; }
+}
+
+#share_url_box{
+  font-size: 0.9em; 
+  background:#f6f8fa; 
+  border:1px solid #e1e4e8;
+  border-radius: 6px; 
+  padding: 8px 10px; 
+  white-space: normal;
+  overflow-wrap: anywhere; 
+  word-break: break-word;
+}
+
+
+
+/* === Glossary floating panel container === */
+.glossary-float{
+  /* closed by default; JS sets display:flex when opening */
+  display: none;
+
+  position: fixed;
+  right: 20px;           /* starting position */
+  top: 80px;
+  z-index: 2000;
+
+  /* look & layout */
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  overflow: hidden;
+
+  /* make header fixed and body grow */
+  display: flex;
+  flex-direction: column;
+
+  /* responsive size + font */
+  width: clamp(360px, 38vw, 780px);
+  max-height: 42vh;
+  font-size: clamp(12px, 1.4vw, 14px);
+}
+
+/* phones / small tablets */
+@media (max-width: 576px){
+  .glossary-float{
+    right: 8px;
+    top: 8px;
+    width: min(70vw, 560px);
+    /* max-height: 42vh; */
+    font-size: 10px;    /* readable on small screens */
+  }
+}
+
+/* large monitors */
+@media (min-width: 1600px){
+  .glossary-float{
+    width: 28vw;
+    max-width: 900px;
+    font-size: 16px;
+  }
+}
+
+
+
+/* === Glossary panel internals === */
+.glossary-float { /* container rules already exist; keeping for clarity */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollable body */
+.glossary-float .g-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  -webkit-overflow-scrolling: touch; /* smoother iOS scroll */
+}
+
+/* Title text */
+.glossary-float .g-title {
+  font-weight: 600;
+  font-size: clamp(14px, 2vw, 18px);
+}
+
+/* Header bar */
+.glossary-float .g-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  color: #002B5F;
+  background: #CCF0FC;
+  border-bottom: 1px solid #e5e5e5;
+  cursor: move;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Close button */
+.glossary-float .g-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Tiny “[source]” link styling */
+.glossary-float .g-body .src-link { font-size: 0.85em; opacity: 0.85; margin-left: .35rem; }
+.glossary-float .g-body a { text-decoration: none; }
+
+
+/* Open/close via class (cleaner than editing inline style) */
+.glossary-float { display: none; }
+.glossary-float.is-open { display: flex; } /* flex so .g-body can scroll */
+
+
+#staticMap1 {
+  margin-left:auto; 
+  margin-right:auto; 
+  margin-bottom:auto; 
+  max-width:97%; 
+  height:auto;}
