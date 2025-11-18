@@ -147,16 +147,38 @@ mod_overview_server <- function(
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    ################################## bookmarking #########################################
+   ################################## bookmarking #########################################
+    # This module participates in the global bookmarking via two hooks:
+    # - `bookmark_qs`: a reactive list provided by the main server with the
+    #   parsed query-string (including $subtab).
+    # - `set_subtab()`: a callback into the main server to report *user-driven*
+    #   changes of the internal tab state.
+    #
+    # Restore path:
+    # - On first non-null bookmark_qs(), we read the desired subtab.
+    # - If it is valid for this module, we wait for the UI to flush, then
+    #   select the corresponding tabsetPanel value.
+    # - We also call set_subtab() once so the main server can see that the
+    #   module has accepted the requested subtab.
+    #
+    # Report path:
+    # - Any later changes to input$tabs_overview (ignoring the initial) are
+    #   forwarded upstream via set_subtab(), so the main server can update
+    #   the URL hash / desired() state.
+
     # RESTORE once, defer until after first flush, then push up
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
       wanted <- qs$subtab
       valid <- c("exec_summary", "introduction", "who_is_fishing")
+
+       # Only act if a valid subtab was requested
       if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
         session$onFlushed(function() {
+          # Drive the internal tabsetPanel to the requested subtab
           updateTabsetPanel(session, "tabs_overview", selected = wanted)
-          isolate(set_subtab(wanted)) # one-arg setter
+          # Inform the parent that we've applied this subtab (one-arg setter)
+          isolate(set_subtab(wanted)) 
         }, once = TRUE)
       }
     })
@@ -164,7 +186,9 @@ mod_overview_server <- function(
     # REPORT on user changes, skip initial default
     observeEvent(input$tabs_overview,
       {
-        set_subtab(input$tabs_overview) # one arg only
+        # Whenever the user clicks a different subtab, tell the main server.
+        # The parent can then update the URL and/or its own `desired()` state.
+        set_subtab(input$tabs_overview) 
       },
       ignoreInit = TRUE
     )

@@ -67,50 +67,76 @@ app_server <- function(input, output, session) {
   # One-time desired state from URL
   desired <- reactiveVal(NULL)
 
-  # Read URL once
+##################################### Bookmarking #####################################
+# High-level:
+# - On first load, read URL hash/query once and parse desired eco, tab, subtab.
+# - Store that in `desired()` and set `is_restoring(TRUE)`.
+# - A single observe() then drives the restore process:
+#   * set ecoregion immediately
+#   * set top-level navbar tab immediately
+#   * keep retrying subtab selection until controls are bound
+#   * stop restoring once live state == desired state
+
+# 1) Read URL once and stage the desired navigation state ------------------------------
   observeEvent(session$clientData$url_hash, {
+    # Hash and query string (e.g. #eco=..., ?tab=..., ?subtab=...)
     hash   <- isolate(session$clientData$url_hash)   %||% ""
     search <- isolate(session$clientData$url_search) %||% ""
+    # parse_nav() is a small helper that extracts eco/tab/subtab from hash+query
     p <- parse_nav(hash, search)
-    # Stage desired state
+    # Store desired state in a single reactiveVal, with empty string as "not set"
     desired(list(
       eco    = p$eco    %||% "",
       tab    = p$tab    %||% "",
       subtab = p$subtab %||% ""
     ))
+
+    # Flip the global "restore in progress" flag; the observer below will do the work
     is_restoring(TRUE)
   }, once = TRUE, ignoreInit = FALSE)
 
-  # Single restore path (bounded retry while inputs bind)
+# 2) Single restore path (bounded retries while inputs bind) ---------------------------
   observe({
     d <- desired()
     if (is.null(d)) return()
     if (!isTRUE(is_restoring())) return()
 
-    # 1) eco immediately
+    # Step 1: restore ecoregion immediately
     if (nzchar(d$eco)) selected_ecoregion(d$eco)
 
-    # 2) top tab immediately
+    # Step 2: restore top-level navbar tab immediately
     if (nzchar(d$tab)) updateNavbarPage(session, "nav-page", selected = d$tab)
 
-    # 3) subtab after controls bind; retry briefly until it sticks or no subtab requested
+    # Step 3: restore subtab, but only once the relevant inputs exist
+    # We keep calling select_subtab() until get_current_subtab() matches,
+    # or until no subtab is requested.
     if (nzchar(d$subtab) && d$tab %in% names(SUBTAB_INPUTS)) {
       # if mismatch, try selecting; we run this observe block repeatedly while restoring
       cur <- get_current_subtab(d$tab, input)
-      if (!identical(cur, d$subtab)) select_subtab(d$tab, d$subtab, session)
+      if (!identical(cur, d$subtab)) 
+      # This call eventually propagates into the relevant module via set_subtab()
+      select_subtab(d$tab, d$subtab, session)
     }
 
-    # Stop restoring only when current live state matches desired (or no subtab requested)
+    # Check whether the live app state now matches the desired state ---------------------
     cur_tab <- input$`nav-page` %||% ""
     cur_sub <- get_current_subtab(d$tab, input)
+
+    # We stop restoring when:
+    # - the selected ecoregion is correct
+    # - the top-level tab matches (or none was requested)
+    # - the subtab matches (or none was requested)
     if (identical(selected_ecoregion() %||% "", d$eco %||% "") &&
         (!nzchar(d$tab) || identical(cur_tab, d$tab)) &&
         (!nzchar(d$subtab) || identical(cur_sub, d$subtab))) {
+
+      # Freeze the restore loop; further navigation will be driven by user input
       is_restoring(FALSE)
       return()
     }
 
-    # Re-check soon while restoring (short, bounded loop without onFlushed churn)
+    # If we’re still not fully in sync, check again shortly.
+    # This gives a short, bounded retry loop without relying on onFlushed() here.
     if (isTRUE(is_restoring())) invalidateLater(80, session)
   })
 
