@@ -226,7 +226,7 @@ mod_resources_server <- function(
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
       wanted <- qs$subtab
-      valid <- c("exec_summary", "introduction", "who_is_fishing")
+      valid <- c("exec_summary", "introduction", "who_is_fishing") ### this needs to get fixed
       if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
         session$onFlushed(function() {
           updateTabsetPanel(session, "tabs_overview", selected = wanted)
