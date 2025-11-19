@@ -51,7 +51,7 @@ mod_navigation_page_ui <- function(id) {
               style = "overflow: visible;",
               fluidRow(
                 column(
-                  4, align = "center",
+                  6, align = "center",
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("overviewBtn"), label = NULL, class = "image-button-link",
@@ -62,7 +62,7 @@ mod_navigation_page_ui <- function(id) {
                   )
                 ),
                 column(
-                  4, align = "center",
+                  6, align = "center",
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("landingsBtn"), label = NULL, class = "image-button-link",
@@ -72,8 +72,9 @@ mod_navigation_page_ui <- function(id) {
                     div(class = "fx-tooltip", HTML("<strong>Landings</strong><br><br>Landings over time:<br>by country, species, fish guild, and gear type"))
                   )
                 ),
+                fluidRow(
                 column(
-                  4, align = "center",
+                  6, align = "center",
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("stockStatusBtn"), label = NULL, class = "image-button-link",
@@ -82,9 +83,20 @@ mod_navigation_page_ui <- function(id) {
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Stock status</strong><br><br>Relative to MSY &amp; PA reference points, and MSFD descriptors"))
                   )
-                )
-              ),
-              # fluidRow(
+                ),
+             
+              
+                column(
+                  6, align = "center",
+                  div(class = "image-button-wrap",
+                    actionLink(
+                      ns("VMS"), label = NULL, class = "image-button-link",
+                      style = "background-image: url('www/icons/vms.svg');",
+                      title = "VMS", `aria-label` = "VMS"
+                    ),
+                    div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Effort distribution and physical disturbance of benthic habitats"))
+                  )
+                )),
               #   column(
               #     4, align = "center",
               #     div(class = "image-button-wrap",
@@ -100,17 +112,6 @@ mod_navigation_page_ui <- function(id) {
               #     4, align = "center",
               #     div(class = "image-button-wrap",
               #       actionLink(
-              #         ns("VMS"), label = NULL, class = "image-button-link",
-              #         style = "background-image: url('www/icons/vms.svg');",
-              #         title = "VMS", `aria-label` = "VMS"
-              #       ),
-              #       div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Effort distribution and physical disturbance of benthic habitats"))
-              #     )
-              #   ),
-              #   column(
-              #     4, align = "center",
-              #     div(class = "image-button-wrap",
-              #       actionLink(
               #         ns("bycatchBtn"), label = NULL, class = "image-button-link",
               #         style = "background-image: url('www/icons/bycatch.svg');",
               #         title = "Bycatch", `aria-label` = "Bycatch"
@@ -118,7 +119,7 @@ mod_navigation_page_ui <- function(id) {
               #       div(class = "fx-tooltip", HTML("<strong>Bycatch</strong><br><br>Protected, endangered, and threatened species"))
               #     )
               #   )
-              # )
+              )
             )
           )
         )
@@ -196,8 +197,8 @@ mod_navigation_page_server <- function(
     observeEvent(input$overviewBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "overview") })
     observeEvent(input$landingsBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "landings") })
     observeEvent(input$stockStatusBtn,{ updateNavbarPage(parent_session, "nav-page", selected = "stock_status") })
+    observeEvent(input$VMS,           { updateNavbarPage(parent_session, "nav-page", selected = "vms") })
     # observeEvent(input$mixfishBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "mixed_fisheries") })
-    # observeEvent(input$VMS,           { updateNavbarPage(parent_session, "nav-page", selected = "vms") })
     # observeEvent(input$bycatchBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "bycatch") })
   })
 }
