@@ -118,7 +118,17 @@ mod_resources_ui <- function(id) {
             notes = "See dataset page for data access and conditions."
           ),
 
-          # 5) Application source code (not a dataset, but important for reuse)
+          # 5) VMS Data
+          resource_card(
+            title = "VMS and Logbook dataset",
+            description = "Aggregated VMS-based effort and physical disturbance data used in the VMS results.",
+            dataset_url = "https://data.ices.dk/vms",
+            metadata_url = NULL,
+            services = list(APIs = "https://data.ices.dk/vms/webservices"),
+            notes = "See dataset page for data access and conditions."
+          ),
+
+          # 6) Application source code (not a dataset, but important for reuse)
           resource_card(
             title = "Application source code",
             description = "Code for this application (versioning, issues, reproducibility).",
