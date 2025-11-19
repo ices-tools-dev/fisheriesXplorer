@@ -286,11 +286,19 @@ mod_landings_server <- function(
      })
    )
     
+    # output$landings_text <- renderUI({
+    #   HTML(select_text(texts, "landings_discards", "landings"))
+    # })
+    # output$discards_text <- renderUI({
+    #   HTML(select_text(texts, "landings_discards", "discards"))
+    # })
+
     output$landings_text <- renderUI({
-      HTML(select_text(texts, "landings_discards", "landings"))
+      HTML(select_text(texts, paste0("landings_discards_", get_ecoregion_acronym(selected_ecoregion())), "landings"))
     })
+
     output$discards_text <- renderUI({
-      HTML(select_text(texts, "landings_discards", "discards"))
+      HTML(select_text(texts, paste0("landings_discards_", get_ecoregion_acronym(selected_ecoregion())), "discards"))
     })
 
     ################################## Landings plots #########################################

@@ -201,7 +201,6 @@ mod_glossary_float_server <- function(id, terms) {
     # Always-available data for the table
     data_r <- reactive({
       df <- resolve_df(terms)
-      if (nrow(df)) df <- df[order(tolower(df$term)), , drop = FALSE]
       df
     })
 
@@ -214,9 +213,16 @@ mod_glossary_float_server <- function(id, terms) {
           Definition = mapply(add_link, df$definition, df$source, USE.NAMES = FALSE),
           stringsAsFactors = FALSE
         ),
-        searchable = TRUE, filterable = TRUE, striped = TRUE, compact = TRUE, highlight = TRUE,
-        defaultSorted = list(Term = "asc"), defaultPageSize = 10, showPageSizeOptions = TRUE,
-        minRows = 5, resizable = TRUE,
+        searchable = TRUE, 
+        filterable = TRUE, 
+        striped = TRUE, 
+        compact = TRUE, 
+        highlight = TRUE,
+        # defaultSorted = list(Term = "asc"), 
+        defaultPageSize = 20, 
+        showPageSizeOptions = TRUE,
+        minRows = 5, 
+        resizable = TRUE,
         columns = list(
           Term = reactable::colDef(minWidth = 100),
           Definition = reactable::colDef(
