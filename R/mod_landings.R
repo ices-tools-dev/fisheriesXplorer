@@ -1,16 +1,67 @@
-#' landings UI Function
+#' Landings and discards UI module
 #'
-#' @description A shiny Module.
+#' This module UI creates the main \emph{Landings} section of the app,
+#' with two tabs: aggregated landings by different categories and
+#' discards trends/coverage. It uses a side panel for explanatory text
+#' and cards for plots and controls.
 #'
-#' @param id,input,output,session Internal parameters for {shiny}.
+#' @param id A character string used as the module namespace. Passed to
+#'   \code{shiny::NS()} and used to namespace all UI elements within the
+#'   module.
 #'
-#' @noRd
+#' @details
+#' The UI contains:
+#' \itemize{
+#'   \item A header created by \code{mod_flex_header_ui()} showing the
+#'     current ecoregion label and date.
+#'   \item A \code{tabsetPanel} with two tabs:
+#'     \itemize{
+#'       \item \code{"Landings"}: a sidebar with dynamic explanatory text
+#'         (\code{landings_text}) and a main card containing:
+#'         \itemize{
+#'           \item A radio-button selector for the landings layer
+#'             (main landed species, fisheries guild, country).
+#'           \item A CSV download link for landings data
+#'             (\code{download_landings_data}).
+#'           \item A dynamic output for the selected layer
+#'             (\code{landings_layer}), typically a map or plot, wrapped
+#'             in \code{shinycssloaders::withSpinner()}.
+#'         }
+#'       \item \code{"Discards"}: a sidebar with dynamic text
+#'         (\code{discards_text}) and cards containing:
+#'         \itemize{
+#'           \item A \code{plotly} discard trends plot
+#'             (\code{discard_trends}) with a CSV download link
+#'             (\code{download_discard_data}).
+#'           \item Two additional \code{plotly} outputs for recorded and
+#'             all discards (\code{recorded_discards}, \code{all_discards}),
+#'             each wrapped in \code{withSpinner()}.
+#'         }
+#'     }
+#' }
 #'
-#' @importFrom shiny NS tagList
-#' @importFrom icesFO plot_discard_trends plot_discard_current plot_catch_trends
-#' @importFrom plotly ggplotly plotlyOutput renderPlotly
+#' The corresponding server logic is implemented in
+#' \code{mod_landings_server()}.
+#'
+#' @return A \code{shiny.tag.list} representing the landings and discards
+#'   UI, suitable for inclusion in a Shiny app.
+#'
+#' @importFrom shiny NS tagList tabsetPanel tabPanel sidebarLayout uiOutput radioButtons downloadLink
+#' @importFrom bslib layout_sidebar sidebar card card_header card_body
 #' @importFrom shinycssloaders withSpinner
-
+#' @importFrom plotly plotlyOutput
+#'
+#' @examples
+#' \dontrun{
+#'   library(shiny)
+#'   ui <- fluidPage(mod_landings_ui("landings"))
+#'   server <- function(input, output, session) {
+#'     mod_landings_server("landings")
+#'   }
+#'   shinyApp(ui, server)
+#' }
+#'
+#' @export
 mod_landings_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -87,9 +138,77 @@ mod_landings_ui <- function(id) {
   )
 }
 
-#' landings Server Functions
+#' Server logic for landings and discards module
 #'
-#' @noRd 
+#' This module server powers the \emph{Landings} section of the app. It
+#' manages bookmarking of the main tabset, renders header labels and a
+#' floating glossary, generates landings and discards plots, and provides
+#' downloadable data bundles for both landings and discards.
+#'
+#' @param id Module id, matching the id used in \code{mod_landings_ui()}.
+#' @param cap_year Optional numeric year indicating the data capture or
+#'   reference year for landings/discards (reserved for use in labels).
+#' @param cap_month Optional numeric month indicating the data capture or
+#'   reference month (reserved for use in labels).
+#' @param selected_ecoregion A reactive expression returning the currently
+#'   selected ecoregion name (character). Used for labelling and to select
+#'   the appropriate cached data file.
+#' @param shared A list or environment containing shared data objects,
+#'   typically including \code{SAG} and \code{SID} tables used by
+#'   \code{format_sag()} and \code{CLD_trends()} for discard calculations.
+#' @param bookmark_qs A reactive returning a list of bookmark query-string
+#'   parameters (including \code{subtab}) or \code{NULL}. Used to restore
+#'   the selected main tab (\code{"landings"} or \code{"discards"}) on load.
+#' @param set_subtab A callback function taking a single character argument
+#'   (the current subtab id). Used to inform the parent app of tab changes
+#'   for bookmarking or other side effects.
+#'
+#' @details
+#' The module:
+#' \itemize{
+#'   \item Restores the active tab (\code{main_tabset}) from
+#'     \code{bookmark_qs()} on first load and reports it via
+#'     \code{set_subtab()}.
+#'   \item Renders a header showing the current ecoregion and a "Last data
+#'     update" label that depends on the active tab.
+#'   \item Attaches a floating glossary via
+#'     \code{mod_glossary_float_server()}, using entries from the
+#'     \code{texts} table (type \code{"glossary"}).
+#'   \item Renders explanatory text blocks for landings and discards from
+#'     \code{texts} (type \code{"landings_discards"}).
+#'   \item For landings:
+#'     \itemize{
+#'       \item Loads an ecoregion-specific \code{.rda} file (by acronym).
+#'       \item Calls \code{plot_catch_trends_plotly()} with parameters
+#'         derived from the radio-button selection and cleans series names
+#'         for display.
+#'       \item Provides a ZIP bundle download (\code{download_landings_data})
+#'         containing a CSV export, a disclaimer, and external ICES ZIP
+#'         files, using \code{safe_download()} where needed.
+#'     }
+#'   \item For discards:
+#'     \itemize{
+#'       \item Uses \code{format_sag()} and \code{CLD_trends()} based on
+#'         \code{shared$SAG} and \code{shared$SID}.
+#'       \item Produces a \code{plotly} time-series trends plot and two
+#'         current-year summary plots (stocks with recorded discards and all
+#'         stocks).
+#'       \item Provides a ZIP bundle download
+#'         (\code{download_discard_data}) containing a CSV export and a
+#'         disclaimer.
+#'     }
+#' }
+#'
+#' @return No direct return value; the function is called for the side
+#'   effects of registering observers, outputs, and download handlers in a
+#'   Shiny server context.
+#'
+#' @importFrom shiny moduleServer observeEvent updateTabsetPanel renderUI
+#'   downloadHandler reactive req tags tagList
+#' @importFrom plotly renderPlotly ggplotly
+#' @importFrom utils write.csv
+#'
+#' @export
 mod_landings_server <- function(
     id, cap_year, cap_month, selected_ecoregion, shared,
     bookmark_qs = reactive(NULL),
@@ -98,7 +217,23 @@ mod_landings_server <- function(
     ns <- session$ns
 
     ################################## bookmarking #########################################
-    # RESTORE once, defer until after first flush, then push up
+    # This module participates in the global bookmarking via two hooks:
+    # - `bookmark_qs`: a reactive list provided by the main server with the
+    #   parsed query-string (including $subtab).
+    # - `set_subtab()`: a callback into the main server to report *user-driven*
+    #   changes of the internal tab state.
+    #
+    # Restore path:
+    # - On first non-null bookmark_qs(), we read the desired subtab.
+    # - If it is valid for this module, we wait for the UI to flush, then
+    #   select the corresponding tabsetPanel value.
+    # - We also call set_subtab() once so the main server can see that the
+    #   module has accepted the requested subtab.
+    #
+    # Report path:
+    # - Any later changes to input$tabs_overview (ignoring the initial) are
+    #   forwarded upstream via set_subtab(), so the main server can update
+    #   the URL hash / desired() state.
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
       wanted <- qs$subtab

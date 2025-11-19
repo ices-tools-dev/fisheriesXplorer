@@ -199,7 +199,24 @@ mod_navigation_page_server <- function(
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # RESTORE once, defer until after first flush, then push up
+   ################################## bookmarking #########################################
+    # This module participates in the global bookmarking via two hooks:
+    # - `bookmark_qs`: a reactive list provided by the main server with the
+    #   parsed query-string (including $subtab).
+    # - `set_subtab()`: a callback into the main server to report *user-driven*
+    #   changes of the internal tab state.
+    #
+    # Restore path:
+    # - On first non-null bookmark_qs(), we read the desired subtab.
+    # - If it is valid for this module, we wait for the UI to flush, then
+    #   select the corresponding tabsetPanel value.
+    # - We also call set_subtab() once so the main server can see that the
+    #   module has accepted the requested subtab.
+    #
+    # Report path:
+    # - Any later changes to input$tabs_overview (ignoring the initial) are
+    #   forwarded upstream via set_subtab(), so the main server can update
+    #   the URL hash / desired() state.
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
       wanted <- qs$subtab

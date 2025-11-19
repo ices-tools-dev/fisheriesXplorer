@@ -1,17 +1,76 @@
-#' stock_status UI Function
+#' Stock status UI module
 #'
-#' @description A shiny Module.
+#' This module UI creates the main \emph{Stock status} section of the app.
+#' It shows summary status plots, trends by functional group, Kobe/CLD
+#' views, and a stock-level lookup table, all for the currently selected
+#' ecoregion.
 #'
-#' @param id,input,output,session Internal parameters for {shiny}.
+#' @param id A character string used as the module namespace. Passed to
+#'   \code{shiny::NS()} and used to namespace all UI elements within the
+#'   module.
 #'
-#' @noRd 
+#' @details
+#' The layout consists of:
+#' \itemize{
+#'   \item A flexible header created by \code{mod_flex_header_ui()},
+#'     displaying the ecoregion label and current date.
+#'   \item A \code{bslib::navset_tab()} (\code{main_tabset}) with four
+#'     \code{nav_panel()} views:
+#'     \itemize{
+#'       \item \strong{Status Summary} (\code{"status_summary"}):
+#'         \itemize{
+#'           \item Sidebar with explanatory text (\code{status_text1}).
+#'           \item Two cards containing static plots:
+#'             \code{status_summary_ices} (MSY & Precautionary Approach)
+#'             and \code{status_summary_ges} (catches vs MSY status),
+#'             each with a combined data + graph download link
+#'             (\code{download_clean_status_data},
+#'             \code{download_status_catch_data}).
+#'         }
+#'       \item \strong{Trends by group} (\code{"trends_by_group"}):
+#'         \itemize{
+#'           \item Sidebar with explanatory text (\code{status_text2}).
+#'           \item A card with a radio-button selector
+#'             (\code{status_trend_selector}) for functional groups
+#'             (elasmobranch, benthic, shellfish, demersal, pelagic),
+#'             a CSV download link (\code{download_trends_data}), and a
+#'             \code{plotly} trends plot (\code{status_trends}).
+#'         }
+#'       \item \strong{Kobe-CLD} (\code{"kobe_cld"}):
+#'         \itemize{
+#'           \item Sidebar with explanatory text (\code{status_text3}).
+#'           \item Controls for group selection
+#'             (\code{status_kobe_cld_selector}) and a year/period slider
+#'             (\code{kobe_cld_slider}), plus a combined data + graphs
+#'             download link (\code{download_CLD_data}).
+#'           \item Two plots: CLD (\code{status_cld}) and Kobe diagram
+#'             (\code{status_kobe}).
+#'         }
+#'       \item \strong{Stock status Lookup} (\code{"status_lookup"}):
+#'         \itemize{
+#'           \item Sidebar with explanatory text (\code{status_text4}).
+#'           \item A card with a \code{reactable} table
+#'             (\code{stock_status_table_reactable}) and a CSV download
+#'             link (\code{download_status_table}).
+#'         }
+#'     }
+#' }
 #'
-#' @importFrom shiny NS tagList 
-#' @importFrom bslib card_image navset_tab nav_panel layout_sidebar sidebar
-#' @importFrom icesFO plot_CLD_bar plot_kobe plot_stock_trends plot_status_prop_pies plot_GES_pies
-#' @importFrom dplyr filter slice_max mutate select group_by if_else row_number ungroup summarize_all rename
-#' @importFrom reactable reactable reactableOutput renderReactable colDef
-#' 
+#' The corresponding server logic is implemented in
+#' \code{mod_stock_status_server()}.
+#'
+#' @return A \code{shiny.tag.list} representing the stock status UI,
+#'   suitable for inclusion in a Shiny application.
+#'
+#' @importFrom shiny NS tagList fluidRow column uiOutput downloadLink
+#'   radioButtons plotOutput
+#' @importFrom bslib navset_tab nav_panel layout_sidebar sidebar card
+#'   card_header card_body
+#' @importFrom shinycssloaders withSpinner
+#' @importFrom plotly plotlyOutput
+#' @importFrom reactable reactableOutput
+#'
+#' @export
 mod_stock_status_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -179,9 +238,119 @@ mod_stock_status_ui <- function(id) {
 
         
     
-#' stock_status Server Functions
+#' Server logic for stock status module
 #'
-#' @noRd 
+#' This module server powers the \emph{Stock status} section of the app. It
+#' manages bookmarking of the main status tabs, renders header labels and the
+#' floating glossary, computes derived status objects, generates plots for all
+#' four views (summary, trends, Kobe/CLD, lookup), and provides downloadable
+#' ZIP bundles for each type of status output.
+#'
+#' @param id Module id, matching the id used in \code{mod_stock_status_ui()}.
+#' @param cap_year Integer (optional) capture/reference year for the status
+#'   data, used in captions and filenames where available.
+#' @param cap_month Integer (optional) capture/reference month for the status
+#'   data, used in captions and filenames where available.
+#' @param selected_ecoregion A reactive expression returning the currently
+#'   selected ecoregion name (character). Used for labelling, filtering, and
+#'   in file naming tokens.
+#' @param shared A list or environment containing shared data objects, typically
+#'   including \code{SAG}, \code{SID}, and \code{clean_status}, which are used
+#'   by helper functions such as \code{format_sag()}, \code{CLD_trends()},
+#'   \code{stockstatus_CLD_current_proxy()}, \code{stock_trends_proxy()}, and
+#'   \code{format_annex_table()}.
+#' @param bookmark_qs A reactive returning a list of bookmark query-string
+#'   parameters (including \code{subtab}) or \code{NULL}. Used to restore the
+#'   selected main tab (\code{"status_summary"}, \code{"trends_by_group"},
+#'   \code{"kobe_cld"}, \code{"status_lookup"}) on load.
+#' @param set_subtab A callback function taking a single character argument
+#'   (the current subtab id). Used to inform the parent app of tab changes for
+#'   bookmarking or other side effects.
+#'
+#' @details
+#' The module:
+#' \itemize{
+#'   \item Restores the active tab from \code{bookmark_qs()} on first load,
+#'     using \code{bslib::nav_select()} when available, and reports it via
+#'     \code{set_subtab()}.
+#'   \item Observes changes to \code{input$main_tabset} (ignoring the initial
+#'     default) and calls \code{set_subtab()} whenever the user switches tab.
+#'   \item Renders a header showing:
+#'     \itemize{
+#'       \item The current ecoregion label (\code{ecoregion_label}).
+#'       \item A "Last data update" timestamp (current system date).
+#'       \item A floating glossary trigger wired up via
+#'         \code{mod_glossary_float_server()}, populated from the
+#'         \code{texts} table (type \code{"glossary"}).
+#'     }
+#'   \item Uses a common sidebar text block for all four tabs, taken from
+#'     \code{select_text(texts, "status", "sidebar")}.
+#'   \item For the \strong{Status Summary} tab:
+#'     \itemize{
+#'       \item Computes \code{catch_current()} from \code{shared$SAG} and
+#'         \code{shared$SID} via \code{format_sag()},
+#'         \code{add_proxyRefPoints()}, and
+#'         \code{stockstatus_CLD_current_proxy()}.
+#'       \item Renders MSY/PA pies with \code{plot_status_prop_pies()} and
+#'         GES pies with \code{plot_GES_pies()}, using client data width for
+#'         responsive sizing.
+#'       \item Provides ZIP bundles for clean status data
+#'         (\code{download_clean_status_data}) and GES/catch status
+#'         (\code{download_status_catch_data}), each containing a CSV export,
+#'         a disclaimer text (fetched via \code{safe_download()}), and a PNG
+#'         plot (generated with \code{ragg::agg_png()} or
+#'         \code{ggplot2::ggsave()} where possible).
+#'     }
+#'   \item For the \strong{Trends by group} tab:
+#'     \itemize{
+#'       \item Builds trends data with \code{stock_trends_proxy()} and
+#'         \code{trends_data()}.
+#'       \item Renders a \code{plotly} time-series plot via
+#'         \code{plot_stock_trends()} for the selected fisheries guild(s).
+#'       \item Exposes a ZIP download (\code{download_trends_data}) with the
+#'         trends CSV and a disclaimer.
+#'     }
+#'   \item For the \strong{Kobe-CLD} tab:
+#'     \itemize{
+#'       \item Computes \code{kobe_cld_data()} from \code{catch_current()}
+#'         filtered by the selected guild(s) and \code{plot_CLD_bar_app()}
+#'         with \code{return_data = TRUE}.
+#'       \item Renders \code{status_kobe} and \code{status_cld} plots by
+#'         slicing the top \code{n} stocks and passing them to
+#'         \code{plot_kobe_app()} and \code{plot_CLD_bar_app()}
+#'         (\code{return_data = FALSE}).
+#'       \item Provides a ZIP bundle (\code{download_CLD_data}) containing the
+#'         filtered CSV, a disclaimer, and PNG images of both Kobe and CLD
+#'         plots.
+#'     }
+#'   \item For the \strong{Stock status lookup} tab:
+#'     \itemize{
+#'       \item Builds a processed data frame suitable for a rich table via
+#'         \code{format_annex_table()}, icon paths
+#'         (\code{match_stockcode_to_illustration()}), and status icon
+#'         mapping (\code{icon_mapping()}), pivoted to provide MSY and PA
+#'         columns.
+#'       \item Renders a \code{reactable} table with HTML columns, grouped
+#'         headers, and filters.
+#'       \item Exposes a ZIP bundle (\code{download_status_table}) with the
+#'         raw annex table CSV and a disclaimer.
+#'     }
+#' }
+#'
+#' @return No direct return value; the function is called for its side
+#'   effects of registering observers, reactives, outputs, and download
+#'   handlers in a Shiny server context.
+#'
+#' @importFrom shiny moduleServer observeEvent updateTabsetPanel renderUI
+#'   reactive req tags tagList downloadHandler sliderInput
+#' @importFrom bslib nav_select
+#' @importFrom plotly renderPlotly
+#' @importFrom reactable renderReactable
+#' @importFrom utils write.csv
+#' @importFrom dplyr filter slice_max mutate select
+#' @importFrom tidyr pivot_wider
+#'
+#' @export 
 mod_stock_status_server <- function(
     id, cap_year, cap_month, selected_ecoregion, shared,
     bookmark_qs = reactive(NULL),
@@ -190,7 +359,23 @@ mod_stock_status_server <- function(
     ns <- session$ns
 
     ################################## bookmarking #########################################
-    # RESTORE once, defer until after first flush, then push up
+    # This module participates in the global bookmarking via two hooks:
+    # - `bookmark_qs`: a reactive list provided by the main server with the
+    #   parsed query-string (including $subtab).
+    # - `set_subtab()`: a callback into the main server to report *user-driven*
+    #   changes of the internal tab state.
+    #
+    # Restore path:
+    # - On first non-null bookmark_qs(), we read the desired subtab.
+    # - If it is valid for this module, we wait for the UI to flush, then
+    #   select the corresponding tabsetPanel value.
+    # - We also call set_subtab() once so the main server can see that the
+    #   module has accepted the requested subtab.
+    #
+    # Report path:
+    # - Any later changes to input$tabs_overview (ignoring the initial) are
+    #   forwarded upstream via set_subtab(), so the main server can update
+    #   the URL hash / desired() state.
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
       wanted <- qs$subtab

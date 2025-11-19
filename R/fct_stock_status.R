@@ -1,4 +1,64 @@
 ################# Data processing ################################################
+
+#' Fetch SID stock list for a given year and ecoregion
+#'
+#' Queries the ICES Stock List OData service for the specified
+#' \code{year}, filters to the requested ecoregion, and returns a
+#' processed stock list data frame. Some assessment keys are
+#' hard-coded/expanded for specific stocks, and fisheries guild labels
+#' are standardised.
+#'
+#' @param year Integer or numeric; assessment year to query in the ICES
+#'   Stock List service (used in the \code{ActiveYear} filter).
+#' @param EcoR Character scalar; ecoregion name to filter on (must match
+#'   the \code{EcoRegion} values returned by the service, e.g.
+#'   \code{"Greater North Sea"}).
+#'
+#' @return
+#' A data frame (tibble) containing at least the columns:
+#' \describe{
+#'   \item{StockKeyLabel}{ICES stock identifier.}
+#'   \item{EcoRegion}{Ecoregion name (one per row after splitting).}
+#'   \item{YearOfLastAssessment}{Year of last assessment.}
+#'   \item{AssessmentKey}{Numeric assessment key (non-\code{NA} only).}
+#'   \item{StockKeyDescription}{Text description of the stock.}
+#'   \item{SpeciesScientificName}{Scientific name of the species.}
+#'   \item{SpeciesCommonName}{Common name of the species.}
+#'   \item{AdviceCategory}{ICES advice category.}
+#'   \item{DataCategory}{ICES data category.}
+#'   \item{FisheriesGuild}{Fisheries guild, with \code{"crustacean"}
+#'     recoded to \code{"shellfish"}.}
+#' }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Calls the ICES OData endpoint
+#'     \code{StockListDWs4} with a filter on \code{ActiveYear == year}
+#'     and a restricted set of columns (e.g. \code{StockKeyLabel},
+#'     \code{EcoRegion}, \code{AssessmentKey}, \code{FisheriesGuild}, etc.).
+#'   \item Parses the JSON response via \code{jsonlite::fromJSON()} and
+#'     extracts the \code{$value} array.
+#'   \item Ensures \code{EcoRegion} is character and splits multi-valued
+#'     ecoregions into separate rows using
+#'     \code{tidyr::separate_rows(EcoRegion, sep = ", ")}.
+#'   \item Filters rows to the requested \code{EcoR}.
+#'   \item For a few specific stocks, calls [add_keys()] to add extra
+#'     rows with additional \code{AssessmentKey} values:
+#'     \code{"cod.27.46a7d20"} and \code{"cod.21.1.isc"}.
+#'   \item Drops any rows with \code{NA} in \code{AssessmentKey}.
+#'   \item Recodes \code{FisheriesGuild == "crustacean"} to
+#'     \code{"shellfish"}.
+#' }
+#'
+#' This helper is used upstream by the application to fetch the SID
+#' (Stock Information Database) for a single ecoregion and year.
+#'
+#' @importFrom jsonlite fromJSON
+#' @importFrom utils URLencode
+#' @importFrom dplyr mutate filter
+#' @importFrom tidyr separate_rows
+#' @noRd
 getSID <- function(year, EcoR) {
         
         stock_list_long <- jsonlite::fromJSON(
@@ -34,6 +94,39 @@ getSID <- function(year, EcoR) {
         return(stock_list_long)
 } 
 
+#' Fetch latest SAG data for an ecoregion
+#'
+#' Queries the ICES SAG (Stock Assessment Graphs) API for the latest
+#' stock data corresponding to a given ecoregion.
+#'
+#' @param Ecoregion Character scalar giving the full ecoregion name
+#'   (e.g. \code{"Greater North Sea"}, \code{"Baltic Sea"}). This is
+#'   converted to the corresponding ICES ecoregion code via
+#'   [get_ecoregion_acronym()].
+#'
+#' @return
+#' A list or data frame (as returned by \code{jsonlite::fromJSON()})
+#' containing the latest SAG data for the requested ecoregion.
+#' The exact structure is determined by the SAG API response.
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Converts \code{Ecoregion} to its ICES acronym using
+#'     [get_ecoregion_acronym()].
+#'   \item Calls the SAG API endpoint
+#'     \code{https://sag.ices.dk/SAG_API/LatestStocks/Download}
+#'     with the \code{ecoregion} query parameter set to that acronym.
+#'   \item Parses the JSON response via \code{jsonlite::fromJSON()} and
+#'     returns the parsed object directly.
+#' }
+#'
+#' This helper is typically used upstream by the application to obtain
+#' the latest assessment data for all stocks in a given ecoregion.
+#'
+#' @importFrom jsonlite fromJSON
+#' @importFrom utils URLencode
+#' @noRd
 getSAG_ecoregion_new <- function(Ecoregion) {
        
         EcoregionCode <- get_ecoregion_acronym(Ecoregion)
@@ -46,6 +139,50 @@ getSAG_ecoregion_new <- function(Ecoregion) {
         return(sag)
 }
 
+#' Fetch and merge stock status for an ecoregion
+#'
+#' Queries the ICES SAG status web service for the latest stock status
+#' in a given ecoregion, unnests the per-year status, and merges it with
+#' a SID stock list (typically from [getSID()]).
+#'
+#' @param Ecoregion Character scalar giving the full ecoregion name
+#'   (e.g. \code{"Greater North Sea"}, \code{"Baltic Sea"}). This is
+#'   converted to the ICES ecoregion code via [get_ecoregion_acronym()].
+#' @param sid A data frame of stock metadata, usually the output of
+#'   [getSID()], containing at least an \code{AssessmentKey} column and
+#'   \code{FisheriesGuild}.
+#'
+#' @return
+#' A data frame resulting from a left merge of \code{sid} with the
+#' un-nested SAG status data on \code{AssessmentKey}. All columns from
+#' \code{sid} are retained, with additional status columns added.
+#' \code{FisheriesGuild} is converted to lower case.
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Converts \code{Ecoregion} to its ICES acronym using
+#'     [get_ecoregion_acronym()].
+#'   \item Calls the SAG API endpoint
+#'     \code{https://sag.ices.dk/SAG_API/LatestStocks/Status}
+#'     with \code{ecoregion=<acronym>} and parses the JSON response via
+#'     \code{jsonlite::fromJSON()}.
+#'   \item Assumes the returned object has a list-column \code{YearStatus}
+#'     and flattens it with \code{tidyr::unnest(YearStatus)}.
+#'   \item Merges the resulting status table with \code{sid} using
+#'     \code{merge(..., by = "AssessmentKey", all.x = TRUE)} so that all
+#'     SID rows are preserved even if no status is available.
+#'   \item Normalises \code{FisheriesGuild} to lower case for
+#'     downstream use.
+#' }
+#'
+#' This helper is intended for internal use in preparing stock status
+#' tables for the application.
+#'
+#' @importFrom jsonlite fromJSON
+#' @importFrom utils URLencode
+#' @importFrom tidyr unnest
+#' @noRd
 getStatusWebService <- function(Ecoregion, sid) {
         EcoregionCode <- get_ecoregion_acronym(Ecoregion)
         
@@ -64,6 +201,66 @@ getStatusWebService <- function(Ecoregion, sid) {
 }
 
 
+#' Format and summarise SAG stock status
+#'
+#' Cleans and reshapes the merged SAG status data into a wide, 
+#' stock-level summary table used by the application. It:
+#' \itemize{
+#'   \item attaches \code{AssessmentComponent} from the raw SAG object,
+#'   \item appends it to \code{StockKeyLabel} where present (and strips
+#'     the literal "Substock"),
+#'   \item maps numeric status codes to colour/status labels,
+#'   \item normalises and recodes fishing pressure and stock size
+#'     variables (e.g. MSYBt, FQual, SSBQual),
+#'   \item de-duplicates by stock / line description / type, keeping the
+#'     most recent year, and
+#'   \item spreads \code{type} into separate columns and renames them to
+#'     \code{FishingPressure} and \code{StockSize}.
+#' }
+#'
+#' @param df Data frame of status information, typically the output from
+#'   [getStatusWebService()], containing at least:
+#'   \code{AssessmentKey}, \code{StockKeyLabel}, \code{status},
+#'   \code{fishingPressure}, \code{stockSize}, \code{type},
+#'   \code{lineDescription}, \code{year}, and \code{FisheriesGuild}.
+#' @param sag Raw SAG data object as returned by
+#'   [getSAG_ecoregion_new()], containing at least
+#'   \code{AssessmentKey} and \code{AssessmentComponent}.
+#'
+#' @return
+#' A data frame in wide format with one row per
+#' \code{StockKeyLabel}–\code{AssessmentKey}–\code{lineDescription}
+#' combination, including:
+#' \describe{
+#'   \item{StockKeyLabel}{Stock label, with \code{AssessmentComponent}
+#'     appended (and "Substock" removed) where applicable.}
+#'   \item{AssessmentKey}{Numeric assessment key.}
+#'   \item{lineDescription}{Text description of the status line
+#'     (harmonised casing for MSY / precautionary lines).}
+#'   \item{FisheriesGuild}{Fisheries guild, with \code{"crustacean"}
+#'     recoded to \code{"shellfish"}.}
+#'   \item{FishingPressure}{Status code (e.g. \code{"GREEN"},
+#'     \code{"RED"}, \code{"ORANGE"}, \code{"GREY"}) for fishing
+#'     pressure.}
+#'   \item{StockSize}{Status code for stock size in the same coding
+#'     scheme.}
+#' }
+#'
+#' @details
+#' The numeric \code{status} codes are mapped to categorical labels:
+#' \code{0 = "GREY"}, \code{1/2 = "GREEN"}, \code{3 = "ORANGE"},
+#' \code{4/5 = "RED"}, \code{6 = "GREY"}, and codes \code{7–9} are
+#' kept as qualitative trend markers (\code{"qual_UP"},
+#' \code{"qual_STEADY"}, \code{"qual_DOWN"}). Qualitative-only lines
+#' (e.g. "Management plan", "Qualitative evaluation") are filtered out
+#' from the final output.
+#'
+#' This helper is intended for internal use in the application to
+#' prepare a concise status table for plotting and summaries.
+#'
+#' @importFrom dplyr mutate case_when filter rename
+#' @importFrom tidyr spread
+#' @noRd
 format_sag_status_new <- function(df,sag) {
 
         df$AssessmentComponent <- sag$AssessmentComponent[ match(df$AssessmentKey, sag$AssessmentKey) ]
@@ -132,6 +329,81 @@ format_sag_status_new <- function(df,sag) {
         return(df)
 }
 
+
+
+#' Format annex table with GES summary
+#'
+#' Prepares a merged annex-style table combining stock status
+#' information with SID/SAG metadata. It aligns \code{StockKeyLabel}
+#' across sources (including substocks), attaches assessment keys and
+#' components, and computes summary columns for Descriptor 3 (D3C1,
+#' D3C2) and an overall GES status.
+#'
+#' @param status A data frame of formatted status information, typically
+#'   the output of \code{format_sag_status_new()}, containing at least
+#'   \code{StockKeyLabel}, \code{FishingPressure}, \code{StockSize},
+#'   \code{StockKeyDescription}, and \code{FisheriesGuild}.
+#' @param year Numeric assessment year (currently not used inside the
+#'   function, but kept for interface compatibility and potential
+#'   future filtering).
+#' @param sid A SID stock list data frame, usually from \code{getSID()},
+#'   containing \code{StockKeyLabel}, \code{AssessmentKey}, 
+#'   \code{FisheriesGuild}, \code{StockKeyDescription}, etc.
+#' @param sag A SAG data object, typically from
+#'   \code{getSAG_ecoregion_new()}, containing at least
+#'   \code{StockKeyLabel}, \code{AssessmentKey}, and
+#'   \code{AssessmentComponent}.
+#'
+#' @return
+#' A data frame with one row per stock (or stock component), including:
+#' \describe{
+#'   \item{StockKeyLabel}{Stock label, with \code{AssessmentComponent}
+#'     appended (and “Substock” removed) where applicable.}
+#'   \item{AssessmentKey}{Assessment key aligned with the SAG/SID data.}
+#'   \item{AssessmentComponent}{Assessment component (or \code{NA} if
+#'     none).}
+#'   \item{FisheriesGuild}{Fisheries guild from SID/status.}
+#'   \item{FishingPressure}{Categorical status (e.g. \code{"GREEN"},
+#'     \code{"RED"}, \code{"GREY"}).}
+#'   \item{StockSize}{Categorical status for stock size.}
+#'   \item{D3C1}{Alias of \code{FishingPressure}.}
+#'   \item{D3C2}{Alias of \code{StockSize}.}
+#'   \item{GES}{Overall GES summary:
+#'     \code{"GREEN"} if both \code{FishingPressure} and \code{StockSize}
+#'     are \code{"GREEN"};
+#'     \code{"RED"} if either is \code{"RED"};
+#'     \code{"GREY"} if either is \code{"GREY"} or if none of the above
+#'     apply.}
+#'   \item{StockKeyDescription}{Cleaned description with any text in
+#'     parentheses removed.}
+#' }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Merges \code{sag} (selecting \code{StockKeyLabel},
+#'     \code{AssessmentKey}, \code{AssessmentComponent}) with \code{sid}
+#'     by \code{StockKeyLabel}, then de-duplicates and renames
+#'     \code{AssessmentKey.x} to \code{AssessmentKey}.
+#'   \item Filters \code{sid} to stocks present in \code{status}, using
+#'     the base (pre-substock) \code{StockKeyLabel}.
+#'   \item Rebuilds \code{StockKeyLabel} including \code{AssessmentComponent}
+#'     (where non-empty) and strips any trailing “Substock” text.
+#'   \item Joins the resulting \code{sid} back onto \code{status} by
+#'     \code{StockKeyLabel}, normalising some column names and dropping
+#'     duplicates.
+#'   \item Creates D3 columns:
+#'     \code{D3C1 = FishingPressure}, \code{D3C2 = StockSize}, and
+#'     \code{GES} as described above.
+#'   \item Cleans \code{StockKeyDescription} by removing any
+#'     parenthesised text.
+#' }
+#'
+#' This helper is designed to produce the annex-style summary table used
+#' for reporting and export from the application.
+#
+#' @importFrom dplyr select distinct rename filter mutate case_when left_join
+#' @noRd
 format_annex_table <- function(status, year, sid, sag) {
         
         sid <- merge(sag %>% dplyr::select(StockKeyLabel, AssessmentKey, AssessmentComponent), sid, by = "StockKeyLabel")
@@ -172,7 +444,56 @@ format_annex_table <- function(status, year, sid, sag) {
 }
 
 
-
+#' Format SAG data and attach fisheries guilds
+#'
+#' Cleans and enriches raw SAG data by attaching fisheries guild
+#' information from SID, filtering out ambiguous multi-purpose stocks,
+#' and harmonising stock labels and guild names.
+#'
+#' @param sag A data frame (or tibble) with SAG data, typically the
+#'   output of \code{getSAG_ecoregion_new()}, containing at least
+#'   \code{StockKeyLabel}, \code{AssessmentKey}, \code{Purpose}, and
+#'   \code{AssessmentComponent}.
+#' @param sid A SID data frame, usually from \code{getSID()}, containing
+#'   at least \code{AssessmentKey}, \code{FisheriesGuild}, and
+#'   \code{YearOfLastAssessment}.
+#'
+#' @return
+#' A data frame with:
+#' \describe{
+#'   \item{All SAG columns}{from \code{sag}, merged with \code{sid} on
+#'     \code{AssessmentKey}.}
+#'   \item{FisheriesGuild}{Lower-case fisheries guild, with
+#'     \code{"crustacean"} recoded to \code{"shellfish"}.}
+#'   \item{StockKeyLabel}{Potentially modified stock label including
+#'     \code{AssessmentComponent} (when present) and with any literal
+#'     “Substock” removed.}
+#' }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Filters \code{sid} to rows with a non-missing
+#'     \code{YearOfLastAssessment} and keeps only
+#'     \code{AssessmentKey} and \code{FisheriesGuild}.
+#'   \item Merges \code{sag} and \code{sid} via
+#'     \code{merge(sag, sid, all.x = TRUE, all.y = FALSE)}.
+#'   \item Normalises \code{FisheriesGuild} to lower case and recodes
+#'     \code{"crustacean"} to \code{"shellfish"}.
+#'   \item Identifies stocks with multiple \code{Purpose} entries (same
+#'     \code{StockKeyLabel} but multiple purposes) and removes those
+#'     from the output via \code{dplyr::anti_join()} to avoid
+#'     ambiguous records.
+#'   \item Appends \code{AssessmentComponent} to \code{StockKeyLabel}
+#'     where non-empty and strips any trailing “Substock” (case
+#'     insensitive).
+#' }
+#'
+#' This helper is intended for internal use when preparing SAG data
+#' for plotting and summaries within the application.
+#'
+#' @importFrom dplyr filter select anti_join
+#' @noRd
 format_sag <- function(sag, sid){
         # sid <- load_sid(year)
         sid <- dplyr::filter(sid,!is.na(YearOfLastAssessment))
@@ -201,6 +522,86 @@ format_sag <- function(sag, sid){
         return(out)
 }
 
+
+#' Apply custom proxy reference points to SAG data
+#'
+#' Reads a table of custom reference point selections and applies them
+#' to a formatted SAG data set, optionally replacing the official
+#' \code{FMSY} and \code{MSYBtrigger} values with user-chosen proxy
+#' reference points. Flags and names for the chosen proxies are also
+#' added.
+#'
+#' @param sag_formatted A data frame of formatted SAG data (e.g. from
+#'   \code{format_sag()}), containing at least:
+#'   \code{AssessmentKey}, \code{FMSY}, \code{MSYBtrigger},
+#'   \code{CustomRefPointName1}–\code{CustomRefPointName4} and
+#'   \code{CustomRefPointValue1}–\code{CustomRefPointValue4}.
+#' @param custom_refpoints_path Character scalar; path to a CSV file
+#'   containing custom reference point settings. The file is read with
+#'   \code{read.table()} using \code{sep = ","} and must contain at
+#'   least:
+#'   \describe{
+#'     \item{AssessmentKey}{Numeric or character assessment key.}
+#'     \item{SAGChartKey}{Integer indicating which chart the setting
+#'       applies to (3 = FMSY, 4 = MSYBtrigger).}
+#'     \item{settingValue}{Integer 1–4 indicating which custom
+#'       reference point (out of 1–4) should be used as proxy.}
+#'   }
+#'
+#' @return
+#' A data frame identical to \code{sag_formatted} but with additional
+#' columns:
+#' \describe{
+#'   \item{FMSY_is_proxy}{Logical; \code{TRUE} if a proxy was chosen for
+#'     \code{FMSY} (i.e. \code{SAGChartKey = 3} present).}
+#'   \item{FMSY_proxy_name}{Name of the chosen \code{FMSY} proxy (from
+#'     \code{CustomRefPointName1}–\code{CustomRefPointName4}), or
+#'     \code{NA} if none.}
+#'   \item{MSYB_is_proxy}{Logical; \code{TRUE} if a proxy was chosen for
+#'     \code{MSYBtrigger} (i.e. \code{SAGChartKey = 4} present).}
+#'   \item{MSYB_proxy_name}{Name of the chosen \code{MSYBtrigger} proxy,
+#'     or \code{NA} if none.}
+#' }
+#'
+#' In addition, when a choice is present:
+#' \itemize{
+#'   \item \code{FMSY} is overwritten by the selected
+#'     \code{CustomRefPointValue1}–\code{CustomRefPointValue4} for
+#'     \code{SAGChartKey = 3};
+#'   \item \code{MSYBtrigger} is overwritten by the selected custom
+#'     value for \code{SAGChartKey = 4}.
+#'   \item If no proxy is chosen, the original \code{FMSY} /
+#'     \code{MSYBtrigger} values are retained.
+#' }
+#'
+#' @details
+#' Internally, the function:
+#' \enumerate{
+#'   \item Reads \code{custom_refpoints_path} as a CSV into
+#'     \code{custom_RefPoints}.
+#'   \item Filters to \code{SAGChartKey \%in\% c(3, 4)} and, for each
+#'     \code{AssessmentKey}–\code{SAGChartKey} combination, keeps the
+#'     first \code{settingValue}.
+#'   \item Reshapes to a wide table with columns
+#'     \code{choice_3} (for FMSY) and \code{choice_4} (for MSYBtrigger).
+#'   \item Left-joins these choices onto \code{sag_formatted} and
+#'     derives:
+#'     \itemize{
+#'       \item Boolean flags \code{FMSY_is_proxy}, \code{MSYB_is_proxy};
+#'       \item proxy names from the corresponding
+#'         \code{CustomRefPointName1}–\code{CustomRefPointName4};
+#'       \item replacement values for \code{FMSY} and
+#'         \code{MSYBtrigger} using
+#'         \code{dplyr::coalesce()} to fall back to the original values
+#'         when no proxy is chosen.
+#'     }
+#'   \item Drops the temporary \code{choice_*} columns before returning.
+#' }
+#'
+#' @importFrom dplyr filter group_by summarise mutate left_join across
+#'   case_when coalesce select
+#' @importFrom tidyr pivot_wider
+#' @noRd
 add_proxyRefPoints <- function(sag_formatted, custom_refpoints_path) {
         
         custom_RefPoints <- read.table(custom_refpoints_path,
@@ -275,65 +676,95 @@ add_proxyRefPoints <- function(sag_formatted, custom_refpoints_path) {
         return(sag_final)
 }
 
-# stockstatus_CLD_current <- function(x) {
-#         browser()
-#         df<- dplyr::select(x,Year,
-#                            StockKeyLabel,
-#                            FisheriesGuild,
-#                            FishingPressure,
-#                            AssessmentYear,
-#                            FMSY,
-#                            StockSize,
-#                            MSYBtrigger,
-#                            Catches,
-#                            Landings,
-#                            Discards)
-#         df$FishingPressure <- as.numeric(df$FishingPressure)
-#         df$StockSize <- as.numeric(df$StockSize)
-#         df$FMSY <- as.numeric(df$FMSY)
-#         df$MSYBtrigger <- as.numeric(df$MSYBtrigger)
-#         df$AssessmentYear <- as.numeric(df$AssessmentYear)
-#         df$Catches <- as.numeric(df$Catches)
-#         df$Landings <- as.numeric(df$Landings)
-#         df$Discards <- as.numeric(df$Discards)
-#         df$Year <- as.numeric(df$Year)
 
-#         df2 <- dplyr::group_by(df,StockKeyLabel)
-#         df2 <- dplyr::filter(df2,Year == AssessmentYear - 1)
-#         df2 <- dplyr::mutate(df2,F_FMSY =  ifelse(!is.na(FMSY),
-#                                                                 FishingPressure / FMSY,
-#                                                                 NA))
-#         df2 <- dplyr::select(df2,StockKeyLabel,
-#                                                FisheriesGuild,
-#                                                F_FMSY,
-#                                                Catches,
-#                                                Landings,
-#                                                Discards,
-#                                                FMSY,
-#                                                FishingPressure)
-#         df3 <- dplyr::group_by(df,StockKeyLabel)
-#         df3 <- dplyr::filter(df3, Year %in% c(AssessmentYear, (AssessmentYear - 1)))
-#         df3 <- dplyr::mutate(df3, SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger),
-#                                                                         StockSize / MSYBtrigger,
-#                                                                         NA))
-#         df3 <- dplyr::select(df3, StockKeyLabel,Year,
-#                                                FisheriesGuild,
-#                                                SSB_MSYBtrigger,
-#                                                StockSize,
-#                                                MSYBtrigger)
-#         check <- unique(df3[c("StockKeyLabel", "Year", "MSYBtrigger")])
-#         check <- check[order(-check$Year),]
-#         check2 <- check[duplicated(check$StockKeyLabel),]
-#         df3 <- dplyr::anti_join(df3,check2)
-#         df4 <- dplyr::full_join(df2, df3)
-#         df4 <- dplyr::mutate(df4, Status = ifelse(is.na(F_FMSY) | is.na(SSB_MSYBtrigger),
-#                                       "GREY",
-#                                       if_else(F_FMSY < 1 & SSB_MSYBtrigger >= 1,
-#                                               "GREEN",
-#                                               "RED",
-#                                               "GREY")))
-#         df4
-# }
+#' Compute current stock status with proxy reference points (CLD view)
+#'
+#' Derives a current, per-stock status summary for fishing pressure and
+#' stock size, taking into account possible proxy reference points for
+#' \code{FMSY} and \code{MSYBtrigger}. This is intended for use in the
+#' catch–landings–discards (CLD) views of the application.
+#'
+#' @param x A data frame containing stock time series and reference
+#'   points, typically based on formatted SAG data with optional proxy
+#'   columns. It must include (where available):
+#'   \itemize{
+#'     \item \code{StockKeyLabel}, \code{FisheriesGuild}
+#'     \item \code{Year}, \code{AssessmentYear}
+#'     \item \code{FishingPressure}, \code{StockSize}
+#'     \item \code{FMSY}, \code{MSYBtrigger}
+#'     \item \code{Catches}, \code{Landings}, \code{Discards}
+#'     \item optional proxy columns:
+#'       \code{FMSY_is_proxy}, \code{FMSY_proxy_name},
+#'       \code{MSYB_is_proxy}, \code{MSYB_proxy_name}
+#'   }
+#'   Missing proxy columns are created and filled with \code{NA} if
+#'   absent.
+#'
+#' @return
+#' A data frame with one row per stock (and fisheries guild), including:
+#' \describe{
+#'   \item{StockKeyLabel}{Stock identifier.}
+#'   \item{FisheriesGuild}{Fisheries guild for the stock.}
+#'   \item{F_FMSY}{Ratio of fishing pressure to \code{FMSY} for
+#'     \code{Year = AssessmentYear - 1}.}
+#'   \item{SSB_MSYBtrigger}{Ratio of stock size to \code{MSYBtrigger}
+#'     for the latest year among \code{AssessmentYear} and
+#'     \code{AssessmentYear - 1} with a non-missing
+#'     \code{MSYBtrigger}.}
+#'   \item{Catches, Landings, Discards}{Total catches, landings, and
+#'     discards (for the F-year row).}
+#'   \item{FMSY}{Reference point used for \code{F_FMSY}, possibly
+#'     already updated by proxy logic upstream.}
+#'   \item{FishingPressure}{Fishing pressure used in the ratio.}
+#'   \item{MSYBtrigger}{Reference point used for
+#'     \code{SSB_MSYBtrigger}.}
+#'   \item{F_proxy}{Logical flag indicating that a proxy FMSY was used
+#'     (\code{FMSY_is_proxy}).}
+#'   \item{F_proxy_name}{Name of the chosen FMSY proxy.}
+#'   \item{B_proxy}{Logical flag indicating that a proxy MSYBtrigger was
+#'     used (\code{MSYB_is_proxy}).}
+#'   \item{B_proxy_name}{Name of the chosen MSYBtrigger proxy.}
+#'   \item{Status}{Categorical status:
+#'     \code{"GREEN"} if \code{F_FMSY < 1} and
+#'     \code{SSB_MSYBtrigger >= 1};
+#'     \code{"RED"} otherwise, when both ratios are available;
+#'     \code{"GREY"} if either ratio is missing.}
+#' }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Ensures that proxy flag/name columns exist; if missing, they
+#'     are created and filled with \code{NA}.
+#'   \item Coerces a set of numeric columns (years, reference points,
+#'     CLD values) to numeric, suppressing conversion warnings.
+#'   \item Computes, per stock, the latest \code{AssessmentYear}
+#'     (\code{AY_latest}).
+#'   \item For the F side:
+#'     \item Filters to \code{Year = AY_latest - 1},
+#'     \item Computes \code{F_FMSY = FishingPressure / FMSY},
+#'     \item Keeps at most one row per stock (latest year).
+#'   \item For the B side:
+#'     \item Filters to \code{Year \%in\% \{AY_latest, AY_latest - 1\}},
+#'     \item For each stock, keeps the latest row with non-missing
+#'       \code{MSYBtrigger},
+#'     \item Computes \code{SSB_MSYBtrigger = StockSize / MSYBtrigger}.
+#'   \item Full-joins F and B summaries by
+#'     \code{StockKeyLabel, FisheriesGuild} and assigns a status:
+#'     \item \code{"GREY"} if either ratio is missing,
+#'     \item \code{"GREEN"} if \code{F_FMSY < 1} and
+#'       \code{SSB_MSYBtrigger >= 1},
+#'     \item \code{"RED"} otherwise.
+#' }
+#'
+#' Proxy logic (which reference point is used) is assumed to be handled
+#' upstream (e.g. via [add_proxyRefPoints()]); this function only
+#' records the proxy flags/names and uses the already chosen reference
+#' point values in the ratios.
+#'
+#' @importFrom dplyr group_by ungroup mutate filter arrange slice_head
+#'   select full_join case_when
+#' @noRd
 stockstatus_CLD_current_proxy <- function(x) {
 
   # --- Ensure proxy columns exist
@@ -404,66 +835,114 @@ stockstatus_CLD_current_proxy <- function(x) {
 
   df4
 }
-### this one works without proxy
-# stock_trends <- function(x) {
-        
-#         x$FishingPressure <- as.numeric(x$FishingPressure)
-#         x$StockSize <- as.numeric(x$StockSize)
-#         x$FMSY <- as.numeric(x$FMSY)
-#         x$MSYBtrigger <- as.numeric(x$MSYBtrigger)
-#         x$Year <- as.numeric(x$Year)
-
-#         df <- dplyr::mutate(x,
-#                 FMEAN = mean(FishingPressure, na.rm = TRUE),
-#                 SSBMEAN = mean(StockSize, na.rm = TRUE),
-#                 FMEAN = ifelse(!grepl("F|F(ages 3-6)", FishingPressureDescription), NA, FMEAN),
-#                 SSBMEAN = ifelse(!grepl("StockSize", StockSizeDescription), NA, SSBMEAN)
-#         )
-
-#         df <- dplyr::mutate(df,
-#                 F_FMSY = ifelse(!is.na(FMSY), FishingPressure / FMSY, NA),
-#                 SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger), StockSize / MSYBtrigger, NA),
-#                 F_FMEAN = ifelse(!is.na(FMEAN), FishingPressure / FMEAN, NA),
-#                 SSB_SSBMEAN = ifelse(!is.na(SSBMEAN), StockSize / SSBMEAN, NA)
-#         )
-
-#         df <- df %>%
-#                 dplyr::select(Year, 
-#                                 StockKeyLabel, 
-#                                 FisheriesGuild, 
-#                                 F_FMSY, 
-#                                 SSB_MSYBtrigger, 
-#                                 F_FMEAN, 
-#                                 SSB_SSBMEAN)
-
-#         df2 <- tidyr::gather(df, Metric, Value, -Year, -StockKeyLabel, -FisheriesGuild) %>%
-#                 dplyr::filter(!is.na(Year))
-
-#         df3 <- df2 %>%
-#                 dplyr::group_by(StockKeyLabel, FisheriesGuild, Metric, Year) %>%
-#                 dplyr::summarize(Value = mean(Value, na.rm = TRUE), .groups = "drop") %>%
-#                 dplyr::filter(!is.na(Value))
-
-#         means <- df2 %>%
-#                 dplyr::group_by(FisheriesGuild, Metric, Year) %>%
-#                 dplyr::summarize(
-#                         non_na_n = sum(!is.na(Value)),
-#                         Value = ifelse(non_na_n >= 2, mean(Value, na.rm = TRUE), NA_real_),
-#                         StockKeyLabel = "Mean",
-#                         .groups = "drop"
-#                 ) %>%
-#                 dplyr::filter(!is.na(Value)) %>%
-#                 dplyr::select(FisheriesGuild, StockKeyLabel, Year, Metric, Value)
 
 
-#         df4 <- dplyr::bind_rows(df3, means) %>%
-#                 dplyr::distinct(.keep_all = TRUE)
-#         # check which stocks have max year = 2026
 
-#         return(df4)
-# }
-
-#### this works with proxy
+#' Compute stock-level and guild-mean trends with proxy reference points
+#'
+#' Builds a long-format time series of relative status metrics for each
+#' stock and fisheries guild, including optional indicators for whether
+#' proxy reference points were used. The output is suitable for plotting
+#' stock trends (per stock and guild means) using F and SSB relative to
+#' reference points and historical means.
+#'
+#' @param x A data frame containing time series and reference point
+#'   information for multiple stocks. It must include at least:
+#'   \itemize{
+#'     \item \code{StockKeyLabel}, \code{FisheriesGuild}
+#'     \item \code{Year}
+#'     \item \code{FishingPressure}, \code{StockSize}
+#'     \item \code{FMSY}, \code{MSYBtrigger}
+#'     \item optionally:
+#'       \code{FishingPressureDescription},
+#'       \code{StockSizeDescription} (used to decide when to compute
+#'       means), and
+#'       \code{FMSY_is_proxy}, \code{FMSY_proxy_name},
+#'       \code{MSYB_is_proxy}, \code{MSYB_proxy_name} (proxy flags /
+#'       names).
+#'   }
+#'   If the proxy columns are missing, they are created and filled with
+#'   \code{NA}.
+#'
+#' @return
+#' A data frame in long format with columns:
+#' \describe{
+#'   \item{FisheriesGuild}{Fisheries guild.}
+#'   \item{StockKeyLabel}{Stock label; the synthetic row
+#'     \code{"Mean"} represents the guild mean for that year and
+#'     metric.}
+#'   \item{Year}{Year (numeric).}
+#'   \item{Metric}{One of:
+#'     \code{"F_FMSY"}, \code{"SSB_MSYBtrigger"},
+#'     \code{"F_FMEAN"}, \code{"SSB_SSBMEAN"}.}
+#'   \item{Value}{Numeric value of the metric.}
+#'   \item{F_proxy}{Logical; \code{TRUE} if any FMSY proxy was used for
+#'     this stock (same across all years/metrics for that stock).}
+#'   \item{F_name}{Name of the FMSY proxy (if any) for this stock.}
+#'   \item{B_proxy}{Logical; \code{TRUE} if any MSYBtrigger proxy was
+#'     used for this stock.}
+#'   \item{B_name}{Name of the MSYBtrigger proxy (if any).}
+#'   \item{is_proxy_metric}{Logical; \code{TRUE} when the metric is
+#'     directly linked to a proxy-based reference point
+#'     (\code{F_FMSY} or \code{SSB_MSYBtrigger}).}
+#'   \item{proxy_name_metric}{Name of the metric-specific proxy (F or
+#'     B), or \code{NA} for metrics not based on proxies.}
+#'   \item{Proxy_is_proxy}{Alias of \code{is_proxy_metric}, for
+#'     backwards compatibility with plotting code.}
+#'   \item{Proxy_name}{Alias of \code{proxy_name_metric}.}
+#' }
+#'
+#' @details
+#' The function proceeds as follows:
+#' \enumerate{
+#'   \item Ensures proxy columns
+#'     (\code{FMSY_is_proxy}, \code{FMSY_proxy_name}, 
+#'     \code{MSYB_is_proxy}, \code{MSYB_proxy_name}) exist; if missing,
+#'     they are added and filled with \code{NA}.
+#'   \item Coerces \code{FishingPressure}, \code{StockSize}, \code{FMSY},
+#'     \code{MSYBtrigger}, and \code{Year} to numeric.
+#'   \item Builds a per-stock proxy map (\code{proxy_map}) summarising:
+#'     \itemize{
+#'       \item whether an FMSY proxy (\code{F_proxy}) or MSYBtrigger
+#'         proxy (\code{B_proxy}) was ever used for that stock, and
+#'       \item the first non-\code{NA} proxy name for each type
+#'         (\code{F_name}, \code{B_name}).
+#'     }
+#'   \item Computes global (over all years and rows) means
+#'     \code{FMEAN} and \code{SSBMEAN} per row, then sets them to
+#'     \code{NA} where the descriptor columns
+#'     (\code{FishingPressureDescription}, \code{StockSizeDescription})
+#'     do not match the expected patterns. These means are used for
+#'     normalisation:
+#'     \code{F_FMEAN = FishingPressure / FMEAN} and
+#'     \code{SSB_SSBMEAN = StockSize / SSBMEAN}.
+#'   \item Computes ratios:
+#'     \item \code{F_FMSY          = FishingPressure / FMSY}
+#'     \item \code{SSB_MSYBtrigger = StockSize / MSYBtrigger}
+#'     \item \code{F_FMEAN         = FishingPressure / FMEAN}
+#'     \item \code{SSB_SSBMEAN     = StockSize / SSBMEAN}
+#'   \item Keeps only the columns needed for trend plotting and pivots
+#'     them to long format (\code{Metric}, \code{Value}).
+#'   \item Averages duplicates at the
+#'     \code{(StockKeyLabel, FisheriesGuild, Metric, Year)} level.
+#'   \item Computes guild means per year and metric (only where at least
+#'     two stocks with non-\code{NA} values are available), stored as
+#'     rows with \code{StockKeyLabel == "Mean"}.
+#'   \item Binds stock-level and guild-mean rows, removes duplicates,
+#'     joins \code{proxy_map}, and derives metric-specific proxy flags
+#'     and names:
+#'     \item \code{is_proxy_metric} is \code{TRUE} for \code{F_FMSY} and
+#'       \code{SSB_MSYBtrigger} when the corresponding proxy is flagged.
+#'     \item \code{proxy_name_metric} carries the F or B proxy name for
+#'       those metrics.
+#'   \item For backwards compatibility, copies these to
+#'     \code{Proxy_is_proxy} and \code{Proxy_name}.
+#' }
+#'
+#' @importFrom dplyr group_by summarise mutate select filter distinct bind_rows
+#'   left_join ungroup
+#' @importFrom tidyr pivot_longer
+#' @noRd
 stock_trends_proxy <- function(x) {
 
   # --- Ensure proxy columns exist (in case some sources don't carry them)
@@ -571,6 +1050,37 @@ stock_trends_proxy <- function(x) {
   return(out)
 }
 
+
+#' Match stock codes to fish illustration files
+#'
+#' For each stock in \code{StockKeyLabel}, finds a corresponding image
+#' file in the \code{inst/app/www/fish} directory based on the first
+#' three characters of the stock code (typically the FAO 3-letter
+#' species code). If no matching file is found, a default
+#' \code{"fish.png"} is returned.
+#'
+#' @param StockKeyLabel Character vector of stock labels (e.g.
+#'   \code{"cod.27.46a7d20"}). Only the first three characters are used
+#'   for matching to illustration file names.
+#' @param df Unused argument; included for interface compatibility with
+#'   other code paths. It is ignored inside the function.
+#'
+#' @return
+#' A character vector of the same length as \code{StockKeyLabel},
+#' containing file names (not full paths) for the matched fish
+#' illustrations. If no illustration is found for a given stock, the
+#' default \code{"fish.png"} is returned.
+#'
+#' @details
+#' The function searches the \code{inst/app/www/fish} folder for files
+#' whose names contain the three-letter prefix
+#' \code{substr(StockKeyLabel, 1, 3)}. If multiple files match, the
+#' first one returned by \code{list.files()} is used. This is intended
+#' for internal use by the Shiny app to display an appropriate fish
+#' illustration for a stock.
+#'
+#' @importFrom base sapply substr
+#' @noRd
 match_stockcode_to_illustration <- function(StockKeyLabel, df) {
         sapply(StockKeyLabel, function(key) {
                 temp <- list.files("inst/app/www/fish", pattern = substr(key, 1, 3))
@@ -584,7 +1094,89 @@ match_stockcode_to_illustration <- function(StockKeyLabel, df) {
 
 ################### Plotting functions ##########################################################
 
-
+#' Plot proportional stock-status pies by guild and reference line
+#'
+#' Creates a grid of pie charts showing the distribution of stock
+#' status categories (e.g. GREEN, RED, GREY, ORANGE) across fisheries
+#' guilds and reference lines (MSY / PA), for both fishing pressure and
+#' stock size. The plot is sized responsively based on the available
+#' width.
+#'
+#' @param df A data frame of stock-level status information, typically
+#'   derived from \code{format_sag_status_new()}, containing at least:
+#'   \itemize{
+#'     \item \code{StockKeyLabel}
+#'     \item \code{FisheriesGuild}
+#'     \item \code{lineDescription} (e.g. "Maximum sustainable yield",
+#'       "Precautionary approach")
+#'     \item \code{FishingPressure} (status code: GREEN, RED, GREY, etc.)
+#'     \item \code{StockSize} (status code: GREEN, RED, GREY, etc.)
+#'   }
+#' @param return_data Logical; if \code{TRUE}, returns the processed
+#'   data frame used for plotting (one row per guild–line–variable–
+#'   colour slice) instead of the \code{ggplot} object. Default is
+#'   \code{FALSE}.
+#' @param width_px Numeric; approximate width of the plot in pixels
+#'   (e.g. \code{session$clientData[["output_<id>_width"]]} in a Shiny
+#'   context). Used to scale font sizes and spacing. Default is 800.
+#' @param min_base,max_base Numeric; lower and upper bounds on the
+#'   base font size used for the \code{theme_bw()} base size. Defaults:
+#'   \code{min_base = 11}, \code{max_base = 18}.
+#'
+#' @return
+#' If \code{return_data = FALSE} (default), a \code{ggplot} object with
+#' faceted pie charts:
+#' \itemize{
+#'   \item Columns: combinations of indicator and line (e.g.
+#'     "Fishing pressure\nMSY", "Stock size\nPA").
+#'   \item Rows: fisheries guilds plus a \code{"total"} row combining
+#'     all guilds.
+#' }
+#' If \code{return_data = TRUE}, a data frame containing the processed
+#' counts and derived \code{fraction} used for the pie slices.
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Selects \code{StockKeyLabel}, \code{FisheriesGuild},
+#'     \code{lineDescription}, \code{FishingPressure}, and
+#'     \code{StockSize}, then pivots to long format with a
+#'     \code{Variable} column distinguishing fishing pressure vs stock
+#'     size.
+#'   \item Counts stocks by \code{FisheriesGuild}, \code{lineDescription},
+#'     \code{Variable}, and status colour (\code{Colour}).
+#'   \item Adds a "total" guild row by summing over guilds.
+#'   \item Renames variables and line descriptions to compact forms
+#'     (e.g. "Fishing pressure", "Stock size", "MSY", "PA"), and
+#'     combines them into a two-line facet header.
+#'   \item Filters to colours with positive counts and computes
+#'     per-facet totals; uses a common maximum to scale slice radii so
+#'     pies are comparable across facets.
+#'   \item Orders facets in a fixed structure (MSY/PA × pressure/stock)
+#'     when present, and orders guilds as
+#'     \code{total, benthic, demersal, pelagic, shellfish, elasmobranch}.
+#'   \item Draws pies with \code{geom_bar()} and
+#'     \code{coord_polar(theta = "y")}, annotating each slice with the
+#'     count of stocks, and applies a manual fill scale for the status
+#'     colours.
+#'   \item Scales font sizes, panel spacing, strip padding, and plot
+#'     margins based on \code{width_px} and the number of facet
+#'     columns, and adds a caption with the current date and ICES
+#'     reference.
+#' }
+#'
+#' This helper is intended for internal use within the Shiny app to
+#' show a compact overview of the proportion of stocks in each status
+#' category by guild and management line.
+#'
+#' @importFrom ggplot2 ggplot aes geom_bar geom_text scale_fill_manual
+#'   coord_polar facet_grid labs theme_bw theme element_blank
+#'   element_text margin
+#' @importFrom grid unit
+#' @importFrom dplyr select group_by summarise mutate filter bind_rows
+#'   across everything
+#' @importFrom tidyr gather spread
+#' @noRd
 plot_status_prop_pies <- function(
   df,
   return_data = FALSE,
@@ -713,7 +1305,100 @@ plot_status_prop_pies <- function(
   if (isTRUE(return_data)) df2 else p1
 }
 
-
+#' Plot GES pie charts for MSY status and catch proportions
+#'
+#' Produces a grid of pie charts summarising GES-related status under
+#' the Maximum Sustainable Yield (MSY) framework, showing the
+#' distribution of status categories (GREEN, RED, GREY, etc.) by
+#' indicator (fishing pressure / stock size) and weighted by catch.
+#'
+#' The top row shows the proportion of catch (thousand tonnes) in each
+#' status category, and labels each slice with the absolute catch and
+#' percentage within that pie. A total catch label is shown in the
+#' centre of each pie.
+#'
+#' @param x A data frame of stock-level status information under
+#'   MSY, typically derived from \code{format_sag_status_new()}, and
+#'   containing at least:
+#'   \itemize{
+#'     \item \code{StockKeyLabel}
+#'     \item \code{lineDescription} (e.g. "Maximum sustainable yield")
+#'     \item \code{FishingPressure} (status code: GREEN/RED/GREY/...)
+#'     \item \code{StockSize} (status code: GREEN/RED/GREY/...)
+#'   }
+#'   Only rows with \code{lineDescription == "Maximum sustainable yield"}
+#'   are used.
+#' @param y A data frame of stock-level catch information for the same
+#'   stocks, containing at least:
+#'   \itemize{
+#'     \item \code{StockKeyLabel}
+#'     \item \code{Catches}
+#'     \item \code{Landings}
+#'   }
+#'   The function derives \code{CATCH} per stock as
+#'   \code{Catches} if available, otherwise \code{Landings}.
+#' @param return_data Logical; if \code{TRUE}, returns the processed
+#'   data (one row per status–indicator combination) instead of the
+#'   plot. Defaults to \code{FALSE}.
+#' @param width_px Numeric; approximate width of the plot in pixels
+#'   (e.g. \code{session$clientData[["output_<id>_width"]]}) used to
+#'   scale font sizes and labels. Default is 800.
+#'
+#' @return
+#' If \code{return_data = FALSE} (default), returns a \code{ggplot}
+#' object showing:
+#' \itemize{
+#'   \item Columns: indicator type (fishing pressure vs stock size).
+#'   \item Rows: metric type (currently the catch-weighted pies:
+#'     "Proportion of catch (thousand tonnes)").
+#'   \item Slice fill: status colour (GREEN, RED, GREY, ORANGE, etc.).
+#'   \item Slice labels: absolute catch (thousand tonnes) and
+#'     percentage within each pie; a central label shows the total
+#'     catch in that facet.
+#' }
+#'
+#' If \code{return_data = TRUE}, returns the underlying data frame used
+#' for plotting (one row per Metric–Variable–Colour combination) with:
+#' \describe{
+#'   \item{Variable}{Indicator: "Fishing Pressure" or "Stock Size".}
+#'   \item{Color}{Status category (e.g. GREEN/RED/GREY/...).}
+#'   \item{Metric}{"Proportion of catch \n(thousand tonnes)".}
+#'   \item{Value}{Raw value used for the pie radius (catch).}
+#'   \item{sum}{Facet-level total used for scaling.}
+#'   \item{fraction}{Value mapped to the polar radius.}
+#'   \item{Value2}{Catch in thousand tonnes (integer).}
+#'   \item{sum2}{Total catch in thousand tonnes (integer).}
+#' }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Filters \code{x} to MSY lineDescription, pivots
+#'     \code{FishingPressure} and \code{StockSize} to a long
+#'     \code{Variable}/\code{Colour} format.
+#'   \item Counts the number of stocks per \code{Variable} and status
+#'     colour, and also sums \code{CATCH} per status colour using
+#'     \code{y}.
+#'   \item Merges the stock counts and catch totals; the stock counts
+#'     are used only for intermediate calculations, while the pies are
+#'     drawn using catch as the radius.
+#'   \item Computes total catch per metric, derives the share of each
+#'     status within each indicator, and converts catch to thousand
+#'     tonnes for labelling.
+#'   \item Builds a polar bar plot with one pie per
+#'     (Metric × Variable) facet and hides axes, showing only colour
+#'     and labels.
+#'   \item Font sizes and label sizes are scaled based on
+#'     \code{width_px} for better responsiveness in Shiny.
+#' }
+#'
+#' @importFrom ggplot2 ggplot aes geom_bar geom_text scale_fill_manual
+#'   coord_polar facet_grid labs theme_bw theme element_blank
+#'   element_text margin
+#' @importFrom dplyr filter select group_by summarise mutate
+#' @importFrom tidyr gather spread
+#' @importFrom plyr revalue
+#' @noRd
 plot_GES_pies <- function(x, y, return_data = FALSE, width_px = 800) {
   # --- Responsive sizes
   base_size        <- max(14, min(20, round(width_px / 50)))
@@ -843,200 +1528,95 @@ plot_GES_pies <- function(x, y, return_data = FALSE, width_px = 800) {
   }
 }
 
-# plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
-#         # --- Filter for selected guild
-#         df <- dplyr::filter(x, FisheriesGuild == guild)
-#         browser()
-#         if (nrow(df) == 0) {
-#                 return(
-#                         plotly::plot_ly() %>%
-#                                 plotly::layout(
-#                                         xaxis = list(visible = FALSE),
-#                                         yaxis = list(visible = FALSE),
-#                                         annotations = list(
-#                                                 list(
-#                                                         text = paste0("No data available for guild: ", guild),
-#                                                         xref = "paper",
-#                                                         yref = "paper",
-#                                                         x = 0.5,
-#                                                         y = 0.5, # center of plot
-#                                                         showarrow = FALSE,
-#                                                         font = list(size = 20)
-#                                                 )
-#                                         )
-#                                 )
-#                 )
-#         }
-
-#         # --- Dynamic color palette for all stocks
-#         adj_names <- sort(setdiff(unique(df$StockKeyLabel), "Mean"))
-#         values <- grDevices::hcl.colors(length(adj_names), palette = "Temps")
-#         names(values) <- adj_names
-#         values <- c(values, c(MEAN = "black"))
-        
-       
-#         # --- Keep only the two metrics of interest and rename
-#         df <- df %>%
-#                 dplyr::filter(Metric %in% c("F_FMSY", "SSB_MSYBtrigger")) %>%
-#                 dplyr::mutate(Metric = dplyr::recode(
-#                         Metric,
-#                         "F_FMSY"          = "F/F<sub>MSY</sub>",
-#                         "SSB_MSYBtrigger" = "SSB/MSY B<sub>trigger</sub>"
-#                 ))
-
-#         # --- Split mean vs stocks
-#         mean_df <- dplyr::filter(df, StockKeyLabel == "Mean")
-        
-#         # --- Remove any existing mean for the last year, suggestion of ADGFO 
-#         last_year_FMSY <- max(mean_df$Year[mean_df$Metric == "F/F<sub>MSY</sub>"], na.rm = TRUE)
-#         last_year_Btrigger <- max(mean_df$Year[mean_df$Metric == "SSB/MSY B<sub>trigger</sub>"], na.rm = TRUE)
-#         idx_FMSY <- mean_df$Metric == "F/F<sub>MSY</sub>" & mean_df$Year == last_year_FMSY
-#         idx_Btrigger <- mean_df$Metric == "SSB/MSY B<sub>trigger</sub>" & mean_df$Year == last_year_Btrigger        
-#         mean_df$Value[idx_FMSY] <- NA_real_
-#         mean_df$Value[idx_Btrigger] <- NA_real_
-
-#         df2 <- dplyr::filter(df, StockKeyLabel != "Mean")
-
-#         # unique group ID per render (prevents stale highlights)
-#         group_id <- paste0("stocks_", round(as.numeric(Sys.time()) * 1000))
 
 
-#         # --- SharedData for all stock traces (used across both subplots)
-#         sd <- crosstalk::SharedData$new(df2, key = ~StockKeyLabel, group = group_id)
-
-#         # --- Helper to build one panel using a filter transform
-#         make_panel <- function(metric_label, yaxis_title, show_legend = TRUE) {
-#                 plotly::plot_ly(
-#                         data = sd,
-#                         x = ~Year,
-#                         y = ~Value,
-#                         color = ~StockKeyLabel,
-#                         colors = values,
-#                         type = "scatter",
-#                         mode = "lines",
-#                         name = ~StockKeyLabel,
-#                         legendgroup = ~StockKeyLabel,
-#                         ids = ~StockKeyLabel,
-#                         transforms = list(list(
-#                                 type      = "filter",
-#                                 target    = ~Metric,
-#                                 operation = "=",
-#                                 value     = metric_label
-#                         )),
-#                         showlegend = show_legend,
-#                         line = list(width = 3)
-#                 ) %>%
-#                         plotly::add_trace(
-#                                 data = dplyr::filter(mean_df, Metric == metric_label),
-#                                 x = ~Year,
-#                                 y = ~Value,
-#                                 name = "Mean",
-#                                 type = "scatter",
-#                                 mode = "lines",
-#                                 line = list(color = "black", width = 5),
-#                                 showlegend = show_legend,
-#                                 inherit = FALSE
-#                         ) %>%
-#                         plotly::layout(
-#                                 yaxis = list(
-#                                         title = yaxis_title,
-#                                         titlefont = list(size = 16),
-#                                         tickfont = list(size = 14),
-#                                         zeroline = TRUE,
-#                                         zerolinecolor = "black",
-#                                         zerolinewidth = 2
-#                                 ),
-#                                 shapes = list(
-#                                         # horizontal reference line at y = 1
-#                                         list(
-#                                                 type = "line",
-#                                                 x0 = safe_min(df$Year, 0),
-#                                                 x1 = safe_max(df$Year, 1),
-#                                                 y0 = 1,
-#                                                 y1 = 1,
-#                                                 line = list(color = "#000000", width = 1)
-#                                         ),
-#                                         # black border around the plot area
-#                                         list(
-#                                                 type = "rect",
-#                                                 xref = "paper",
-#                                                 yref = "paper",
-#                                                 x0 = 0,
-#                                                 x1 = 1,
-#                                                 y0 = 0,
-#                                                 y1 = 1,
-#                                                 line = list(color = "black", width = 1),
-#                                                 fillcolor = "rgba(0,0,0,0)"
-#                                         )
-#                                 )
-#                         )
-#         }
-
-#         # --- Build both panels
-#         plot1 <- make_panel("F/F<sub>MSY</sub>", "F/F<sub>MSY</sub>", show_legend = TRUE)
-#         plot2 <- make_panel("SSB/MSY B<sub>trigger</sub>", "SSB/MSY B<sub>trigger</sub>", show_legend = FALSE)
-
-#         # --- Combine panels and enable cross-highlighting
-#         final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
-#                 plotly::layout(
-#                         xaxis = list(
-#                                 title = "Year",
-#                                 titlefont = list(size = 16),
-#                                 tickfont = list(size = 14)
-#                         ),
-#                         margin = list(b = 100, r = 50),
-#                         legend = list(
-#                                 title = list(text = "Stock name", font = list(size = 16)),
-#                                 orientation = "h",
-#                                 x = 0.5, y = 1.05, # center above the plot
-#                                 xanchor = "center",
-#                                 yanchor = "bottom",
-#                                 font = list(size = 16)
-#                         ),
-#                         annotations = list(
-#                                 list(
-#                                         x = 1, y = -0.15, # relative to plotting area (0–1, left–right / bottom–top)
-#                                         xref = "paper",
-#                                         yref = "paper",
-#                                         text = paste0("ICES Stock Assessment Database, ", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
-#                                         showarrow = FALSE,
-#                                         xanchor = "right",
-#                                         yanchor = "bottom"
-#                                 ),
-#                                 list(
-#                                         text = paste0("Status trends: ", guild, " (", ecoregion, ")"),
-#                                         x = 0.01, y = 0.99, # relative to plotting area (0–1, left–right / bottom–top)
-#                                         xref = "paper", yref = "paper",
-#                                         showarrow = FALSE,
-#                                         xanchor = "left",
-#                                         yanchor = "top",
-#                                         font = list(size = 18, color = "black")
-#                                 )
-#                         )
-#                 ) %>%
-#                 plotly::highlight(
-#                         on = "plotly_click",
-#                         off = "plotly_doubleclick",
-#                         opacityDim = 0.4, # dims non-selected lines in both panels
-#                         selected = plotly::attrs_selected(line = list(width = 5))
-#                 ) %>% 
-#                 plotly::config(
-#                         responsive = TRUE,
-#                         toImageButtonOptions = list(
-#                                 filename = paste0(ecoregion, "_StatusTrends_", guild, "_", format(Sys.Date(), "%d-%b-%y")),
-#                                 format   = "png",
-#                                 scale    = 3
-#                                 # width  = 1600,
-#                                 # height = 900
-#                         )
-#                 )
-
-#         if (return_data) {
-#                 return(df)
-#         } else {
-#                 return(final_plot)
-#         }
-# }
+#' Plot stock status trends by guild with proxy highlighting
+#'
+#' Creates an interactive two-panel Plotly time-series figure showing
+#' stock-level status trajectories for a single fisheries guild.
+#' The top panel displays exploitation status (\code{F/F_MS Y}), and
+#' the bottom panel displays stock status
+#' (\code{SSB/MSY B_trigger}) over time.
+#'
+#' Lines corresponding to stocks that use proxy reference points are
+#' drawn with a dotted linetype, and the hover text explicitly
+#' indicates when a proxy is used. A thick black line shows the
+#' fisheries-guild mean in each panel (with the last year truncated
+#' so it is visually distinct from individual-stock series).
+#'
+#' Clicking a stock line in either panel highlights the selected stock
+#' in both panels and dims all other stocks; double-click clears the
+#' selection.
+#'
+#' @param x A data frame of stock-level metrics, typically the output
+#'   of \code{stock_trends_proxy()}, containing at least:
+#'   \itemize{
+#'     \item \code{StockKeyLabel} – stock name or label.
+#'     \item \code{FisheriesGuild} – guild classification.
+#'     \item \code{Metric} – one of \code{"F_FMSY"} or
+#'       \code{"SSB_MSYBtrigger"} (other metrics are ignored).
+#'     \item \code{Year} – assessment year (numeric).
+#'     \item \code{Value} – numeric value of the metric.
+#'     \item \code{Proxy_is_proxy} – logical flag indicating whether
+#'       the metric is based on a proxy reference point for that row.
+#'     \item \code{Proxy_name} – optional description of the proxy
+#'       reference point (character, may be \code{NA}).
+#'   }
+#'   Rows with \code{StockKeyLabel == "Mean"} are interpreted as
+#'   guild-level means.
+#'
+#' @param guild Character scalar; the fisheries guild to display
+#'   (e.g. \code{"demersal"}, \code{"pelagic"}, etc.). Only rows with
+#'   \code{FisheriesGuild == guild} are plotted.
+#' @param return_data Logical; if \code{TRUE}, returns the filtered
+#*   data frame for the requested guild (with the added
+#'   \code{MetricLabel} column) instead of the Plotly object.
+#'   Default is \code{FALSE}.
+#' @param ecoregion Optional character scalar used to annotate the
+#'   title and the export filename (e.g. \code{"Greater North Sea"}).
+#'
+#' @return
+#' If \code{return_data = FALSE} (default), an interactive Plotly
+#' htmlwidget consisting of two vertically stacked panels:
+#' \itemize{
+#'   \item Top panel: \code{F/F_MS Y} time series by stock, with a
+#'     horizontal reference line at 1 and a thick black mean line.
+#'   \item Bottom panel: \code{SSB/MSY B_trigger} time series by stock,
+#'     similarly annotated.
+#' }
+#'
+#' If there are no rows for the requested \code{guild}, a blank Plotly
+#' object is returned with a central annotation indicating that no data
+#' are available.
+#'
+#' If \code{return_data = TRUE}, the function returns the subset of
+#' \code{x} used for plotting (for the selected guild and metrics),
+#' including the derived \code{MetricLabel} column.
+#'
+#' @details
+#' Colours are assigned per \code{StockKeyLabel} using
+#' \code{hcl.colors(..., palette = "Temps")}, excluding the guild
+#' mean row (\code{"Mean"}). Stocks that rely on proxy reference
+#' points (\code{Proxy_is_proxy == TRUE}) are drawn as dotted lines;
+#' other stocks are drawn as solid lines.
+#'
+#' Hover text shows the stock name, year, metric value, and—when
+#' applicable—the proxy reference point name. A horizontal reference
+#' line at 1 is added in both panels, along with a rectangular border
+#' around each subplot.
+#'
+#' A random Crosstalk group is created per call to ensure linked
+#' highlighting across both panels without interference between
+#' multiple instances of the plot in a Shiny app. The export filename
+#' for the built-in "Download as PNG" button includes the ecoregion,
+#' guild name, and current date.
+#'
+#' @importFrom dplyr filter mutate recode group_by ungroup arrange
+#'   slice_head select
+#' @importFrom grDevices hcl.colors
+#' @importFrom plotly plot_ly add_lines layout subplot highlight
+#'   highlight_key config attrs_selected
+#' @noRd
 plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
   # --- helpers
   safe_min <- function(v, pad = 0) {
@@ -1292,80 +1872,104 @@ plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
 
 
 
-
-
-# plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
-#   # --- Filter by guild
-#   if (identical(guild, "All")) {
-#     df <- x
-#   } else {
-#     df <- dplyr::filter(x, FisheriesGuild %in% guild)
-#   }
-
-#   # --- Build 'total' per stock (max of Catches/Landings across time)
-#   df <- df %>%
-#     dplyr::group_by(StockKeyLabel) %>%
-#     dplyr::mutate(
-#       total = ifelse(
-#         all(is.na(Catches) & is.na(Landings)),
-#         NA,
-#         max(Catches, Landings, na.rm = TRUE)
-#       )
-#     ) %>%
-#     dplyr::ungroup() %>%
-#     dplyr::filter(!is.na(total))
-
-#   # Order stocks by total (smallest at bottom after coord_flip)
-#   df <- dplyr::mutate(df, StockKeyLabel = forcats::fct_reorder(StockKeyLabel, total))
-
-#   # --- Caption
-#   cap_lab <- ggplot2::labs(caption = paste0("ICES Stock Assessment Database, ",
-#                      format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"))
-
-#   # --- Plot
-#   p <- ggplot2::ggplot(df, ggplot2::aes(x = StockKeyLabel, y = Catches / 1000)) +
-#     ggplot2::geom_segment(
-#       ggplot2::aes(xend = StockKeyLabel, yend = 0, color = Status),
-#       size = 2, na.rm = TRUE
-#     ) +
-#     ggplot2::geom_segment(
-#       ggplot2::aes(y = Landings / 1000, xend = StockKeyLabel, yend = 0, color = Status),
-#       size = 2, na.rm = TRUE
-#     ) +
-#     ggplot2::geom_point(
-#       ggplot2::aes(y = Catches / 1000, fill = Status),
-#       color = "grey50", shape = 24, size = 7, alpha = 0.8, na.rm = TRUE
-#     ) +
-#     ggplot2::geom_point(
-#       ggplot2::aes(y = Landings / 1000, fill = Status),
-#       color = "grey50", shape = 21, size = 7, alpha = 0.8, na.rm = TRUE
-#     ) +
-#     ggplot2::scale_fill_manual(values = c(
-#       "GREEN" = "#4daf4a",
-#       "RED"   = "#e41a1c",
-#       "GREY"  = "#d3d3d3"
-#     )) +
-#     ggplot2::scale_color_manual(values = c(
-#       "GREEN" = "#4daf4a",
-#       "RED"   = "#e41a1c",
-#       "GREY"  = "#d3d3d3"
-#     )) +
-#     ggplot2::coord_equal() +
-#     ggplot2::coord_flip() +
-#     ggplot2::theme_bw(base_size = 20) +
-#     ggplot2::labs(x = expression("Stock name"), y = expression("Catch and Landings (thousand tonnes)")) +
-#     ggplot2::theme(
-#       legend.position      = "none",
-#       plot.caption         = ggplot2::element_text(size = 12),
-#       panel.grid.minor     = ggplot2::element_blank(),
-#       panel.grid.major.y   = ggplot2::element_blank(),
-#       panel.grid.major.x   = ggplot2::element_line(size = 0.1, color = "grey80")
-#     ) +
-#     cap_lab
-
-#   if (isTRUE(return_data)) df else p
-# }
-
+#' Plot catches and landings by stock with proxy reference-point markers
+#'
+#' Produces a catch–landings "dumbbell" style plot (per stock) for a
+#' given fisheries guild, highlighting whether reference points are
+#' based on proxies. Each stock appears as a vertical pair of points
+#' for catches and landings (in thousand tonnes) connected to zero by
+#' line segments, with colours indicating overall status
+#' (e.g. GREEN/RED/GREY).
+#'
+#' Stocks using proxy reference points are drawn with hollow markers
+#' (status-coloured outlines), while stocks using official reference
+#' points are drawn with filled markers. A small legend explains the
+#' shape/fill convention for landings vs catches and proxy vs
+#' non-proxy.
+#'
+#' @param x A data frame containing stock-level data for one or more
+#'   fisheries guilds, with at least the following columns:
+#'   \itemize{
+#'     \item \code{StockKeyLabel} – stock identifier (character).
+#'     \item \code{FisheriesGuild} – guild label(s) (character or factor).
+#'     \item \code{Catches} – catches (typically in tonnes; plotted as
+#'       \code{Catches/1000}).
+#'     \item \code{Landings} – landings (typically in tonnes; plotted as
+#'       \code{Landings/1000}).
+#'     \item \code{Status} – categorical status code per stock (e.g.
+#'       \code{"GREEN"}, \code{"RED"}, \code{"GREY"}), used for colours.
+#'     \item \code{F_proxy} – logical (or coercible to logical) flag
+#'       indicating that the F-related reference point is a proxy
+#'       (may contain \code{NA}).
+#'     \item \code{B_proxy} – logical (or coercible to logical) flag
+#'       indicating that the B-related reference point is a proxy
+#'       (may contain \code{NA}).
+#'   }
+#'   Other columns are ignored.
+#'
+#' @param guild Either a single character value or a character vector
+#'   of fisheries guilds to include (matched against
+#'   \code{FisheriesGuild}). If \code{guild} is exactly \code{"All"},
+#'   no filtering by guild is applied and all rows in \code{x} are
+#'   used.
+#'
+#' @param return_data Logical; if \code{TRUE}, the function returns the
+#'   processed data frame used for plotting instead of the ggplot
+#'   object. The returned data includes:
+#'   \itemize{
+#'     \item the original columns used in the plot;
+#'     \item \code{total} – per-stock maximum of catches or landings
+#'       across time (used for ordering);
+#'     \item \code{ProxyFlag} – logical flag indicating if either
+#'       \code{F_proxy} or \code{B_proxy} is \code{TRUE} for that row.
+#'   }
+#'   Default is \code{FALSE}.
+#'
+#' @return
+#' If \code{return_data = FALSE} (default), a \code{ggplot} object is
+#' returned. The plot shows:
+#' \itemize{
+#'   \item one horizontal "bar" per stock (after \code{coord_flip()}),
+#'     ordered by total volume (smaller stocks at the bottom);
+#'   \item coloured segments from 0 to catches/landings (thousand
+#'     tonnes) per stock, coloured by \code{Status};
+#'   \item filled markers for non-proxy reference points (triangles for
+#'     catches, circles for landings);
+#'   \item hollow markers with coloured outlines for proxy reference
+#'     points;
+#'   \item an inset legend describing landings vs catches and proxy vs
+#'     non-proxy markers;
+#'   \item a caption of the form
+#'     \dQuote{ICES Stock Assessment Database, dd-Mmm-yy. ICES, Copenhagen}.
+#' }
+#'
+#' If \code{return_data = TRUE}, the processed data frame (after
+#' guild filtering, ordering, and \code{total}/\code{ProxyFlag}
+#' computation) is returned instead.
+#'
+#' @details
+#' For each stock, \code{total} is calculated as:
+#' \deqn{\max(\text{Catches}, \text{Landings}, \mathrm{na.rm} = TRUE)}
+#' across all years in \code{x}. Stocks with missing catches and
+#' landings throughout are removed from the plot. The factor ordering
+#' of \code{StockKeyLabel} is then set according to \code{total},
+#' so that smaller total-volume stocks appear lower in the plot
+#' after \code{coord_flip()}.
+#'
+#' The function expects the columns \code{F_proxy} and \code{B_proxy}
+#' to be present. If either is missing, a warning is issued, as this
+#' usually indicates an upstream processing problem. The combined
+#' \code{ProxyFlag} column is set to \code{TRUE} if either
+#' \code{F_proxy} or \code{B_proxy} is \code{TRUE}, and is used to
+#' switch between filled vs hollow markers.
+#'
+#' @importFrom dplyr filter group_by mutate ungroup
+#' @importFrom forcats fct_reorder
+#' @importFrom ggplot2 ggplot aes geom_segment geom_point scale_fill_manual
+#'   scale_colour_manual coord_equal coord_flip theme_bw labs theme
+#'   element_text element_blank unit guide_legend guides scale_shape_manual
+#'   element_rect
+#' @noRd
 plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
   # --- Filter by guild
   df <- if (identical(guild, "All")) x else dplyr::filter(x, FisheriesGuild %in% guild)
@@ -1534,49 +2138,84 @@ plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
 
 
 
-# plot_kobe_app <- function(x, guild, return_data = FALSE){
-#         cap_lab <- ggplot2::labs(caption = paste0("ICES Stock Assessment Database, ",
-#                      format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"))
 
-#         if(guild == "All"){
-#                 df <-x
-#         }else(df <- dplyr::filter(x,FisheriesGuild %in% guild))
-#         xmax = max(df$F_FMSY, na.rm = TRUE)
-#         ifelse(xmax < 3, xmax2 <- 3, xmax2 <- (xmax + 0.5))
-#         ymax = max(df$SSB_MSYBtrigger, na.rm = TRUE)
-#         ifelse(ymax < 3, ymax2 <- 3, ymax2 <- (ymax + 0.5))
-#         kobe <- ggplot2::ggplot(df, ggplot2::aes(x = F_FMSY, y = SSB_MSYBtrigger,
-#                                          data_id = StockKeyLabel)) +
-#                 ggplot2::coord_cartesian(xlim = c(0, xmax2), ylim = c(0, ymax2))+
-#                 ggplot2::geom_point(ggplot2::aes(color = Status), size = 13,
-#                            alpha = 0.7, na.rm = TRUE) +
-#                 ggplot2::geom_hline(yintercept = 1, color = "grey60", linetype = "dashed") +
-#                 ggplot2::geom_vline(xintercept = 1, color = "grey60", linetype = "dashed") +
-#                 ggrepel::geom_text_repel(ggplot2::aes(label = StockKeyLabel),
-#                                          segment.size = .25,
-#                                          force = 5,
-#                                          size = 5) +
-#                 ggplot2::scale_color_manual(values = c("GREEN" = "#4daf4a",
-#                                               "RED" = "#e41a1c",
-#                                               "GREY" = "#d3d3d3")) +
-#                 ggplot2::labs(x = expression(F/F[MSY]),
-#                      y = expression(SSB/MSY~B[trigger]),
-#                      caption = "") +
-#                 ggplot2::theme_bw(base_size = 20) +
-#                 ggplot2::theme(legend.position = 'none',
-#                       panel.grid.minor = ggplot2::element_blank(),
-#                       panel.grid.major = ggplot2::element_blank(),
-#                       plot.caption = ggplot2::element_text(size = 10)) +
-#                       cap_lab
-      
-        
-#         if(return_data == T){
-#                 df
-#         }else{
-#                 kobe
-#         }
-# }
-
+#' Plot a Kobe-style status diagram with proxy reference-point markers
+#'
+#' Produces a Kobe-style plot of exploitation status (\eqn{F/F_{MSY}})
+#' versus stock status (\eqn{SSB/MSY\,B_{trigger}}) for the latest
+#' assessment values of each stock, optionally filtered by fisheries
+#' guild. Points are coloured by overall status and their shapes
+#' indicate whether the underlying reference points are official or
+#' proxy values.
+#'
+#' Stocks using only official reference points are drawn as filled
+#' circles ("Normal refpoint"). Stocks for which either the F-based
+#' or B-based reference point is a proxy are drawn as hollow circles
+#' with a thicker outline ("Proxy refpoint"). Stock labels are added
+#' with repelled text to reduce overlap.
+#'
+#' @param x A data frame containing stock-level indicators with at
+#'   least the following columns:
+#'   \itemize{
+#'     \item \code{StockKeyLabel} – stock identifier (character).
+#'     \item \code{FisheriesGuild} – fisheries guild (character/factor).
+#'     \item \code{F_FMSY} – ratio of fishing pressure to \eqn{F_{MSY}}.
+#'     \item \code{SSB_MSYBtrigger} – ratio of spawning stock biomass
+#'       to \eqn{MSY\,B_{trigger}}.
+#'     \item \code{Status} – categorical status code, typically
+#'       \code{"GREEN"}, \code{"RED"}, or \code{"GREY"}, used for
+#'       point colouring.
+#'     \item \code{F_proxy} – logical flag indicating whether the
+#'       F-related reference point is a proxy (may contain \code{NA}).
+#'     \item \code{B_proxy} – logical flag indicating whether the
+#'       B-related reference point is a proxy (may contain \code{NA}).
+#'   }
+#'   If \code{F_proxy} or \code{B_proxy} are missing, they are created
+#'   and set to \code{FALSE} (i.e. treated as normal reference points).
+#'
+#' @param guild Either a single character value or a character vector
+#'   of fisheries guilds to include (matched against
+#'   \code{FisheriesGuild}). If \code{guild} is exactly \code{"All"},
+#'   no guild-based filtering is applied and all rows in \code{x} are
+#'   used.
+#'
+#' @param return_data Logical; if \code{TRUE}, the processed data
+#'   frame used to build the plot (after guild filtering and
+#'   \code{ProxyFlag} construction) is returned instead of the
+#'   ggplot object. Default is \code{FALSE}.
+#'
+#' @return
+#' If \code{return_data = FALSE} (default), returns a \code{ggplot}
+#' object showing stocks in Kobe space with:
+#' \itemize{
+#'   \item x-axis: \eqn{F/F_{MSY}}.
+#'   \item y-axis: \eqn{SSB/MSY\,B_{trigger}}.
+#'   \item point colours given by \code{Status}.
+#'   \item point shapes indicating "Normal refpoint" vs
+#'     "Proxy refpoint", with a legend explaining the distinction.
+#'   \item dashed reference lines at 1 on both axes.
+#'   \item stock labels plotted with \code{ggrepel::geom_text_repel()}.
+#'   \item a standard caption of the form
+#'     \dQuote{ICES Stock Assessment Database, dd-Mmm-yy. ICES, Copenhagen}.
+#' }
+#'
+#' If \code{return_data = TRUE}, the function returns the filtered and
+#' augmented data frame (including the \code{ProxyFlag} column) instead
+#' of plotting.
+#'
+#' @details
+#' The plotting window is automatically expanded to at least \code{[0, 3]}
+#' on each axis, or slightly beyond the maximum observed values in
+#' \code{F_FMSY} and \code{SSB_MSYBtrigger}. The legend for the
+#' reference-point shape drops levels that are not present in the data
+#' (e.g. if no proxies are present, only "Normal refpoint" is shown).
+#'
+#' @importFrom dplyr filter mutate if_else
+#' @importFrom ggplot2 ggplot aes coord_cartesian geom_point geom_hline
+#'   geom_vline scale_color_manual scale_shape_manual labs theme_bw theme
+#'   element_blank element_text element_rect guides guide_legend unit
+#' @importFrom ggrepel geom_text_repel
+#' @noRd
 plot_kobe_app <- function(x, guild, return_data = FALSE){
 
   cap_lab <- ggplot2::labs(
@@ -1677,70 +2316,3 @@ plot_kobe_app <- function(x, guild, return_data = FALSE){
   if (isTRUE(return_data)) df else kobe
 }
 
-
-
-
-# Old version of stock trends function with experimental coverage rule
-# stock_trends <- function(x, coverage_thresh = 0.80){
-#   x$FishingPressure <- as.numeric(x$FishingPressure)
-#   x$StockSize       <- as.numeric(x$StockSize)
-#   x$FMSY            <- as.numeric(x$FMSY)
-#   x$MSYBtrigger     <- as.numeric(x$MSYBtrigger)
-#   x$Year            <- as.numeric(x$Year)
-
-#   df <- dplyr::mutate(x,
-#     FMEAN   = mean(FishingPressure, na.rm = TRUE),
-#     SSBMEAN = mean(StockSize,      na.rm = TRUE),
-#     FMEAN   = ifelse(!grepl("F|F(ages 3-6)", FishingPressureDescription), NA, FMEAN),
-#     SSBMEAN = ifelse(!grepl("StockSize",     StockSizeDescription),       NA, SSBMEAN)
-#   )
-
-#   df <- dplyr::mutate(df,
-#     F_FMSY          = ifelse(!is.na(FMSY),        FishingPressure / FMSY,        NA),
-#     SSB_MSYBtrigger = ifelse(!is.na(MSYBtrigger), StockSize       / MSYBtrigger, NA),
-#     F_FMEAN         = ifelse(!is.na(FMEAN),       FishingPressure / FMEAN,       NA),
-#     SSB_SSBMEAN     = ifelse(!is.na(SSBMEAN),     StockSize       / SSBMEAN,     NA)
-#   )
-
-#   df <- df %>%
-#     dplyr::select(Year, StockKeyLabel, FisheriesGuild, F_FMSY, SSB_MSYBtrigger, F_FMEAN, SSB_SSBMEAN)
-
-#   df2 <- tidyr::gather(df, Metric, Value, -Year, -StockKeyLabel, -FisheriesGuild) %>%
-#     dplyr::filter(!is.na(Year))
-
-#   df3 <- df2 %>%
-#     dplyr::group_by(StockKeyLabel, FisheriesGuild, Metric, Year) %>%
-#     dplyr::summarize(Value = mean(Value, na.rm = TRUE), .groups = "drop") %>%
-#     dplyr::filter(!is.na(Value))
-
-#   # ---- NEW: coverage rule for the across-stock yearly "Mean"
-#   # Denominator = distinct stocks that ever have data for this FisheriesGuild × Metric (across all years)
-#   denom <- df2 %>%
-#     dplyr::filter(!is.na(Value)) %>%
-#     dplyr::group_by(FisheriesGuild, Metric) %>%
-#     dplyr::summarise(total_stocks = dplyr::n_distinct(StockKeyLabel), .groups = "drop")
-
-#   # For each year: how many of those stocks have data, and what is that year's mean?
-#   year_stats <- df2 %>%
-#     dplyr::group_by(FisheriesGuild, Metric, Year) %>%
-#     dplyr::summarise(
-#       n_present = dplyr::n_distinct(StockKeyLabel[!is.na(Value)]),
-#       year_mean = mean(Value, na.rm = TRUE),
-#       .groups = "drop"
-#     )
-
-#   means <- year_stats %>%
-#     dplyr::inner_join(denom, by = c("FisheriesGuild","Metric")) %>%
-#     dplyr::mutate(
-#       coverage = ifelse(total_stocks > 0, n_present / total_stocks, NA_real_),
-#       Value    = dplyr::if_else(!is.na(coverage) & coverage >= coverage_thresh, year_mean, NA_real_),
-#       StockKeyLabel = "Mean"
-#     ) %>%
-#     dplyr::filter(!is.na(Value)) %>%
-#     dplyr::select(FisheriesGuild, StockKeyLabel, Year, Metric, Value)
-
-#   df4 <- dplyr::bind_rows(df3, means) %>%
-#     dplyr::distinct(.keep_all = TRUE)
-
-#   return(df4)
-# }
