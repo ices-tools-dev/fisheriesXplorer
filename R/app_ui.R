@@ -1,13 +1,42 @@
-#' The application User-Interface
+#' The application user-interface
 #'
-#' @param request Internal parameter for `{shiny}`.
-#'     DO NOT REMOVE.
+#' Main UI definition for the \code{fisheriesXplorer} Shiny application.
+#' Sets up external resources, global options (e.g. spinners), a
+#' fullscreen helper script, and the top-level navigation bar with
+#' module UIs for the different sections of the app.
+#'
+#' @param request Internal parameter for Shiny, typically a
+#'   \code{shiny::Request} object. Required to support bookmarking and
+#'   other advanced features, even if not used directly.
+#'
+#' @return
+#' A \code{shiny.tag.list} containing the complete UI for the
+#' application, including external resources and a \code{navbarPage}
+#' with the main tabs.
+#'
+#' @details
+#' The UI includes:
+#' \itemize{
+#'   \item A call to \code{golem_add_external_resources()} to register
+#'     static resources (CSS, JS, images, etc.).
+#'   \item A logo/title link pointing to the deployed app.
+#'   \item Global options for \pkg{shinycssloaders} spinners.
+#'   \item A JavaScript helper function \code{toggleFullScreen()} for
+#'     entering/exiting fullscreen mode.
+#'   \item A \code{navbarPage} with tabs for Home, Overview, Landings,
+#'     Stock status, and Resources, each rendering the corresponding
+#'     module UI.
+#'   \item A right-aligned "Share" button (using \code{bslib::nav_spacer()}
+#'     and \code{bslib::nav_item()}) that triggers share-link logic in
+#'     the server.
+#' }
+#'
+#' This function is typically passed to \code{shinyApp()} (or the golem
+#' entry point) as the UI argument.
+#'
 #' @import shiny
-#' @importFrom desc desc_get_version
+#' @importFrom bslib nav_spacer nav_item
 #' @noRd
-# =========================
-# UI
-# =========================
 app_ui <- function(request) {
   
   tagList(
@@ -53,17 +82,7 @@ app_ui <- function(request) {
       tabPanel("Overview", value = "overview", mod_overview_ui("overview_1")),
       tabPanel("Landings", value = "landings", mod_landings_ui("landings_1")),
       tabPanel("Stock status", value = "stock_status", mod_stock_status_ui("stock_status_1")),
-      # tabPanel(
-      #   "Mixed Fisheries",
-      #   value = "mixed_fisheries",
-      #   layout_sidebar(
-      #     sidebar = sidebar(mod_mixfish_plot_selection_ui("mixfish_selection_1"), width = "20vw"),
-      #     mod_mixfish_plot_display_ui("mixfish_viz_1")
-      #   )
-      # ),
-      # tabPanel("VMS",     value = "vms",     mod_vms_ui("vms_1")),
-      # tabPanel("Bycatch", value = "bycatch", mod_bycatch_ui("bycatch_1")),
-
+      
       # push right
       bslib::nav_spacer(),
 
@@ -76,59 +95,6 @@ app_ui <- function(request) {
           style = "margin-right: 8px;"
         )
       ),
-
-      # navbarMenu("Resources",
-      #   align = "right",
-      #   tabPanel(
-      #     tagList(icon("envelope"), "Contact & Feedback"),
-      #     fluidPage(
-      #       h3("Contact & Feedback"),
-      #       p("We’d love to hear from you. For questions, bug reports, or suggestions:"),
-      #       tags$ul(
-      #         tags$li(HTML("Email: <a href='mailto:your-team@example.org'>your-team@example.org</a>")),
-      #         tags$li(HTML("Issue tracker (optional): <a href='#'>link to GitHub/issue tracker</a>"))
-      #       ),
-      #       p(em("Please include the ecoregion and a screenshot/permalink if reporting an issue."))
-      #     )
-      #   ),
-      #   tabPanel(
-      #     tagList(icon("database"), "Data Sources"),
-      #     fluidPage(
-      #       h3("Data Sources"),
-      #       p("This application integrates multiple ICES data services and related sources."),
-      #       tags$ul(
-      #         tags$li(HTML("<b>SID</b> — Stock Information Database (used to resolve stock metadata).")),
-      #         tags$li(HTML("<b>SAG</b> — Stock Assessment Graphs service (assessment outputs and indicators).")),
-      #         tags$li(HTML("<b>Status service</b> — current stock status summaries.")),
-      #         tags$li(HTML("<b>Landings</b> — compiled landings by stock/ecoregion.")),
-      #         tags$li(HTML("<b>VMS</b> and <b>Bycatch</b> — specialised components drawing on internal/external services."))
-      #       ),
-      #       p(em("Exact endpoints and refresh cadences are documented in the code repository / deployment manifest."))
-      #     )
-      #   ),
-      #   tabPanel(
-      #     tagList(icon("exclamation-triangle"), "Data disclaimer & policy"),
-      #     fluidPage(
-      #       h3("Data disclaimer & policy"),
-      #       p(HTML("This is a <b>development</b> deployment. Contents are indicative and should not be quoted or used elsewhere.")),
-      #       p("Data are subject to change as assessments and monthly updates are released.")
-      #     )
-      #   ),
-      #   tabPanel(
-      #     tagList(icon("quote-right"), "Citation"),
-      #     fluidPage(
-      #       h3("Citation"),
-      #       p("Suggested wording (adapt to your needs):"),
-      #       tags$pre(
-      #         "ICES (YEAR).
-      #         fisheriesXplorer [Shiny application].
-      #         URL: https://ices-tools-dev.shinyapps.io/fisheriesXplorer/
-      #         Accessed: YYYY-MM-DD."
-      #       )
-      #     )
-      #   )
-      # )
-      # NEW: Resources as a module tab 
       tabPanel(
         tagList("Resources"),
         value = "resources",
@@ -138,7 +104,39 @@ app_ui <- function(request) {
   )
 }
 
-# Resources (same as your version)
+#' Add external resources to the app
+#'
+#' Registers the \code{www} resource path and attaches common external
+#' dependencies (favicon, Google Analytics snippet, bundled CSS/JS,
+#' custom styles, Font Awesome, and clipboard helper) to the document
+#' \code{<head>} for the \code{fisheriesXplorer} app.
+#'
+#' @return
+#' A \code{shiny.tag} (a \code{<head>} element) to be included in the UI,
+#' typically via \code{tagList(golem_add_external_resources(), ...)}.
+#'
+#' @details
+#' This helper:
+#' \itemize{
+#'   \item Registers the \code{"www"} static resource path using
+#'     \code{app_sys("app/www")}.
+#'   \item Sets the favicon.
+#'   \item Includes the Google Analytics HTML snippet.
+#'   \item Bundles app-specific resources from \code{app/www}.
+#'   \item Applies small CSS tweaks (e.g. for \code{#custom_slider}).
+#'   \item Adds a JS snippet to set \code{title} attributes on elements
+#'     with class \code{"collapse-toggle"}.
+#'   \item Loads custom fonts, Font Awesome, the main stylesheet, and a
+#'     clipboard helper script (\code{copy.js}).
+#'   \item Enables \pkg{shinyjs}.
+#' }
+#'
+#' Intended to be called once from \code{app_ui()}.
+#'
+#' @importFrom golem add_resource_path app_sys bundle_resources
+#' @importFrom shiny tags includeHTML
+#' @importFrom shinyjs useShinyjs
+#' @noRd
 golem_add_external_resources <- function() {
   add_resource_path("www", app_sys("app/www"))
   tags$head(
