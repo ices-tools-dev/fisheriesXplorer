@@ -159,39 +159,6 @@ merge_cells <- function(values) {
   }, c(1, spans[-length(spans)] + 1), spans, unique_values)
 }
 
-#' Flexible two-column header UI helper
-#'
-#' Creates a flexbox-based header row with two placeholders, one aligned
-#' to the left and one to the right. Each side is filled via a
-#' \code{uiOutput()} whose IDs are namespaced using the provided
-#' \code{ns} function.
-#'
-#' @param ns A namespacing function, typically created by
-#'   [shiny::NS()] inside a Shiny module.
-#' @param left_id Character scalar giving the output ID (without
-#'   namespace) for the left-hand side content.
-#' @param right_id Character scalar giving the output ID (without
-#'   namespace) for the right-hand side content.
-#'
-#' @return
-#' A \code{shiny.tag} representing a \code{<div>} container with two
-#' \code{uiOutput()} elements arranged using CSS flexbox. Intended for
-#' use inside Shiny UI definitions.
-#'
-#' @examples
-#' \dontrun{
-#' mod_flex_header_ui(ns, left_id = "title", right_id = "controls")
-#' }
-#'
-#' @export
-mod_flex_header_ui <- function(ns, left_id, right_id) {
-  div(
-    style = "display:flex;justify-content:space-between;align-items:center;
-             padding:10px;font-weight:bold;font-size:1.2em;margin-bottom:0;",
-    uiOutput(ns(left_id)),
-    uiOutput(ns(right_id))
-  )
-}
 
 #' Create a label with a custom tooltip
 #'
