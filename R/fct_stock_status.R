@@ -634,7 +634,7 @@ plot_status_prop_pies <- function(
 
   # Base R rename + compact regime names
   df2$Variable <- as.character(df2$Variable)
-  df2$Variable[df2$Variable == "FishingPressure"] <- "Fishing pressure"
+  df2$Variable[df2$Variable == "FishingPressure"] <- "Fishing\npressure"
   df2$Variable[df2$Variable == "StockSize"]       <- "Stock size"
   df2$lineDescription <- gsub("Maximum sustainable yield", "MSY", df2$lineDescription)
   df2$lineDescription <- gsub("Precautionary approach",  "PA",  df2$lineDescription)
@@ -659,8 +659,8 @@ plot_status_prop_pies <- function(
     dplyr::ungroup()
 
   # Facet orders (keep only existing)
-  wanted_headers <- c("Fishing pressure\nMSY","Stock size\nMSY",
-                      "Fishing pressure\nPA", "Stock size\nPA")
+  wanted_headers <- c("Fishing\npressure\nMSY","Stock size\nMSY",
+                      "Fishing\npressure\nPA", "Stock size\nPA")
   present_headers <- intersect(wanted_headers, unique(df2$header))
   df2$header <- factor(df2$header, levels = present_headers)
 
