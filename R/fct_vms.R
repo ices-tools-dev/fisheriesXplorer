@@ -24,7 +24,7 @@ plot_effort_map_app <- function (effort, ecoregion_name, ecoregion_shape, land_s
     geom_sf(data = land_shape,fill = "grey80", color = "grey90", size = 1) + 
     geom_sf(data = effort, aes(fill = icesFO:::get_map_breaks(mw_fishinghours)), col = "transparent") + 
     scale_fill_viridis_d(name = "MW Fishing Hours", direction = -1, option = "A", guide = guide_legend(reverse = TRUE)) + 
-    theme_bw(base_size = 22) + 
+    theme_bw(base_size = 15) + 
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank()) + 
     coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
@@ -34,7 +34,7 @@ plot_effort_map_app <- function (effort, ecoregion_name, ecoregion_shape, land_s
   
   if(fishing_category == "all") {
     p <- p + facet_wrap(~fishing_category_FO)+
-      theme(strip.text = element_text(size = 20))+
+      theme(strip.text = element_text(size = 11))+
       ggtitle(paste0("Average MW Fishing hours ", paste(yr-3, yr, sep = "-")),
               subtitle = paste0(ecoregion_name, ": All gears"))
   }
@@ -77,19 +77,18 @@ plot_sar_map_app <- function (sar_data,  ecoregion_name, ecoregion_shape, land_s
     geom_sf(data = sar_data, aes(fill = icesFO:::get_map_breaks(sar)), col = "transparent") + 
     scale_fill_viridis_d(name = legend_name, direction = -1, 
                                   option = "A", guide = guide_legend(reverse = TRUE)) + 
-    theme_bw(base_size = 22) + 
+    theme_bw(base_size = 15) + 
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank()) + 
     coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
     labs(caption = paste0("Made with Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date)) + 
-    theme_bw(base_size = 20)+ 
     ggtitle(paste0("Swept Area Ratio ", paste(yr-3, yr, sep = "-")),
           subtitle = paste0(ecoregion_name, ": ", stringr::str_to_title(sar_layer), " layer"))
   
   if(sar_layer == "all") {
 
     p <- p + facet_wrap(~layer)+
-      theme(strip.text = element_text(size = 20)) +
+      theme(strip.text = element_text(size = 11)) +
       ggtitle(paste0("Swept Area Ratio ", paste(yr-3, yr, sep = "-")),
               subtitle = paste0(ecoregion_name, ": Surface and Subsurface layers"))
   }

@@ -17,7 +17,6 @@ mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
-    
     layout_sidebar(
       bg = "white", fg = "black",
       sidebar = sidebar(
@@ -30,7 +29,7 @@ mod_vms_ui <- function(id) {
         column(
           6,
           card(
-            height = "85vh",
+            height = "82vh",
             card_header("Fishing Effort",
                         downloadLink(ns("download_effort_data"),
                                     HTML(paste0("<span class='hovertext' data-hover='Data & Plot image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
@@ -42,7 +41,7 @@ mod_vms_ui <- function(id) {
                 selected = "All"
               ),
               tags$style(type = "text/css", "#vms_effort_layer {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
-              withSpinner(suppressWarnings(uiOutput(ns("vms_effort_layer"), height = "65vh", width = "100%", fill = T)))
+              withSpinner(suppressWarnings(uiOutput(ns("vms_effort_layer"), width = "100%", fill = T)))
             )
           )
       ),
