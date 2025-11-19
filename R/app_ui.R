@@ -53,17 +53,7 @@ app_ui <- function(request) {
       tabPanel("Overview", value = "overview", mod_overview_ui("overview_1")),
       tabPanel("Landings", value = "landings", mod_landings_ui("landings_1")),
       tabPanel("Stock status", value = "stock_status", mod_stock_status_ui("stock_status_1")),
-      tabPanel("VMS",     value = "vms",     mod_vms_ui("vms_1")),
-      # tabPanel(
-      #   "Mixed Fisheries",
-      #   value = "mixed_fisheries",
-      #   layout_sidebar(
-      #     sidebar = sidebar(mod_mixfish_plot_selection_ui("mixfish_selection_1"), width = "20vw"),
-      #     mod_mixfish_plot_display_ui("mixfish_viz_1")
-      #   )
-      # ),
-      # tabPanel("Bycatch", value = "bycatch", mod_bycatch_ui("bycatch_1")),
-
+      
       # push right
       bslib::nav_spacer(),
 
@@ -76,59 +66,6 @@ app_ui <- function(request) {
           style = "margin-right: 8px;"
         )
       ),
-
-      # navbarMenu("Resources",
-      #   align = "right",
-      #   tabPanel(
-      #     tagList(icon("envelope"), "Contact & Feedback"),
-      #     fluidPage(
-      #       h3("Contact & Feedback"),
-      #       p("We’d love to hear from you. For questions, bug reports, or suggestions:"),
-      #       tags$ul(
-      #         tags$li(HTML("Email: <a href='mailto:your-team@example.org'>your-team@example.org</a>")),
-      #         tags$li(HTML("Issue tracker (optional): <a href='#'>link to GitHub/issue tracker</a>"))
-      #       ),
-      #       p(em("Please include the ecoregion and a screenshot/permalink if reporting an issue."))
-      #     )
-      #   ),
-      #   tabPanel(
-      #     tagList(icon("database"), "Data Sources"),
-      #     fluidPage(
-      #       h3("Data Sources"),
-      #       p("This application integrates multiple ICES data services and related sources."),
-      #       tags$ul(
-      #         tags$li(HTML("<b>SID</b> — Stock Information Database (used to resolve stock metadata).")),
-      #         tags$li(HTML("<b>SAG</b> — Stock Assessment Graphs service (assessment outputs and indicators).")),
-      #         tags$li(HTML("<b>Status service</b> — current stock status summaries.")),
-      #         tags$li(HTML("<b>Landings</b> — compiled landings by stock/ecoregion.")),
-      #         tags$li(HTML("<b>VMS</b> and <b>Bycatch</b> — specialised components drawing on internal/external services."))
-      #       ),
-      #       p(em("Exact endpoints and refresh cadences are documented in the code repository / deployment manifest."))
-      #     )
-      #   ),
-      #   tabPanel(
-      #     tagList(icon("exclamation-triangle"), "Data disclaimer & policy"),
-      #     fluidPage(
-      #       h3("Data disclaimer & policy"),
-      #       p(HTML("This is a <b>development</b> deployment. Contents are indicative and should not be quoted or used elsewhere.")),
-      #       p("Data are subject to change as assessments and monthly updates are released.")
-      #     )
-      #   ),
-      #   tabPanel(
-      #     tagList(icon("quote-right"), "Citation"),
-      #     fluidPage(
-      #       h3("Citation"),
-      #       p("Suggested wording (adapt to your needs):"),
-      #       tags$pre(
-      #         "ICES (YEAR).
-      #         fisheriesXplorer [Shiny application].
-      #         URL: https://ices-tools-dev.shinyapps.io/fisheriesXplorer/
-      #         Accessed: YYYY-MM-DD."
-      #       )
-      #     )
-      #   )
-      # )
-      # NEW: Resources as a module tab 
       tabPanel(
         tagList("Resources"),
         value = "resources",
