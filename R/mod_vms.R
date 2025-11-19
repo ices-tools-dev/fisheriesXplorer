@@ -17,7 +17,7 @@ mod_vms_ui <- function(id) {
   ns <- NS(id)
   tagList(
     mod_flex_header_ui(ns, "ecoregion_label", "current_date"),
-    br(),
+    
     layout_sidebar(
       bg = "white", fg = "black",
       sidebar = sidebar(
@@ -73,21 +73,61 @@ mod_vms_ui <- function(id) {
 #' vms Server Functions
 #'
 #' @noRd 
-mod_vms_server <- function(id, selected_ecoregion){
-  moduleServer( id, function(input, output, session){
+mod_vms_server <- function(id, 
+    selected_ecoregion,
+    bookmark_qs = reactive(NULL),
+    set_subtab = function(...) {}){
+  moduleServer(id, function(input, output, session){
     ns <- session$ns
     
+    ################################## bookmarking #########################################
+    # RESTORE once, defer until after first flush, then push up
+    observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
+      qs <- bookmark_qs()
+      wanted <- qs$subtab
+      valid <- c("vms")
+      if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
+        session$onFlushed(function() {
+          updateTabsetPanel(session, "main_tabset", selected = wanted)
+          isolate(set_subtab(wanted))
+        }, once = TRUE)
+      }
+    })
+
+    # REPORT on user changes, skip initial default
+    observeEvent(input$main_tabset,
+      {
+        set_subtab(input$main_tabset)
+      },
+      ignoreInit = TRUE
+    )
+
     output$ecoregion_label <- renderText({
       req(selected_ecoregion())
       paste("Ecoregion:", selected_ecoregion())
     })
 
-    output$current_date <- renderText({
-      "Last update: December 05, 2024" # e.g., "May 26, 2025"
+    output$current_date <- renderUI({
+      tab <- input$main_tabset
+      if (is.null(tab)) tab <- "vms"
+      
+      date_text <- "November, 2025"
+
+      tagList(
+        tags$span(tags$b("Last data update:"), " ", date_text),
+        tags$span(" \u00B7 "),
+        mod_glossary_float_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
+      )
     })
-    
-  
-    
+    mod_glossary_float_server(
+     "app_glossary",
+     terms = reactive({
+       df <- select_text(texts, "glossary", NULL) # your texts.rda table
+       df[, intersect(names(df), c("term", "definition", "source")), drop = FALSE]
+     })
+   )
+
+        
     output$vms_effort_layer <- renderUI({
       req(selected_ecoregion, input$fishing_cat_selector)
       render_vms(ecoregion = selected_ecoregion(),

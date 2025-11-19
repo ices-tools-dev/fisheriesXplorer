@@ -51,7 +51,7 @@ mod_navigation_page_ui <- function(id) {
               style = "overflow: visible;",
               fluidRow(
                 column(
-                  4, align = "center",
+                  6, align = "center",
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("overviewBtn"), label = NULL, class = "image-button-link",
@@ -62,7 +62,7 @@ mod_navigation_page_ui <- function(id) {
                   )
                 ),
                 column(
-                  4, align = "center",
+                  6, align = "center",
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("landingsBtn"), label = NULL, class = "image-button-link",
@@ -72,8 +72,9 @@ mod_navigation_page_ui <- function(id) {
                     div(class = "fx-tooltip", HTML("<strong>Landings</strong><br><br>Landings over time:<br>by country, species, fish guild, and gear type"))
                   )
                 ),
+                fluidRow(
                 column(
-                  4, align = "center",
+                  6, align = "center",
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("stockStatusBtn"), label = NULL, class = "image-button-link",
@@ -82,11 +83,11 @@ mod_navigation_page_ui <- function(id) {
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Stock status</strong><br><br>Relative to MSY &amp; PA reference points, and MSFD descriptors"))
                   )
-                )
-              ),
-              fluidRow(
+                ),
+             
+              
                 column(
-                  4, align = "center",
+                  6, align = "center",
                   div(class = "image-button-wrap",
                     actionLink(
                       ns("VMS"), label = NULL, class = "image-button-link",
@@ -95,7 +96,7 @@ mod_navigation_page_ui <- function(id) {
                     ),
                     div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Effort distribution and physical disturbance of benthic habitats"))
                   )
-                ),
+                )),
               #   column(
               #     4, align = "center",
               #     div(class = "image-button-wrap",
