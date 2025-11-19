@@ -30,7 +30,7 @@ mod_overview_ui <- function(id) {
           ),
           tabsetPanel(
             id = ns("tabs_overview"), # <-- NEW
-            tabPanel("KeySignals",
+            tabPanel("Key Signals",
               value = "key_signals",
               card(uiOutput(ns("key_signals")))
             ),
