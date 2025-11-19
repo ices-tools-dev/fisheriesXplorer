@@ -144,7 +144,7 @@ for(i in 1:length(ecoregions)){
   })
   
   if (!is.null(result) && inherits(result, "ggplot")) {
-      ragg::agg_png(filename = name_of_file, units = "px",width = 3600, height = 2250, res = dpi)
+      ragg::agg_png(filename = name_of_file, units = "px",width = 1300, height = 1000, res = dpi)
       print(result)
       grDevices::dev.off()
         
@@ -200,7 +200,7 @@ for(i in 1:length(sar_maps)){
       })
       
       if (!is.null(result) && inherits(result, "ggplot")) {
-        ragg::agg_png(filename = name_of_file, units = "px",width = 3600, height = 2250, res = dpi)
+        ragg::agg_png(filename = name_of_file, units = "px",width = 1300, height = 1000, res = dpi)
         print(result)
         grDevices::dev.off()
       } else {
