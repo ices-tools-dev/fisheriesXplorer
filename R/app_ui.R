@@ -53,6 +53,7 @@ app_ui <- function(request) {
       tabPanel("Overview", value = "overview", mod_overview_ui("overview_1")),
       tabPanel("Landings", value = "landings", mod_landings_ui("landings_1")),
       tabPanel("Stock status", value = "stock_status", mod_stock_status_ui("stock_status_1")),
+      tabPanel("VMS",     value = "vms",     mod_vms_ui("vms_1")),
       # tabPanel(
       #   "Mixed Fisheries",
       #   value = "mixed_fisheries",
@@ -61,7 +62,6 @@ app_ui <- function(request) {
       #     mod_mixfish_plot_display_ui("mixfish_viz_1")
       #   )
       # ),
-      # tabPanel("VMS",     value = "vms",     mod_vms_ui("vms_1")),
       # tabPanel("Bycatch", value = "bycatch", mod_bycatch_ui("bycatch_1")),
 
       # push right
