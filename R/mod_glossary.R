@@ -201,7 +201,6 @@ mod_glossary_float_server <- function(id, terms) {
     # Always-available data for the table
     data_r <- reactive({
       df <- resolve_df(terms)
-      # if (nrow(df)) df <- df[order(tolower(df$term)), , drop = FALSE]
       df
     })
 
