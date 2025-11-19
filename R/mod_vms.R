@@ -23,6 +23,7 @@ mod_vms_ui <- function(id) {
       sidebar = sidebar(
         width = "33vw", bg = "white", fg = "black",
         open = FALSE,
+        uiOutput(ns("effort_text")),
         uiOutput(ns("sar_text"))
       ),
       fluidRow(
@@ -115,6 +116,14 @@ mod_vms_server <- function(id, selected_ecoregion){
       content  = vms_bundle_content(selected_ecoregion, what = "sar"),
       contentType = "application/zip"
     )
+    
+    output$effort_text <- renderUI({
+      HTML(select_text(texts, "vms", "effort_sidebar"))
+    })
+    
+    output$sar_text <- renderUI({
+      HTML(select_text(texts, "status", "sar_sidebar"))
+    })
   })
 }
     

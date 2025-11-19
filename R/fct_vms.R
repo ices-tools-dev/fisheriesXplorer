@@ -1,12 +1,3 @@
-# base_size         <- max(9,  min(18, round(w / 55)))
-# axis_title_size   <- max(10, min(20, round(w / 50)))
-# tick_size         <- max(9,  min(16, round(w / 55)))
-# legend_title_size <- max(10, min(18, round(w / 55)))
-# legend_text_size  <- max(9,  min(16, round(w / 65)))
-# title_annot_size  <- max(12, min(22, round(w / 40)))
-# caption_size      <- max(8,  min(14, round(w / 70)))
-# 
-
 #' Title
 #'
 #' @param effort 
