@@ -141,7 +141,7 @@ vms_bundle_content <- function(selected_ecoregion, what) {
     }
     
     disc_path_vms <- file.path(td, "Disclaimer_VMS.txt")
-    disc_url_vms <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_vms_data_output.txt"
+    disc_url_vms <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/disclaimer_vms_data_ouput.txt"
     if (!safe_download(disc_url_vms, disc_path_vms)) {
       writeLines(c(
         "Disclaimer for VMS data output.",

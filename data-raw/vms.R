@@ -27,6 +27,10 @@ yr <- 2024
 # Set resolution for plotting
 dpi <- 144 
 
+#plot dimensions
+plot_width <- 1300
+plot_height <- 1000
+
 # SAR and Effort updated November 2025
 vms_data_update = "November 2025"
 vms_data_update_short = "Nov-25"
@@ -144,7 +148,7 @@ for(i in 1:length(ecoregions)){
   })
   
   if (!is.null(result) && inherits(result, "ggplot")) {
-      ragg::agg_png(filename = name_of_file, units = "px",width = 3600, height = 2250, res = dpi)
+      ragg::agg_png(filename = name_of_file, units = "px",width = plot_width, height = plot_height, res = dpi)
       print(result)
       grDevices::dev.off()
         
@@ -200,7 +204,7 @@ for(i in 1:length(sar_maps)){
       })
       
       if (!is.null(result) && inherits(result, "ggplot")) {
-        ragg::agg_png(filename = name_of_file, units = "px",width = 3600, height = 2250, res = dpi)
+        ragg::agg_png(filename = name_of_file, units = "px",width = plot_width, height = plot_height, res = dpi)
         print(result)
         grDevices::dev.off()
       } else {
