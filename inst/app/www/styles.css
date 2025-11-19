@@ -1,9 +1,56 @@
-p {
+/* p {
     font-size: 21px;
 }
 
 li {
     font-size: 20px;
+} */
+/* Common layout for all overview text sections */
+.fx-section {
+  font-size: 18px;           /* base size */
+  line-height: 1.5;
+  color: #002B5F;
+}
+
+/* Paragraphs inside overview sections */
+.fx-section p {
+  font-size: 18px;
+  line-height: 1.5;
+  margin-top: 0;
+  margin-bottom: 0.75em;
+}
+
+/* Lists inside overview sections */
+.fx-section ul,
+.fx-section ol {
+  margin-top: 0.25em;
+  margin-bottom: 0.75em;
+  padding-left: 1.4em;   /* indent bullets/numbers */
+}
+
+.fx-section li {
+  font-size: 18px;
+  line-height: 1.5;
+  margin-bottom: 0.35em;
+}
+
+/* Sub-headings like country names in "Who is fishing" */
+.fx-section h4 {
+  font-size: 19px;
+  font-weight: 600;
+  margin-top: 1.2em;
+  margin-bottom: 0.35em;
+  color: #002B5F;
+}
+
+/* Make links in the text slightly distinct but subtle */
+.fx-section a {
+  color: #005b99;
+  text-decoration: underline;
+}
+.fx-section a:hover,
+.fx-section a:focus {
+  color: #003f6e;
 }
 
 .card-body, .bslib-gap-spacing, .html-fill-item, .html-fill-container {
@@ -676,3 +723,24 @@ caption {
   margin-bottom:auto; 
   max-width:97%; 
   height:auto;}
+
+/* === NAV LABEL SIZES === */
+
+/* Top navbar tabs */
+.navbar-default .navbar-nav > li > a {
+  font-size: 20px;      /* adjust to taste: 15–18px */
+  font-weight: 500;
+}
+
+/* Nav tabs inside cards (Bootstrap 3 style) */
+.nav-tabs > li > a,
+.nav-pills > li > a {
+  font-size: 20px;      /* same as above for consistency */
+  font-weight: 500;
+}
+
+/* bslib / Bootstrap 4/5-style nav links, just in case */
+.nav-link {
+  font-size: 20px;
+  font-weight: 500;
+}

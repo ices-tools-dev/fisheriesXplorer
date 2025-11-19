@@ -117,14 +117,40 @@ mod_overview_server <- function(
       )
     })
     ################################## Text sections #########################################
+    
     output$key_signals <- renderUI({
-      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "key_signals"))
+      div(
+        class = "fx-section fx-key-signals",
+        HTML(select_text(
+          texts,
+          paste0("overview_", get_ecoregion_acronym(selected_ecoregion())),
+          "key_signals"
+        ))
+      )
     })
+
     output$introduction <- renderUI({
-      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "introduction"))
+      div(
+        class = "fx-section fx-introduction",
+        HTML(select_text(
+          texts,
+          paste0("overview_", get_ecoregion_acronym(selected_ecoregion())),
+          "introduction"
+        ))
+      )
     })
+
     output$who_is_fishing <- renderUI({
-      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "who_is_fishing"))
+      div(
+        class = "fx-section fx-who-is-fishing",
+        HTML(select_text(
+          texts,
+          paste0("overview_", get_ecoregion_acronym(selected_ecoregion())),
+          "who_is_fishing"
+        ))
+      )
     })
+
+    
   })
 }
