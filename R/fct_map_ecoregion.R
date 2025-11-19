@@ -1,21 +1,43 @@
-#' @description Function to plot the interactive map of regions.
+#' Create a leaflet map of ICES ecoregions
 #'
+#' Builds a \code{leaflet} map in a Lambert azimuthal equal-area projection
+#' (EPSG:3035) showing a background Europe polygon and ICES ecoregion
+#' polygons. The ecoregions are added both as a single group and as
+#' individual groups per ecoregion, which can be controlled via
+#' \code{leaflet} layer controls elsewhere in the app.
 #'
-#' @noRd
+#' @param eco_shape An \code{sf} or \code{sp} polygon object containing ICES
+#'   ecoregions. Must include at least the columns \code{Ecoregion} and
+#'   \code{OBJECTID}, which are used for labels, \code{layerId}, and groups.
+#' @param map_shape An \code{sf} or \code{sp} polygon object providing the
+#'   background map layer (typically a Europe outline) in the same CRS as
+#'   \code{eco_shape}.
 #'
-#' @param eco_shape (ecoregions' shapefile)
-#' @param map_shape (europe's shapefile)
+#' @details
+#' The map uses a custom \code{leafletCRS} with EPSG:3035 and a fixed range of
+#' zoom levels. Three polygon layers are added:
+#' \itemize{
+#'   \item A background \code{map_shape} layer (group \code{"Europe"}).
+#'   \item A grey \code{eco_shape} layer for all ecoregions (group
+#'     \code{"Eco_regions"}) with labels from \code{Ecoregion}.
+#'   \item A blue \code{eco_shape} layer with groups defined by
+#'     \code{Ecoregion} and \code{layerId} from \code{OBJECTID}.
+#' }
+#' The map view is initialised over the North Atlantic / Europe and the
+#' per-ecoregion groups are hidden by default using \code{hideGroup()}.
 #'
-#' @return leaflet object
+#' @return A \code{leaflet} map widget that can be rendered in a Shiny
+#'   application or an R Markdown document.
+#'
+#' @importFrom leaflet leaflet leafletOptions leafletCRS addPolygons setView hideGroup
 #'
 #' @examples
 #' \dontrun{
-#' map_ecoregion(eco_shape, map_shape)
+#'   library(leaflet)
+#'   map_ecoregion(eco_shape = ices_eco, map_shape = europe_outline)
 #' }
 #'
-#'
-#' @import leaflet
-#'
+#' @export
 map_ecoregion <- function(eco_shape, map_shape) {
 
   minZoom <- 0.5
