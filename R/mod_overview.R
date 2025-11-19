@@ -64,9 +64,9 @@ mod_overview_ui <- function(id) {
           ),
           tabsetPanel(
             id = ns("tabs_overview"), # <-- NEW
-            tabPanel("Executive Summary",
-              value = "exec_summary",
-              card(uiOutput(ns("executive_summary")))
+            tabPanel("Key Signals",
+              value = "key_signals",
+              card(uiOutput(ns("key_signals")))
             ),
             tabPanel("Introduction",
               value = "introduction",
@@ -168,8 +168,7 @@ mod_overview_server <- function(
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
       wanted <- qs$subtab
-      valid <- c("exec_summary", "introduction", "who_is_fishing")
-      # Only act if a valid subtab was requested
+      valid <- c("key_signals", "introduction", "who_is_fishing")
       if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
         session$onFlushed(function() {
           # Drive the internal tabsetPanel to the requested subtab
@@ -224,14 +223,40 @@ mod_overview_server <- function(
       )
     })
     ################################## Text sections #########################################
-    output$executive_summary <- renderUI({
-      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "executive_summary"))
+    
+    output$key_signals <- renderUI({
+      div(
+        class = "fx-section fx-key-signals",
+        HTML(select_text(
+          texts,
+          paste0("overview_", get_ecoregion_acronym(selected_ecoregion())),
+          "key_signals"
+        ))
+      )
     })
+
     output$introduction <- renderUI({
-      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "introduction"))
+      div(
+        class = "fx-section fx-introduction",
+        HTML(select_text(
+          texts,
+          paste0("overview_", get_ecoregion_acronym(selected_ecoregion())),
+          "introduction"
+        ))
+      )
     })
+
     output$who_is_fishing <- renderUI({
-      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "who_is_fishing"))
+      div(
+        class = "fx-section fx-who-is-fishing",
+        HTML(select_text(
+          texts,
+          paste0("overview_", get_ecoregion_acronym(selected_ecoregion())),
+          "who_is_fishing"
+        ))
+      )
     })
+
+    
   })
 }
