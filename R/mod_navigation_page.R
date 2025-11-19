@@ -1,14 +1,35 @@
-#' landing_page UI Function
+#' Navigation / landing page UI module
 #'
-#' @description A shiny Module.
+#' Build the landing page for the fisheriesXplorer app, combining:
+#' \itemize{
+#'   \item an interactive ICES ecoregion map with a synced selector, and
+#'   \item three large topic buttons (Overview, Landings, Stock status)
+#'         that the server module can use to navigate to the relevant
+#'         sections of the app.
+#' }
 #'
-#' @param id,input,output,session Internal parameters for {shiny}.
+#' The module exposes a single UI function to be used in \code{app_ui()}
+#' and a corresponding server module (e.g. \code{mod_navigation_page_server()})
+#' that wires the inputs into the rest of the application.
 #'
-#' @noRd 
+#' @param id Character string used to create a namespace for the module
+#'   via \code{shiny::NS()}. Typically passed as a literal in
+#'   \code{mod_navigation_page_ui("navigation_page_1")}.
 #'
-#' @importFrom shiny NS tagList 
-#' @importFrom bslib card card_header card_body layout_column_wrap nav_panel layout_sidebar sidebar
-#' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup 
+#' @return A \link[shiny]{tagList} containing the landing-page UI:
+#'   a hidden \code{tabsetPanel} with the map card (leaflet output and
+#'   virtual select input) and a card of image-based navigation buttons.
+#'   Intended to be included inside a higher-level UI definition such
+#'   as \code{navbarPage()}.
+#'
+#' @seealso \code{\link{mod_navigation_page_server}} for the server-side
+#'   logic associated with this UI.
+#'
+#' @noRd
+#'
+#' @importFrom shiny NS tagList tabsetPanel tabPanel fluidRow column br actionLink
+#' @importFrom bslib card card_header card_body layout_column_wrap
+#' @importFrom leaflet leafletOutput leafletProxy hideGroup showGroup
 #' @importFrom shinyWidgets virtualSelectInput updateVirtualSelect
 #' @importFrom shinyjs onclick
 #' @importFrom stringr str_replace_all
@@ -51,10 +72,13 @@ mod_navigation_page_ui <- function(id) {
               style = "overflow: visible;",
               fluidRow(
                 column(
-                  6, align = "center",
-                  div(class = "image-button-wrap",
+                  4,
+                  align = "center",
+                  div(
+                    class = "image-button-wrap",
                     actionLink(
-                      ns("overviewBtn"), label = NULL, class = "image-button-link",
+                      ns("overviewBtn"),
+                      label = NULL, class = "image-button-link",
                       style = "background-image: url('www/icons/overview.svg');",
                       title = "Overview", `aria-label` = "Overview"
                     ),
@@ -62,63 +86,33 @@ mod_navigation_page_ui <- function(id) {
                   )
                 ),
                 column(
-                  6, align = "center",
-                  div(class = "image-button-wrap",
+                  4,
+                  align = "center",
+                  div(
+                    class = "image-button-wrap",
                     actionLink(
-                      ns("landingsBtn"), label = NULL, class = "image-button-link",
+                      ns("landingsBtn"),
+                      label = NULL, class = "image-button-link",
                       style = "background-image: url('www/icons/landings.svg');",
                       title = "Landings", `aria-label` = "Landings"
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Landings</strong><br><br>Landings over time:<br>by country, species, fish guild, and gear type"))
                   )
                 ),
-                fluidRow(
                 column(
-                  6, align = "center",
-                  div(class = "image-button-wrap",
+                  4,
+                  align = "center",
+                  div(
+                    class = "image-button-wrap",
                     actionLink(
-                      ns("stockStatusBtn"), label = NULL, class = "image-button-link",
+                      ns("stockStatusBtn"),
+                      label = NULL, class = "image-button-link",
                       style = "background-image: url('www/icons/Stock Status.svg');",
                       title = "Stock status", `aria-label` = "Stock status"
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Stock status</strong><br><br>Relative to MSY &amp; PA reference points, and MSFD descriptors"))
                   )
-                ),
-             
-              
-                column(
-                  6, align = "center",
-                  div(class = "image-button-wrap",
-                    actionLink(
-                      ns("VMS"), label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/vms.svg');",
-                      title = "VMS", `aria-label` = "VMS"
-                    ),
-                    div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Effort distribution and physical disturbance of benthic habitats"))
-                  )
-                )),
-              #   column(
-              #     4, align = "center",
-              #     div(class = "image-button-wrap",
-              #       actionLink(
-              #         ns("mixfishBtn"), label = NULL, class = "image-button-link",
-              #         style = "background-image: url('www/icons/mix_fishieries.svg');",
-              #         title = "Mixed Fisheries", `aria-label` = "Mixed Fisheries"
-              #       ),
-              #       div(class = "fx-tooltip", HTML("<strong>Mixed Fisheries</strong><br><br>Technical interactions across the main fisheries"))
-              #     )
-              #   ),
-              #   column(
-              #     4, align = "center",
-              #     div(class = "image-button-wrap",
-              #       actionLink(
-              #         ns("bycatchBtn"), label = NULL, class = "image-button-link",
-              #         style = "background-image: url('www/icons/bycatch.svg');",
-              #         title = "Bycatch", `aria-label` = "Bycatch"
-              #       ),
-              #       div(class = "fx-tooltip", HTML("<strong>Bycatch</strong><br><br>Protected, endangered, and threatened species"))
-              #     )
-              #   )
+                )
               )
             )
           )
@@ -130,10 +124,73 @@ mod_navigation_page_ui <- function(id) {
 
 
 
-    
-#' landing_page Server Functions
+#' Navigation / landing page server module
 #'
-#' @noRd 
+#' Server-side logic for the fisheriesXplorer landing page / navigation
+#' screen. This module:
+#' \itemize{
+#'   \item renders the ICES ecoregion leaflet map,
+#'   \item keeps the map selection and the virtual select input
+#'         \code{selected_locations} in sync, and
+#'   \item updates the parent navbar when the user clicks one of the
+#'         topic image-buttons (Overview, Landings, Stock status).
+#' }
+#'
+#' It can optionally consume bookmarked query-string state via
+#' \code{bookmark_qs} to restore an overview subtab, although this
+#' currently assumes that a tabset with id \code{"tabs_overview"} and
+#' values \code{"exec_summary"}, \code{"introduction"}, or
+#' \code{"who_is_fishing"} exists elsewhere in the app.
+#'
+#' @param id Module id string, used to create a namespace with
+#'   \code{shiny::NS()}. Typically passed as a literal in
+#'   \code{mod_navigation_page_server("navigation_page_1", ...)}.
+#'
+#' @param parent_session The parent (top-level) \link[shiny]{session}
+#'   object. This is used to switch navbar tabs via
+#'   \code{\link[shiny]{updateNavbarPage}()} when the user clicks one
+#'   of the topic buttons.
+#'
+#' @param selected_ecoregion A reactive value object (e.g. created
+#'   with \code{shiny::reactiveVal()}) that will be updated by the
+#'   module whenever the user selects an ICES ecoregion, either by
+#'   clicking on the map or by using the \code{selected_locations}
+#'   virtual select input. The current ecoregion name is written as a
+#'   single character string.
+#'
+#' @param bookmark_qs A reactive expression returning either
+#'   \code{NULL} (no bookmarked state) or a list of query-string
+#'   values, typically including a \code{subtab} element. This is used
+#'   once at initialisation time to restore the overview subtab, if a
+#'   valid subtab value is provided. Defaults to
+#'   \code{reactive(NULL)}.
+#'
+#' @return No return value; this function is called for its side
+#'   effects (rendering the map, updating the selected ecoregion,
+#'   and navigating the parent navbar).
+#'
+#' @details
+#' This module assumes that the following objects / functions are
+#' available in the package namespace:
+#' \itemize{
+#'   \item \code{eco_shape}, \code{map_shape}: spatial data used by
+#'         \code{map_ecoregion()} to draw the leaflet map.
+#'   \item \code{map_ecoregion()}: a helper that returns a configured
+#'         \code{leaflet} map for the ICES ecoregions.
+#' }
+#' When the user selects an area on the map, the corresponding
+#' ecoregion is:
+#' \enumerate{
+#'   \item set as the current choice in \code{selected_locations}, and
+#'   \item propagated to \code{selected_ecoregion()} for use by other
+#'         modules.
+#' }
+#'
+#' @importFrom shiny moduleServer reactive observeEvent req updateNavbarPage
+#'   updateTabsetPanel
+#' @importFrom leaflet renderLeaflet leafletProxy hideGroup showGroup
+#' @importFrom shinyWidgets updateVirtualSelect
+#' @noRd
 mod_navigation_page_server <- function(
   id, 
   parent_session, 
@@ -197,9 +254,6 @@ mod_navigation_page_server <- function(
     observeEvent(input$overviewBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "overview") })
     observeEvent(input$landingsBtn,   { updateNavbarPage(parent_session, "nav-page", selected = "landings") })
     observeEvent(input$stockStatusBtn,{ updateNavbarPage(parent_session, "nav-page", selected = "stock_status") })
-    observeEvent(input$VMS,           { updateNavbarPage(parent_session, "nav-page", selected = "vms") })
-    # observeEvent(input$mixfishBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "mixed_fisheries") })
-    # observeEvent(input$bycatchBtn,    { updateNavbarPage(parent_session, "nav-page", selected = "bycatch") })
   })
 }
 
