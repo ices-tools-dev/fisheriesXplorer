@@ -1,14 +1,40 @@
+## Load required libraries
 library(dplyr)
 library(icesTAF)
 
 
-
+#' List of ICES ecoregions
 ecoregions <- c(
   "Baltic Sea", "Bay of Biscay and the Iberian Coast", "Celtic Seas",
   "Greater North Sea", "Norwegian Sea", "Icelandic Waters", "Barents Sea",
   "Greenland Sea", "Faroes", "Oceanic Northeast Atlantic", "Azores"
 )
 
+#' Get acronym for an ICES ecoregion
+#'
+#' Translates a full ICES ecoregion name into the corresponding
+#' three-letter acronym used in the app (e.g. `"Baltic Sea"` → `"BtS"`).
+#'
+#' @param ecoregion A single character string giving the full
+#'   ecoregion name. Must be one of:
+#'   `"Baltic Sea"`, `"Bay of Biscay and the Iberian Coast"`,
+#'   `"Celtic Seas"`, `"Greater North Sea"`, `"Norwegian Sea"`,
+#'   `"Icelandic Waters"`, `"Barents Sea"`, `"Greenland Sea"`,
+#'   `"Faroes"`, `"Oceanic Northeast Atlantic"`, or `"Azores"`.
+#'
+#' @return A character string with the corresponding acronym:
+#'   `"BtS"`, `"BI"`, `"CS"`, `"NrS"`, `"NwS"`, `"IS"`, `"BrS"`,
+#'   `"GS"`, `"FO"`, `"ONA"`, or `"AZ"`.
+#'
+#' @details
+#' If `ecoregion` does not match any of the supported names,
+#' the function raises an error via [base::stop()].
+#'
+#' @examples
+#' get_ecoregion_acronym("Baltic Sea")
+#' get_ecoregion_acronym("Greater North Sea")
+#'
+#' @export
 get_ecoregion_acronym <- function(ecoregion) {
   switch(ecoregion,
          "Baltic Sea" = "BtS",
@@ -27,73 +53,180 @@ get_ecoregion_acronym <- function(ecoregion) {
 }
 
 
-# library(icesTAF)
-
+#' Load ASFIS species reference table
+#'
+#' Reads the local ASFIS ASFIS\_sp CSV file and returns a data frame with
+#' English common name, scientific name, and FAO three-letter species code.
+#'
+#' @details
+#' This function expects the file `./data-raw/ASFIS_sp_2025.csv` to be present
+#' relative to the project root (or package root, if used inside a package).
+#' Only the columns `English_name`, `Scientific_Name`, and `Alpha3_Code`
+#' are kept.
+#'
+#' @return
+#' A data frame (or tibble, if used with dplyr) with three character columns:
+#' \describe{
+#'   \item{English_name}{English common name of the species.}
+#'   \item{Scientific_Name}{Scientific (Latin) name of the species.}
+#'   \item{Alpha3_Code}{FAO three-letter species code.}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' species <- load_asfis_species()
+#' head(species)
+#' }
+#'
 load_asfis_species <- function() {
-
 #   url <- "http://www.fao.org/fishery/static/ASFIS/ASFIS_sp.zip"
-
-#   filename <- tempfile(fileext = ".zip")
-
-#   utils::download.file(url, destfile = filename, mode = "wb")
-
-#   ## unzip the file to a temporary directory
-#     tempdir <- tempdir()
-#     on.exit(unlink(tempdir, recursive = TRUE), add = TRUE)
-#     unzip(filename, exdir = tempdir)
-#  ## read csv file
-#     filename <- list.files(tempdir, pattern = "ASFIS_sp", full.names = TRUE)
-#     if (length(filename) == 0) {
-#       stop("No ASFIS_sp file found in the zip archive.")
-#     }
-    
-#     # choose the csv file
-#     filename <- filename[grep(".*csv", filename)]
-
-#     if (length(filename) == 0) {
-#       stop("No CSV file found in the zip archive.")
-#     }
-
-    # read the csv file
-#     species <- read.csv(filename, na.strings = "", stringsAsFactors = FALSE)
     species <- read.csv("./data-raw/ASFIS_sp_2025.csv", na.strings = "", stringsAsFactors = FALSE)
     species <- dplyr::select(species, English_name, Scientific_Name, Alpha3_Code)
     return(species)
 }
 
 
+#' Load ICES historical catches data
+#'
+#' Reads the local `ICES_historical_catches.csv` file and returns a data frame
+#' with historical catches as provided by ICES.
+#'
+#' @details
+#' This function expects the file `./data-raw/ICES_historical_catches.csv`
+#' to be available relative to the project (or package) root. All columns
+#' in the CSV file are returned unchanged.
+#'
+#' @return
+#' A data frame containing the contents of `ICES_historical_catches.csv`.
+#'
+#' @examples
+#' \dontrun{
+#' hist <- load_historical_catches()
+#' head(hist)
+#' }
+#'
+#' @export
 load_historical_catches<- function(){
         # url <- "http://ices.dk/data/Documents/CatchStats/HistoricalLandings1950-2010.zip"
-        # tmpFileHistoric <- tempfile(fileext = ".zip")
-        # download.file(url, destfile = tmpFileHistoric, mode = "wb", quiet = FALSE)
-        # out <- read.csv(unz(tmpFileHistoric, "HistoricalLandings1950-2010/ICES_1950-2010.csv"),
-        #                               stringsAsFactors = FALSE,
-        #                               header = TRUE,
-        #                               fill = TRUE,
-        #                               na.strings = c("...", "-", "ns", "."))
         hist <- read.csv("./data-raw/ICES_historical_catches.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
 }
 
 
 
-
+#' Load ICES official catches data
+#'
+#' Reads the local `ICESCatchDataset2006-2023_noConf.csv` file and returns
+#' a data frame with official ICES catch statistics.
+#'
+#' @details
+#' This function expects the file
+#' `./data-raw/ICESCatchDataset2006-2023_noConf.csv` to be available
+#' relative to the project (or package) root. All columns in the CSV file
+#' are returned unchanged.
+#'
+#' @return
+#' A data frame containing the contents of
+#' `ICESCatchDataset2006-2023_noConf.csv`.
+#'
+#' @examples
+#' \dontrun{
+#' official <- load_official_catches()
+#' head(official)
+#' }
+#'
+#' @export
 load_official_catches<- function(){
         # url <- "http://ices.dk/data/Documents/CatchStats/OfficialNominalCatches.zip"
-        # tmpFileCatch <- tempfile(fileext = ".zip")
-        # download.file(url, destfile = tmpFileCatch, mode = "wb", quiet = TRUE)
-        # out <- read.csv(unz(tmpFileCatch,
-        #                 grep("ICESCatchDataset.*.csv", unzip(tmpFileCatch,
-        #                      list = TRUE)$Name,
-        #                      value = TRUE)),
-        #                      stringsAsFactors = FALSE,
-        #                      header = TRUE,
-        #                      fill = TRUE)
-        # out <- dplyr::filter(function(x)!all(is.na(x)), out)
         official <- read.csv("./data-raw/ICESCatchDataset2006-2023_noConf.csv", header = TRUE)#, na.strings = "", stringsAsFactors = FALSE)
 }
 
 
-
+#' Format historical, official and preliminary catches for an ecoregion
+#'
+#' Combines ICES historical catches, official catches and (optionally)
+#' preliminary catch data into a single tidy data set for the selected
+#' ecoregion(s). The function harmonises country names and codes,
+#' assigns ICES ecoregions, and attaches species and fisheries guild
+#' information.
+#'
+#' @param year A numeric vector of years. Currently not used inside the
+#'   function, but kept for interface compatibility and potential
+#'   future filtering.
+#' @param ecoregion Character vector of ICES ecoregion names to keep
+#'   (e.g. `"Baltic Sea"`, `"Greater North Sea"`, `"Celtic Seas"`,
+#'   `"Norwegian Sea"`, `"Barents Sea"`, `"Faroes"`, `"Azores"`,
+#'   `"Oceanic Northeast Atlantic"`, `"Greenland Sea"`,
+#'   `"Icelandic Waters"`). Used both in some area–ecoregion mappings
+#'   and in the final filter (`ECOREGION %in% ecoregion`).
+#' @param historical Data frame of ICES historical catches, with at
+#'   least the columns `Country`, `Species`, `Division` and yearly
+#'   catch columns (e.g. `X1950`, `X1951`, ...).
+#' @param official Data frame of ICES official catches, with at least
+#'   the columns `Country` (ISO2 code), `Species`, `Area`, `Units`
+#'   and yearly catch columns.
+#' @param preliminary Optional data frame of preliminary catches
+#'   (default `NULL`). If supplied, it is merged on top of historical
+#'   and official data. Expected to contain at least `Year`,
+#'   `Country` (ISO2 code), `Area`, a catch column, and a species
+#'   column (Latin name).
+#' @param species_list Data frame with ASFIS species information,
+#'   typically from [load_asfis_species()], containing columns
+#'   `English_name`, `Scientific_Name` and `Alpha3_Code`.
+#' @param sid Data frame with stock information (e.g. ICES SID),
+#'   used to derive fisheries guilds. Must contain at least
+#'   `StockKeyLabel` (from which `Alpha3_Code` is derived) and
+#'   `FisheriesGuild`.
+#'
+#' @return
+#' A data frame with one row per year–country–guild–ecoregion–species
+#' combination, containing:
+#' \describe{
+#'   \item{YEAR}{Year (numeric).}
+#'   \item{COUNTRY}{Country name (string).}
+#'   \item{ISO3}{ISO3 country code.}
+#'   \item{GUILD}{Fisheries guild (e.g. `"Pelagic"`, `"Demersal"`,
+#'     `"undefined"`).}
+#'   \item{ECOREGION}{ICES ecoregion name.}
+#'   \item{SPECIES_NAME}{Scientific (Latin) species name.}
+#'   \item{SPECIES_CODE}{FAO three-letter species code.}
+#'   \item{COMMON_NAME}{English common name of the species.}
+#'   \item{VALUE}{Catch value (typically in tonnes).}
+#' }
+#'
+#' @details
+#' Historical catches are reshaped from wide (year columns) to long
+#' format, area divisions are mapped to ICES ecoregions, country names
+#' are normalised and converted to ISO3 codes, and species are linked
+#' to ASFIS codes and fisheries guilds via `species_list` and `sid`.
+#'
+#' Official and, if supplied, preliminary catches are treated similarly,
+#' and then all sources are combined. The final data set is filtered to
+#' the requested `ecoregion` values.
+#'
+#' Values reported as `"<0.5"` in the historical data are converted to
+#' zero. Missing guilds are set to `"undefined"`. Some special cases
+#' (e.g. Faroe Islands historical records and sandeel (`Ammodytes`)
+#' records) are handled explicitly in the function body.
+#'
+#' @examples
+#' \dontrun{
+#' species <- load_asfis_species()
+#' hist    <- load_historical_catches()
+#' off     <- load_official_catches()
+#'
+#' df <- format_catches(
+#'   year       = 2025,
+#'   ecoregion  = "Greater North Sea",
+#'   historical = hist,
+#'   official   = off,
+#'   preliminary = NULL,
+#'   species_list = species,
+#'   sid = sid_table
+#' )
+#' head(df)
+#' }
+#'
+#' @export
 format_catches <- function(year, ecoregion, historical, official, preliminary = NULL, species_list, sid) {
         
         fish_category <- dplyr::mutate(sid, Alpha3_Code = substr(sid$StockKeyLabel, start = 1, stop = 3))
@@ -402,7 +535,7 @@ hist <- load_historical_catches()
 hist$Country[which(hist$Country == "Germany, New L\xe4nder")]<- "Germany"
 
 official <- load_official_catches()
-# official <- official[, -1]
+
 
 ## Ceate folders using the acronyms of the ecoregions
 for (ecoregion in ecoregions) {
