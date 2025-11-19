@@ -30,9 +30,9 @@ mod_overview_ui <- function(id) {
           ),
           tabsetPanel(
             id = ns("tabs_overview"), # <-- NEW
-            tabPanel("Executive Summary",
-              value = "exec_summary",
-              card(uiOutput(ns("executive_summary")))
+            tabPanel("KeySignals",
+              value = "key_signals",
+              card(uiOutput(ns("key_signals")))
             ),
             tabPanel("Introduction",
               value = "introduction",
@@ -66,7 +66,7 @@ mod_overview_server <- function(
     observeEvent(bookmark_qs(), once = TRUE, ignoreInit = TRUE, {
       qs <- bookmark_qs()
       wanted <- qs$subtab
-      valid <- c("exec_summary", "introduction", "who_is_fishing")
+      valid <- c("key_signals", "introduction", "who_is_fishing")
       if (!is.null(wanted) && nzchar(wanted) && wanted %in% valid) {
         session$onFlushed(function() {
           updateTabsetPanel(session, "tabs_overview", selected = wanted)
@@ -117,8 +117,8 @@ mod_overview_server <- function(
       )
     })
     ################################## Text sections #########################################
-    output$executive_summary <- renderUI({
-      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "executive_summary"))
+    output$key_signals <- renderUI({
+      HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "key_signals"))
     })
     output$introduction <- renderUI({
       HTML(select_text(texts, paste0("overview_", get_ecoregion_acronym(selected_ecoregion())), "introduction"))

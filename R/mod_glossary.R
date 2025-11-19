@@ -215,7 +215,7 @@ mod_glossary_float_server <- function(id, terms) {
           stringsAsFactors = FALSE
         ),
         searchable = TRUE, filterable = TRUE, striped = TRUE, compact = TRUE, highlight = TRUE,
-        defaultSorted = list(Term = "asc"), defaultPageSize = 10, showPageSizeOptions = TRUE,
+        defaultSorted = list(Term = "asc"), defaultPageSize = 20, showPageSizeOptions = TRUE,
         minRows = 5, resizable = TRUE,
         columns = list(
           Term = reactable::colDef(minWidth = 100),

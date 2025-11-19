@@ -27,7 +27,7 @@ mod_stock_status_ui <- function(id) {
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
             open = FALSE,
-            uiOutput(ns("status_text1"))
+            uiOutput(ns("status_text_summary"))
           ),
           fluidRow(
             column(
@@ -244,9 +244,7 @@ mod_stock_status_server <- function(
    )
     
 
-    output$status_text1 <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
-      HTML(select_text(texts, "status", "sidebar"))
-    })
+    
 
     ######################### Status summary tab #################################################
 
@@ -802,8 +800,16 @@ mod_stock_status_server <- function(
       },
       contentType = "application/zip"
     )
-
+  # output$status_summary <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
+      # HTML(select_text(texts, "status", "sidebar"))
+      output$status_text_summary <- renderUI({
+      HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "summary"))
+    
+    })
   })
+
+
+  
 }
 
     
