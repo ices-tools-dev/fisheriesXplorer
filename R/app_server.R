@@ -185,13 +185,15 @@ app_server <- function(input, output, session) {
   )
   mod_landings_server(
     "landings_1", cap_year, cap_month,
-    selected_ecoregion = selected_ecoregion, shared = shared,
+    selected_ecoregion = selected_ecoregion, 
+    shared = shared,
     bookmark_qs        = reactive(list()),     # parent restores
     set_subtab         = function(...) {}
   )
   mod_stock_status_server(
     "stock_status_1", cap_year, cap_month,
-    selected_ecoregion = selected_ecoregion, shared = shared,
+    selected_ecoregion = selected_ecoregion, 
+    shared = shared,
     bookmark_qs        = reactive(list()),     # parent restores
     set_subtab         = function(...) {}
   )

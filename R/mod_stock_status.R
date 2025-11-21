@@ -352,7 +352,10 @@ mod_stock_status_ui <- function(id) {
 #'
 #' @export 
 mod_stock_status_server <- function(
-    id, cap_year, cap_month, selected_ecoregion, shared,
+    id, cap_year, 
+    cap_month, 
+    selected_ecoregion, 
+    shared,
     bookmark_qs = reactive(NULL),
     set_subtab = function(...) {}) {
   moduleServer(id, function(input, output, session) {
