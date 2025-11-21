@@ -447,13 +447,9 @@ mod_stock_status_server <- function(
 
     
     output$download_clean_status_data <- downloadHandler(
-      filename = function() {
-        ecoregion <- selected_ecoregion()
-        acronym <- get_ecoregion_acronym(ecoregion)
-        date_tag <- format(Sys.Date(), "%d-%b-%y")
-        paste0("status_data_bundle_", acronym, "_", date_tag, ".zip")
-      },
+      filename = prep_bundle_filename(content_type = "status_catch_data_bundle", selected_ecoregion = selected_ecoregion(), output_type = "zip"),
       content = function(file) {
+        
         # --- Temp workspace
         td <- tempfile("status_bundle_")
         dir.create(td, showWarnings = FALSE)
@@ -543,12 +539,7 @@ mod_stock_status_server <- function(
 
     ############################### GES download ##################################################
     output$download_status_catch_data <- downloadHandler(
-      filename = function() {
-        ecoregion <- selected_ecoregion()
-        acronym <- get_ecoregion_acronym(ecoregion)
-        date_tag <- format(Sys.Date(), "%d-%b-%y")
-        paste0("status_catch_data_bundle_", acronym, "_", date_tag, ".zip")
-      },
+      filename =  prep_bundle_filename(content_type = "status_catch_data_bundle", selected_ecoregion = selected_ecoregion(), output_type = "zip"),
       content = function(file) {
         # Temp workspace
         td <- tempfile("status_catch_bundle_")
@@ -734,12 +725,7 @@ mod_stock_status_server <- function(
 
     ######################### CLD/Kobe download ################################################
     output$download_CLD_data <- downloadHandler(
-      filename = function() {
-        ecoregion <- selected_ecoregion()
-        acronym <- get_ecoregion_acronym(ecoregion)
-        date_tag <- format(Sys.Date(), "%d-%b-%y")
-        paste0("status_CLD_data_bundle_", acronym, "_", date_tag, ".zip")
-      },
+      filename = prep_bundle_filename(content_type = "status_cld_data_bundle", selected_ecoregion = selected_ecoregion(), output_type = "zip"),
       content = function(file) {
         # --- Temp workspace
         td <- tempfile("status_CLD_bundle_")
@@ -921,12 +907,7 @@ mod_stock_status_server <- function(
 
     ######################### Stock status table download ##############################################
     output$download_status_table <- downloadHandler(
-      filename = function() {
-        ecoregion <- selected_ecoregion()
-        acronym <- get_ecoregion_acronym(ecoregion)
-        date_tag <- format(Sys.Date(), "%d-%b-%y")
-        paste0("status_table_data_bundle_", acronym, "_", date_tag, ".zip")
-      },
+      filename = prep_bundle_filename(content_type = "status_table_data_bundle", selected_ecoregion = selected_ecoregion(), output_type = "zip"),
       content = function(file) {
         # --- Temp workspace
         td <- tempfile("status_table_bundle_")
@@ -962,19 +943,29 @@ mod_stock_status_server <- function(
           utils::write.csv(dat, csv_path, row.names = FALSE)
         }
 
-        # --- 2) Disclaimer.txt (fixed name; no acronym/date)
-        disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
-        if (!safe_download(disc_url, disc_path)) {
+        # --- 2) Disclaimers (fixed name; no acronym/date)
+        disc_path_fx <- file.path(td, "Disclaimer_fisheriesXplorer.txt")
+        disc_url_fx <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
+        if (!safe_download(disc_url_fx, disc_path_fx)) {
           writeLines(c(
             "Disclaimer for fisheriesXplorer status table data.",
             "The official disclaimer could not be fetched automatically.",
-            paste("Please see:", disc_url)
+            paste("Please see:", disc_url_fx)
           ), con = disc_path)
+        }
+        
+        disc_path_vms <- file.path(td, "Disclaimer_VMS.txt")
+        disc_url_vms <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/disclaimer_vms_data_ouput.txt"
+        if (!safe_download(disc_url_vms, disc_path_vms)) {
+          writeLines(c(
+            "Disclaimer for VMS data output.",
+            "The official disclaimer could not be fetched automatically.",
+            paste("Please see:", disc_url_vms)
+          ), con = disc_path_vms)
         }
 
         # --- Zip everything
-        files_to_zip <- c(if (file.exists(csv_path)) csv_path, disc_path)
+        files_to_zip <- c(if (file.exists(csv_path)) csv_path, disc_path_fx)
         if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
           zip::zipr(zipfile = file, files = files_to_zip, root = td)
         } else {

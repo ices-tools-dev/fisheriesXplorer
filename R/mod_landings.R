@@ -330,12 +330,7 @@ mod_landings_server <- function(
 
     ############################### Download landings data bundle ###############################
     output$download_landings_data <- downloadHandler(
-      filename = function() {
-        ecoregion <- selected_ecoregion()
-        acronym <- get_ecoregion_acronym(ecoregion)
-        date_tag <- format(Sys.Date(), "%d-%b-%y")
-        paste0("landings_trends_bundle_", acronym, "_", date_tag, ".zip")
-      },
+      filename = prep_bundle_filename(content_type = "landings_trends_bundle", selected_ecoregion = selected_ecoregion(), output_type = "zip"),
       content = function(file) {
         # Temp workspace
         td <- tempfile("landings_bundle_")
@@ -441,12 +436,7 @@ mod_landings_server <- function(
 
     ############################### Download discard data bundle ###############################
     output$download_discard_data <- downloadHandler(
-      filename = function() {
-        ecoregion <- selected_ecoregion()
-        acronym <- get_ecoregion_acronym(ecoregion)
-        date_tag <- format(Sys.Date(), "%d-%b-%y")
-        paste0("discard_data_bundle_", acronym, "_", date_tag, ".zip")
-      },
+      filename = prep_bundle_filename(content_type = "discard_data_bundle", selected_ecoregion = selected_ecoregion(), output_type = "zip"),
       content = function(file) {
         # Temp workspace
         td <- tempfile("discard_bundle_")

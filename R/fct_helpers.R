@@ -693,4 +693,32 @@ add_keys <- function(df, stock_label, keys, key_col = "AssessmentKey") {
           additions <- template[rep(1, length(keys)), ]
           additions[[key_col]] <- keys
           dplyr::bind_rows(df, additions)
-        }
+}
+
+#' Prepare the name of a file for download.
+#' 
+#' Generates consistently named download files from the \code{content_type} and \code{selected_ecoregion},
+#' converting selected ecoregion to its acronym and adding a date tag
+#'
+#' @param content_typw
+#' @param selected_ecoregion 
+#' @param file_type
+#'
+#' @details The function results in a filename with the following format:
+#' [content_type]_data_bundle_[ecoregion acronym]_[date_tag].zip
+#'
+#' @examples
+#' \dontrun{
+#' zip_filename <- prep_bundle_filename(
+#' content_type="vms_effort",
+#' selected_ecoregion="Greater North Sea",
+#' file_type = "zip")
+#' }
+prep_bundle_filename <- function(content_type, selected_ecoregion, output_type) {
+  function() {
+    ecoregion <- selected_ecoregion()
+    acronym  <- get_ecoregion_acronym(ecoregion)
+    date_tag <- format(Sys.Date(), "%d-%b-%y")
+    paste0(content_type,"_", acronym, "_", date_tag, ".", output_type)
+  }
+}

@@ -95,15 +95,6 @@ plot_sar_map_app <- function (sar_data,  ecoregion_name, ecoregion_shape, land_s
   p
 }
 
-vms_bundle_filename <- function(selected_ecoregion, what) {
-  function() {
-    ecoregion <- selected_ecoregion()
-    acronym  <- get_ecoregion_acronym(ecoregion)
-    date_tag <- format(Sys.Date(), "%d-%b-%y")
-    paste0("vms_", what, "_data_bundle_", acronym, "_", date_tag, ".zip")
-  }
-}
-
 #' Title Bundle vms content for download, either effort or sar data
 #'
 #' @param selected_ecoregion reactive value

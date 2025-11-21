@@ -145,13 +145,13 @@ mod_vms_server <- function(id,
     })
     
     output$download_effort_data <- downloadHandler(
-      filename = vms_bundle_filename(selected_ecoregion, what = "effort"),
+      filename = prep_bundle_filename("vms_effort", selected_ecoregion, "zip"),
       content  = vms_bundle_content(selected_ecoregion, what = "effort"),
       contentType = "application/zip"
     )
     
     output$download_sar_data <- downloadHandler(
-      filename = vms_bundle_filename(selected_ecoregion, what = "sar"),
+      filename = prep_bundle_filename("vms_sar", selected_ecoregion, "zip"),
       content  = vms_bundle_content(selected_ecoregion, what = "sar"),
       contentType = "application/zip"
     )
