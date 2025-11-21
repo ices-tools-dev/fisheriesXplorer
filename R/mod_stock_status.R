@@ -142,13 +142,13 @@ mod_stock_status_ui <- function(id) {
               card_header(
                 radioButtons(ns("status_trend_selector"), NULL,
                   inline = TRUE,
-                  choices = sort(c(
-                    "Elasmobranchs" = "elasmobranch",
+                  choices = c(
                     "Benthic"       = "benthic",
-                    "Shellfish"    = "shellfish",
                     "Demersal"      = "demersal",
-                    "Pelagic"       = "pelagic"
-                  ))
+                    "Elasmobranchs" = "elasmobranch",
+                    "Pelagic"       = "pelagic",
+                    "Shellfish"    = "shellfish"
+                  )
                 ),
                 downloadLink(ns("download_trends_data"),
                   HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
@@ -175,13 +175,14 @@ mod_stock_status_ui <- function(id) {
                   style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
                   radioButtons(ns("status_kobe_cld_selector"),NULL,
                     inline = TRUE,
-                    choices = sort(c(
+                    choices = c(
+                      "All Stocks"= "All",
                       "Benthic"   = "benthic",
                       "Demersal"  = "demersal",
-                      "Shellfish"= "shellfish",
+                      "Elasmobranchs" = "elasmobranch",
                       "Pelagic"   = "pelagic",
-                      "All Stocks"= "All"
-                    )),
+                      "Shellfish"= "shellfish"
+                    ),
                     selected = "All"
                   )
                 )
