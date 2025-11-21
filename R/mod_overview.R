@@ -192,7 +192,7 @@ mod_overview_server <- function(
     ################################## header + glossary #########################################
     output$ecoregion_label <- renderUI({
       req(selected_ecoregion())
-      tags$span(tags$b("Ecoregion:"), " ", selected_ecoregion())
+      tags$span(tags$b("Ecoregion:"), " ", paste0(selected_ecoregion(), " (", get_ecoregion_acronym(selected_ecoregion()), ")"))
     })
 
     output$current_date <- renderUI({
