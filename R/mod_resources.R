@@ -45,65 +45,49 @@ mod_resources_ui <- function(id) {
     id = ns("resources_nav"),
 
     # --- Contact & Feedback
-    bslib::nav_panel(
-      tagList(icon("envelope"), "Contact & Feedback"),
-      tags$style(HTML("
-        .msform-embed { position: relative; width: 100%; max-width: 1100px; }
-        .msform-embed iframe { width: 100%; height: 70vh; border: 0; }
-        @media (max-width: 600px){ .msform-embed iframe { height: 85vh; }
-      ")),
-      h3("Contact & Feedback"),
-      p("We’d love to hear from you. For questions, bug reports, or suggestions:"),
-      tags$ul(tags$li(HTML("Email: <a href='mailto:luca.lamoni@ices.dk'>luca.lamoni@ices.dk</a>"))),
-      p("Or fill out the form below:"),
-      div(
-        class = "msform-embed",
-        tags$iframe(
-          src = "https://forms.office.com/e/vF0shUzLRk?embed=true",
-          width = "640px", height = "480px", frameborder = "0",
-          marginwidth = "0", marginheight = "0",
-          style = "border: none; max-width:100%; max-height:100vh",
-          loading = "lazy", allowfullscreen = NA, webkitallowfullscreen = NA,
-          mozallowfullscreen = NA, msallowfullscreen = NA
-        )
-      ),
-      p(
-        em("Having trouble submitting inside the app? "),
-        a("Open the form in a new tab.",
-          href = "https://forms.office.com/e/vF0shUzLRk", target = "_blank", rel = "noopener"
-        )
+    # --- Contact & Feedback
+bslib::nav_panel(
+  tagList(icon("envelope"), "Contact & Feedback"),
+  div(
+    class = "resources-page",
+    h3(HTML("<b>Contact & Feedback</b>")),
+    p("We’d love to hear from you. For questions, bug reports, or suggestions:"),
+    tags$ul(
+      tags$li(HTML("Email: <a href='mailto:luca.lamoni@ices.dk'>luca.lamoni@ices.dk</a>"))
+    ),
+    p("Or fill out the form below:"),
+    div(
+      class = "msform-embed",
+      tags$iframe(
+        src = "https://forms.office.com/e/vF0shUzLRk?embed=true",
+        width = "640px", height = "480px", frameborder = "0",
+        marginwidth = "0", marginheight = "0",
+        style = "border: none; max-width:100%; max-height:100vh",
+        loading = "lazy", allowfullscreen = NA, webkitallowfullscreen = NA,
+        mozallowfullscreen = NA, msallowfullscreen = NA
       )
     ),
+    p(
+      em("Having trouble submitting inside the app? "),
+      a(
+        "Open the form in a new tab.",
+        href = "https://forms.office.com/e/vF0shUzLRk",
+        target = "_blank", rel = "noopener"
+      )
+    )
+  )
+),
 
 
     bslib::nav_panel(
       tagList(icon("database"), "Data Sources"),
-
-      # Scoped CSS (works in BS3/BS5)
-      tags$style(HTML("
-                    .resources-page { margin-top: .5rem; }
-                    .resources-page .intro-card, .resources-page .fair-card {
-                      border: 1px solid #e5e7eb; border-radius: 12px; background:#fff;
-                      padding: 12px 16px; margin-bottom: 16px;
-                    }
-                    .resources-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
-                    @media (min-width: 992px){ .resources-grid { grid-template-columns: 1fr 1fr; } }
-                    .source-card { border: 1px solid #e5e7eb; border-radius: 12px; background:#fff; padding: 12px 16px; }
-                    .source-title { font-weight: 600; margin: 0 0 6px 0; font-size: 2.15rem; }
-                    .kv { margin: .25rem 0 0 0; }
-                    .kv dt { width: 9.5rem; float: left; clear: left; color: #445; font-weight: 600; }
-                    .kv dd { margin-left: 10rem; }
-                    .source-notes { margin-top: 10px; font-size: .92em; color: #5f6b7a; background: #f8f9fa; border-radius: 8px; padding: 8px 10px; }
-                    /* avoid clipped first letters with rounded corners */
-                    .resources-page .source-card, .resources-page .intro-card, .resources-page .fair-card { overflow: visible; }
-                  ")),
       div(
         class = "resources-page",
 
         # Intro
         div(
           class = "intro-card",
-          h4(HTML("<b>About these data</b>")),
+          h3(HTML("<b>About these data</b>")),
           p(
             "fisheriesXplorer displays (and cites) data from ICES services.",
             " Each source below lists what is used, where it comes from, how to access it, and how to cite/reuse it."
@@ -153,15 +137,15 @@ mod_resources_ui <- function(id) {
             notes = "See dataset page for data access and conditions."
           ),
 
-          # 5) VMS Data
-          resource_card(
-            title = "VMS and Logbook dataset",
-            description = "Aggregated VMS-based effort and physical disturbance data used in the VMS results.",
-            dataset_url = "https://data.ices.dk/vms",
-            metadata_url = NULL,
-            services = list(APIs = "https://data.ices.dk/vms/webservices"),
-            notes = "See dataset page for data access and conditions."
-          ),
+          # # 5) VMS Data
+          # resource_card(
+          #   title = "VMS and Logbook dataset",
+          #   description = "Aggregated VMS-based effort and physical disturbance data used in the VMS results.",
+          #   dataset_url = "https://data.ices.dk/vms",
+          #   metadata_url = NULL,
+          #   services = list(APIs = "https://data.ices.dk/vms/webservices"),
+          #   notes = "See dataset page for data access and conditions."
+          # ),
 
           # 6) Application source code (not a dataset, but important for reuse)
           resource_card(
@@ -214,16 +198,8 @@ mod_resources_ui <- function(id) {
     ),
     bslib::nav_panel(
       tagList(icon("quote-right"), "Citation"),
-      tags$style(HTML("
-        .cite-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:12px 16px; }
-        .cite-title { font-weight:600; font-size:1.15rem; margin:0 0 6px 0; }
-        .codeblock { background:#f6f8fa; border-radius:6px; padding:8px 10px; white-space:pre-wrap;
-                     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
-        .cite-actions { margin-top:.5rem; display:flex; gap:.5rem; flex-wrap:wrap; }
-        details summary { cursor:pointer; margin-top:.5rem; font-weight:600; }
-      ")),
       div(class = "cite-card",
-        div(class = "cite-title", "How to cite this application"),
+        div(class = "cite-title", h3(HTML("<b>How to cite this application</b>"))),
         p("Please cite the application to support reproducibility:"),
         div(class = "codeblock", app_cite$text),
 
