@@ -80,7 +80,7 @@ mod_landings_ui <- function(id) {
           card(
             height = "85vh",
             card_header(
-              radioButtons(ns("landings_layer_selector"), NULL,
+              radioButtons(ns("landings_layer_selector"), "Select grouping:",
                 inline = TRUE,
                 choices = c(
                   "Main landed species" = "Common name",

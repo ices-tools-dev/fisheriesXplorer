@@ -140,7 +140,7 @@ mod_stock_status_ui <- function(id) {
             card(
               height = "85vh", full_screen = TRUE,
               card_header(
-                radioButtons(ns("status_trend_selector"), NULL,
+                radioButtons(ns("status_trend_selector"), "Select a fisheries guild:",
                   inline = TRUE,
                   choices = c(
                     "Benthic"       = "benthic",
@@ -173,7 +173,7 @@ mod_stock_status_ui <- function(id) {
                 6,
                 div(
                   style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
-                  radioButtons(ns("status_kobe_cld_selector"),NULL,
+                  radioButtons(ns("status_kobe_cld_selector"), "Select a fisheries guild:",
                     inline = TRUE,
                     choices = c(
                       "All Stocks"= "All",
@@ -700,7 +700,7 @@ mod_stock_status_server <- function(
       div(
         id = "custom_slider",
         sliderInput(ns("n_selector"), 
-          HTML("Choose <em>n</em> of stocks"),
+          HTML("Select <em>n</em> of stocks:"),
           min = 1, 
           max = slider_max, 
           value = min(10, slider_max), 
