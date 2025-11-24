@@ -165,7 +165,7 @@ mod_stock_status_ui <- function(id) {
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black", open = FALSE,
-            uiOutput(ns("status_text3"))
+            uiOutput(ns("status_cld_trends"))
           ),
           card(
             card_header(
@@ -996,6 +996,9 @@ mod_stock_status_server <- function(
     })
     output$status_text_trends <- renderUI({
       HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "trends"))    
+    })
+    output$status_cld_trends <- renderUI({
+      HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "cld"))    
     })
   })
 
