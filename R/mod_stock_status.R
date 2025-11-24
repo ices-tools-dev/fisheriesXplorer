@@ -992,13 +992,22 @@ mod_stock_status_server <- function(
   # output$status_summary <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       # HTML(select_text(texts, "status", "sidebar"))
     output$status_text_summary <- renderUI({
-      HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "summary"))    
+      div(
+        class = "sidebar-text",
+      HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "summary"))
+      )
     })
     output$status_text_trends <- renderUI({
+      div(
+        class = "sidebar-text",
       HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "trends"))    
+      )
     })
     output$status_cld_trends <- renderUI({
+      div(
+        class = "sidebar-text",
       HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "cld"))    
+      )
     })
   })
 
