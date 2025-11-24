@@ -874,3 +874,17 @@ details summary {
   font-size: 18px;
   line-height: 1.5;
 }
+
+.sidebar-text p, .sidebar-text li,  .sidebar-text ul, .sidebar-text ol {
+  font-size: 15px;
+  line-height: 1;
+  color: #002B5F;
+}
+
+.sidebar-text h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 1.2em;
+  margin-bottom: 0.35em;
+  color: #002B5F;
+}

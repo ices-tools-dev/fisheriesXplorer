@@ -133,7 +133,7 @@ mod_stock_status_ui <- function(id) {
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
             open = FALSE,
-            uiOutput(ns("status_text2"))
+            uiOutput(ns("status_text_trends"))
           ),
           column(
             12,
@@ -165,7 +165,7 @@ mod_stock_status_ui <- function(id) {
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black", open = FALSE,
-            uiOutput(ns("status_text3"))
+            uiOutput(ns("status_cld_trends"))
           ),
           card(
             card_header(
@@ -991,9 +991,23 @@ mod_stock_status_server <- function(
     )
   # output$status_summary <- output$status_text2 <- output$status_text3 <- output$status_text4 <- renderUI({
       # HTML(select_text(texts, "status", "sidebar"))
-      output$status_text_summary <- renderUI({
+    output$status_text_summary <- renderUI({
+      div(
+        class = "sidebar-text",
       HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "summary"))
-    
+      )
+    })
+    output$status_text_trends <- renderUI({
+      div(
+        class = "sidebar-text",
+      HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "trends"))    
+      )
+    })
+    output$status_cld_trends <- renderUI({
+      div(
+        class = "sidebar-text",
+      HTML(select_text(texts, paste0("status_", get_ecoregion_acronym(selected_ecoregion())), "cld"))    
+      )
     })
   })
 
