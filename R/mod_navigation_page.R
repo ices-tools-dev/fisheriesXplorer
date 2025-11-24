@@ -47,7 +47,7 @@ mod_navigation_page_ui <- function(id) {
           width = 1 / 2,
           card(
             full_screen = FALSE,
-            card_header("Select an ICES ecoregion"),
+            card_header("Select an ICES ecoregion:"),
             tags$style(type = "text/css", "#map {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
             withSpinner(leafletOutput(ns("map"), width = "90%")),
             tags$style(type = "text/css", "#selected_locations {margin-left: auto; margin-right: auto; margin-bottom: auto;}"),
