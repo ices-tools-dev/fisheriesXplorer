@@ -2074,9 +2074,9 @@ plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
 
   legend_keys <- c(
     "Landings"        = 21,
-    "Landings (proxy)"= 21,
+    "Landings \n(Proxy ref. point)"= 21,
     "Catches"         = 24,
-    "Catches (proxy)" = 24
+    "Catches \n(Proxy ref. point)" = 24
   )
   present <- c(has_land_norm, has_land_proxy, has_catch_norm, has_catch_proxy)
   legend_keys <- legend_keys[present]
@@ -2102,21 +2102,21 @@ plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
             size   = 6,
             # per-key aesthetics matching 'legend_labels' order:
             fill   = c("Landings"         = "grey60",
-                       "Landings (proxy)" = NA,
+                       "Landings \n(Proxy ref. point)" = NA,
                        "Catches"          = "grey60",
-                       "Catches (proxy)"  = NA)[legend_labels],
+                       "Catches \n(Proxy ref. point)"  = NA)[legend_labels],
             colour = c("Landings"         = "grey25",
-                       "Landings (proxy)" = "grey25",
+                       "Landings \n(Proxy ref. point)" = "grey25",
                        "Catches"          = "grey25",
-                       "Catches (proxy)"  = "grey25")[legend_labels],
+                       "Catches \n(Proxy ref. point)"  = "grey25")[legend_labels],
             stroke = c("Landings"         = 1.0,
-                       "Landings (proxy)" = 2,
+                       "Landings \n(Proxy ref. point)" = 2,
                        "Catches"          = 1.0,
-                       "Catches (proxy)"  = 2)[legend_labels],
+                       "Catches \n(Proxy ref. point)"  = 2)[legend_labels],
             alpha  = 1
           ),
-          keyheight = ggplot2::unit(18, "pt"),
-          keywidth  = ggplot2::unit(26, "pt"),
+          keyheight = ggplot2::unit(30, "pt"),
+          keywidth  = ggplot2::unit(30, "pt"),
           byrow = TRUE
         )
       ) +
@@ -2126,8 +2126,8 @@ plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
         legend.background    = ggplot2::element_rect(fill = ggplot2::alpha("white", 0.9),
                                                      colour = "grey85"),
         legend.spacing.y  = ggplot2::unit(10, "pt"),
-        legend.key.height    = ggplot2::unit(20, "pt"),
-        legend.key.width     = ggplot2::unit(20, "pt")
+        legend.key.height    = ggplot2::unit(30, "pt"),
+        legend.key.width     = ggplot2::unit(30, "pt")
       )
   } else {
     p <- p + ggplot2::theme(legend.position = "none")
@@ -2234,7 +2234,7 @@ plot_kobe_app <- function(x, guild, return_data = FALSE){
   df <- df %>%
     dplyr::mutate(
       ProxyFlag = dplyr::if_else((F_proxy %in% TRUE) | (B_proxy %in% TRUE),
-                                 "Proxy refpoint", "Normal refpoint")
+                                 "Proxy reference point", "Reference point")
     )
 
   # Axes limits
@@ -2253,14 +2253,14 @@ plot_kobe_app <- function(x, guild, return_data = FALSE){
 
     # ---- Normal refpoint (filled circle) ----
     ggplot2::geom_point(
-      data = dplyr::filter(df, ProxyFlag == "Normal refpoint"),
+      data = dplyr::filter(df, ProxyFlag == "Reference point"),
       ggplot2::aes(color = Status, shape = ProxyFlag),
       size = pt_size, alpha = 0.7, na.rm = TRUE
     ) +
 
     # ---- Proxy refpoint (empty circle with thicker outline) ----
     ggplot2::geom_point(
-      data = dplyr::filter(df, ProxyFlag == "Proxy refpoint"),
+      data = dplyr::filter(df, ProxyFlag == "Proxy reference point"),
       ggplot2::aes(color = Status, shape = ProxyFlag),
       size = pt_size, alpha = 0.9, na.rm = TRUE,
       fill = NA, stroke = proxy_stroke
@@ -2282,9 +2282,9 @@ plot_kobe_app <- function(x, guild, return_data = FALSE){
 
     # Shape legend (auto-drops “Proxy refpoint” if not present)
     ggplot2::scale_shape_manual(
-      name   = "Reference point",
-      values = c("Normal refpoint" = 16,  # filled circle
-                 "Proxy refpoint"  = 21), # circle with border (uses stroke)
+      name   = "ICES reference point",
+      values = c("Reference point" = 16,  # filled circle
+                 "Proxy reference point"  = 21), # circle with border (uses stroke)
       drop = TRUE
     ) +
 
@@ -2302,8 +2302,8 @@ plot_kobe_app <- function(x, guild, return_data = FALSE){
       legend.justification = c(1, 1),
       legend.background  = ggplot2::element_rect(fill = ggplot2::alpha("white", 0.85),
                                                  color = "grey85"),
-      legend.key.height  = ggplot2::unit(12, "pt"),
-      legend.key.width   = ggplot2::unit(18, "pt")
+      legend.key.height  = ggplot2::unit(30, "pt"),
+      legend.key.width   = ggplot2::unit(30, "pt")
     ) +
     # Make legend symbols neutral (single color) and readable
     ggplot2::guides(
