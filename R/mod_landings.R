@@ -393,9 +393,11 @@ mod_landings_server <- function(
     year <- Sys.Date() %>%
       format("%Y") %>%
       as.numeric()
+    
+    cld_reactive <- reactive(CLD_trends(format_sag(shared$SAG, shared$SID)))
 
     output$discard_trends <- renderPlotly({
-      fig2 <- ggplotly(plot_discard_trends_app_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)),
+      fig2 <- ggplotly(plot_discard_trends_app_plotly(cld_reactive(),
         year,
         ecoregion = get_ecoregion_acronym(selected_ecoregion())
       ))
@@ -408,7 +410,7 @@ mod_landings_server <- function(
     })
 
     output$recorded_discards <- renderPlotly({
-      catch_trends2 <- CLD_trends(format_sag(shared$SAG, shared$SID)) %>% filter(Discards > 0)
+      catch_trends2 <- cld_reactive() %>% filter(Discards > 0)
       plot_discard_current_plotly(catch_trends2,
         year = year,
         position_letter = paste0("Stocks with recorded discards (2025, ", get_active_region_acronym(selected_ecoregion()), ")"),
@@ -417,7 +419,7 @@ mod_landings_server <- function(
     })
 
     output$all_discards <- renderPlotly({
-      plot_discard_current_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)),
+      plot_discard_current_plotly(cld_reactive(),
         year = year,
         position_letter = paste0("All Stocks (2025, ", get_active_region_acronym(selected_ecoregion()), ")") ,
         ecoregion = get_ecoregion_acronym(selected_ecoregion())
@@ -446,7 +448,7 @@ mod_landings_server <- function(
 
         # ---- Build CSV (include acronym + date) ----
         # If CLD_trends() returns multiple measures, filter upstream if needed to "discards" only.
-        dat <- CLD_trends(format_sag(shared$SAG, shared$SID))
+        dat <- cld_reactive()
 
         csv_name <- paste0("discard_data_", acronym, "_", date_tag, ".csv")
         csv_path <- file.path(td, csv_name)
