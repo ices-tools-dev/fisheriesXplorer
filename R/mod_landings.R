@@ -257,7 +257,7 @@ mod_landings_server <- function(
 
     output$ecoregion_label <- renderUI({
       req(selected_ecoregion())
-      tags$span(tags$b("Ecoregion:"), " ", paste0(selected_ecoregion(), " (", get_ecoregion_acronym(selected_ecoregion()), ")"))
+      tags$span(tags$b("ICES ecoregion:"), " ", paste0(selected_ecoregion(), " (", get_ecoregion_acronym(selected_ecoregion()), ")"))
     })
 
     ################################## header + glossary #########################################
@@ -411,7 +411,7 @@ mod_landings_server <- function(
       catch_trends2 <- CLD_trends(format_sag(shared$SAG, shared$SID)) %>% filter(Discards > 0)
       plot_discard_current_plotly(catch_trends2,
         year = year,
-        position_letter = paste0("Stocks with recorded discards (2025, ", get_active_region_acronym(selected_ecoregion()), ")"),
+        position_letter = paste0("Current discards\nStocks with recorded discards (", year-1, ", ", get_active_region_acronym(selected_ecoregion()), ")"),
         ecoregion = get_ecoregion_acronym(selected_ecoregion())
       )
     })
@@ -419,7 +419,7 @@ mod_landings_server <- function(
     output$all_discards <- renderPlotly({
       plot_discard_current_plotly(CLD_trends(format_sag(shared$SAG, shared$SID)),
         year = year,
-        position_letter = paste0("All Stocks (2025, ", get_active_region_acronym(selected_ecoregion()), ")") ,
+        position_letter = paste0("Current discards\nAll Stocks (", year-1, ", ", get_active_region_acronym(selected_ecoregion()), ")") ,
         ecoregion = get_ecoregion_acronym(selected_ecoregion())
       )
     })
