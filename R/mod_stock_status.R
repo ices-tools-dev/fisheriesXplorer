@@ -138,7 +138,7 @@ mod_stock_status_ui <- function(id) {
           column(
             12,
             card(
-              height = "85vh", full_screen = TRUE,
+              height = "100vh", full_screen = TRUE,
               card_header(
                 radioButtons(ns("status_trend_selector"), "Select a fisheries guild:",
                   inline = TRUE,
@@ -154,7 +154,7 @@ mod_stock_status_ui <- function(id) {
                   HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                 )
               ),
-              card_body(withSpinner(plotlyOutput(ns("status_trends"), height = "68vh")))
+              card_body(withSpinner(plotlyOutput(ns("status_trends"))))#, height = "68vh"
             )
           )
         )
