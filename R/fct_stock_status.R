@@ -1617,7 +1617,11 @@ plot_GES_pies <- function(x, y, return_data = FALSE, width_px = 800) {
 #' @importFrom plotly plot_ly add_lines layout subplot highlight
 #'   highlight_key config attrs_selected
 #' @noRd
-plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
+plot_stock_trends <- function(x, 
+                              guild, 
+                              return_data = FALSE, 
+                              ecoregion = NULL,
+                              per_panel_height = 330) {
   # --- helpers
   safe_min <- function(v, pad = 0) {
     m <- suppressWarnings(base::min(v, na.rm = TRUE))
@@ -1824,6 +1828,7 @@ plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
   # --- Combine + highlight without recoloring
   final_plot <- plotly::subplot(plot1, plot2, nrows = 2, shareX = TRUE, titleY = TRUE) %>%
     plotly::layout(
+      height = per_panel_height * 2,
       xaxis = list(title = "Year", titlefont = list(size = 16), tickfont = list(size = 14)),
       margin = list(b = 100, r = 50),
       legend = list(
@@ -1834,7 +1839,7 @@ plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
       ),
       annotations = list(
         list(
-          x = 1, y = -0.15, xref = "paper", yref = "paper",
+          x = 1, y = -0.17, xref = "paper", yref = "paper",
           text = paste0("ICES Stock Assessment Database, ", base::format(base::Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
           showarrow = FALSE, xanchor = "right", yanchor = "bottom"
         ),
