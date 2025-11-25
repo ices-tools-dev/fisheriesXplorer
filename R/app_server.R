@@ -42,10 +42,10 @@
 app_server <- function(input, output, session) {
 
   ######################## Welcome modal (maybe we could add useful information here?) ########################
-  showModal(modalDialog(
-    title = "Important message",
-    HTML("Welcome to the development version of the fisheriesXplorer application. <u>The contents are indicative and should not be quoted or used elsewhere</u>.")
-  ))
+  # showModal(modalDialog(
+  #   title = "Important message",
+  #   HTML("Welcome to the development version of the fisheriesXplorer application. <u>The contents are indicative and should not be quoted or used elsewhere</u>.")
+  # ))
 
   # ------------------------
   # Date bits (refactor all the dates here?)
