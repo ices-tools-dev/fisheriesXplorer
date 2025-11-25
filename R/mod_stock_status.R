@@ -81,7 +81,7 @@ mod_stock_status_ui <- function(id) {
       id = ns("main_tabset"),   
 
       nav_panel(
-        "Status Summary", value = "status_summary",   
+        "Summary", value = "status_summary",   
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -128,7 +128,7 @@ mod_stock_status_ui <- function(id) {
       ),
 
       nav_panel(
-        "Trends by group", value = "trends_by_group",   
+        "Trends", value = "trends_by_group",   
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -161,7 +161,7 @@ mod_stock_status_ui <- function(id) {
       ),
 
       nav_panel(
-        "Kobe-CLD", value = "kobe_cld",  
+        "Catch & Kobe plot", value = "kobe_cld",  
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black", open = FALSE,
@@ -215,7 +215,7 @@ mod_stock_status_ui <- function(id) {
       ),
 
       nav_panel(
-        "Stock status Lookup", value = "status_lookup",   # <-- NEW value
+        "Stock list", value = "status_lookup",   # <-- NEW value
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
