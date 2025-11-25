@@ -639,15 +639,15 @@ plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregi
       font = list(size = axis_title_size),
       tickfont = list(size = tick_size)
     ),
-    legend = list(title = list(text = "<b>Fisheries Guild</b>")),
-    margin = list(b = 100),
+    legend = list(title = list(text = "<b>Fisheries guild:</b>")),
+    margin = list(b = 120),
     annotations = list(
       list(
         xref = "paper",
         yref = "paper",
         xanchor = "right",
         yanchor = "bottom",
-        x = 1, y = -0.2,
+        x = 1, y = -0.4,
         showarrow = FALSE,
         text = paste0("ICES Stock Assessment Database,", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
         font = list(size = caption_size)
@@ -833,16 +833,16 @@ plot_discard_current_plotly <- function(x, year, position_letter = NULL, return_
         # font = list(size = 13),
         tickfont = list(size = 13)),
       showlegend = TRUE,
-      margin = list(l = 20, r = 20, t = 50, b = 120),
+      margin = list(l = 20, r = 20, t = 50, b = 140),
       annotations = list(
         list(
           xref = "paper", 
           yref = "paper",
           xanchor = "right", 
           yanchor = "bottom",
-          x = 1, y = -0.4, 
+          x = 1, y = -0.5, 
           showarrow = FALSE,
-          text = paste0("ICES Stock Assessment Database,", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
+          text = paste0("ICES Stock Assessment Database,\n", format(Sys.Date(), "%d-%b-%y"), ". ICES, Copenhagen"),
           font = list(size = 12)
         )
       )  
