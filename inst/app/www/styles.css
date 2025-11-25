@@ -332,7 +332,7 @@ caption {
   background-color: #ffffff;
   border-color: rgb(194, 194, 194);
   border-width: 1px 1px 1px 1px;
-  border-radius: 30px;
+  border-radius: 15px 15px 15px 15px;
 } 
 
 .card-header {
