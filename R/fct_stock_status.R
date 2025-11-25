@@ -1827,7 +1827,7 @@ plot_stock_trends <- function(x, guild, return_data = FALSE, ecoregion = NULL) {
       xaxis = list(title = "Year", titlefont = list(size = 16), tickfont = list(size = 14)),
       margin = list(b = 100, r = 50),
       legend = list(
-        title = list(text = "Stock name", font = list(size = 16)),
+        title = list(text = "<b>Stock code:</b>", font = list(size = 16)),
         orientation = "h",
         x = 0.5, y = 1.05, xanchor = "center", yanchor = "bottom",
         font = list(size = 16)
@@ -2057,7 +2057,7 @@ plot_CLD_bar_app <- function(x, guild, return_data = FALSE) {
     ggplot2::coord_equal() +
     ggplot2::coord_flip() +
     ggplot2::theme_bw(base_size = 20) +
-    ggplot2::labs(x = "Stock name", y = "Catch and Landings (thousand tonnes)") +
+    ggplot2::labs(x = "Stock code", y = "Catch and Landings (thousand tonnes)") +
     ggplot2::theme(
       plot.caption       = ggplot2::element_text(size = 14),
       panel.grid.minor   = ggplot2::element_blank(),

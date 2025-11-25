@@ -368,7 +368,7 @@ plot_catch_trends_plotly <- function(
               )
             ),
             legend = list(
-              title = list(text = "<b>Common name</b>", font = list(size = legend_title_size)),
+              title = list(text = "<b>Common name:</b>", font = list(size = legend_title_size)),
               orientation = "h",
               y = 1.12, x = 0, xanchor = "left", yanchor = "bottom",
               font = list(size = legend_text_size),
@@ -456,7 +456,7 @@ plot_catch_trends_plotly <- function(
         )
       ),
       legend = list(
-        title = list(text = paste0("<b>", type, "</b>"), font = list(size = legend_title_size)),
+        title = list(text = paste0("<b>", type, ":</b>"), font = list(size = legend_title_size)),
         orientation = "h",
         x = 0.5, y = 1.08, xanchor = "center", yanchor = "bottom",
         font = list(size = legend_text_size),
