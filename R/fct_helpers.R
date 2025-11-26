@@ -712,6 +712,4 @@ revision_dates <- c(
   IS  = "2024-12-05",
   NwS = "2022-11-30",
   NrS = "2024-12-05",
-  ONA = "2022-11-30"
-  # add all your ecoregions here
-)
+  ONA = "2022-11-30")
