@@ -196,8 +196,11 @@ mod_overview_server <- function(
     })
 
     output$current_date <- renderUI({
+      eco <- get_ecoregion_acronym(selected_ecoregion())
+      req(eco)
+      raw_date <- revision_dates[eco]
       tagList(
-        tags$span(tags$b("Last text update:"), " December 05, 2024"),
+        tags$span(tags$b("Last text revision: "), format(as.Date(raw_date), "%B %d, %Y")),
         tags$span(" \u00B7 "),
         mod_glossary_float_ui(ns("app_glossary"), link_text = "Glossary", panel_title = "Glossary")
       )

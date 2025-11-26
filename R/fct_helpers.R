@@ -694,3 +694,24 @@ add_keys <- function(df, stock_label, keys, key_col = "AssessmentKey") {
           additions[[key_col]] <- keys
           dplyr::bind_rows(df, additions)
         }
+
+
+
+
+#' Revision dates for ecoregions
+#' A named character vector mapping ecoregion acronyms to last revision dates of the FOs text.
+#'  Used in the Overview tab.
+revision_dates <- c(
+  AZ = "2022-11-30",
+  BI = "2022-11-30",
+  BrS ="2022-11-30",
+  BtS = "2022-11-30",
+  CS  = "2025-11-27",
+  FO  = "2022-11-30",
+  GS  = "2024-12-05",
+  IS  = "2024-12-05",
+  NwS = "2022-11-30",
+  NrS = "2024-12-05",
+  ONA = "2022-11-30"
+  # add all your ecoregions here
+)
