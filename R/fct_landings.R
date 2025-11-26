@@ -128,7 +128,7 @@ CLD_trends <- function(x){
                        MSYBtrigger,
                        Catches,
                        Landings,
-                       Discards)
+                       Discards)     
         df["Discards"][df["Discards"] == 0] <- NA
         df["Catches"][df["Catches"] == 0] <- NA
         df["Landings"][df["Landings"] == 0] <- NA
@@ -538,9 +538,25 @@ plot_catch_trends_plotly <- function(
 #' @importFrom scales percent
 #' @export
 plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregion = NULL) {
+  
   # Check for non-numeric Year values and warn if any NAs are introduced
+  if (all(is.na(x$Discards))) {
+    return(
+      plotly::plot_ly() %>%
+        plotly::layout(
+          xaxis = list(visible = FALSE),
+          yaxis = list(visible = FALSE),
+          annotations = list(list(
+            text = "No discards available",
+            xref = "paper", yref = "paper", x = 0.5, y = 0.5,
+            showarrow = FALSE, font = list(size = 20)
+          ))
+        )
+    )
+  }
 
-    # --- Responsive font sizes (fallback to 800px)
+
+  # --- Responsive font sizes (fallback to 800px)
   w <- tryCatch({
     if (!is.null(session)) session$clientData[["output_landings_1-discard_trends_width"]] else NA_real_
   }, error = function(e) NA_real_)
@@ -589,7 +605,7 @@ plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregi
       Year = as.numeric(Year),
       Landings = as.numeric(Landings)
     )
-
+  
   df5 <- df %>%
     dplyr::select(-Discards, -Landings) %>%
     dplyr::left_join(df3, by = c("Year", "StockKeyLabel")) %>%
@@ -747,9 +763,31 @@ plot_discard_trends_app_plotly <- function(x, year, return_data = FALSE, ecoregi
 #' @importFrom plotly plot_ly layout config
 #' @export
 plot_discard_current_plotly <- function(x, year, position_letter = NULL, return_data = FALSE, order_df = NULL, ecoregion = NULL) {
-  df <- x %>% dplyr::mutate(Year = as.numeric(Year),
-                            FMSY = as.numeric(FMSY),
-                            MSYBtrigger = as.numeric(MSYBtrigger)) %>% dplyr::filter(Year %in% seq(year - 5, year - 1))
+  
+  if (nrow(x) == 0) {
+    return(
+      plotly::plot_ly() %>%
+        plotly::layout(
+          xaxis = list(visible = FALSE),
+          yaxis = list(visible = FALSE),
+          annotations = list(list(
+            text = "No discards available",
+            xref = "paper", yref = "paper", x = 0.5, y = 0.5,
+            showarrow = FALSE, font = list(size = 20)
+          ))
+        )
+    )
+  }
+  
+  df <- x %>%
+    dplyr::mutate(
+      Year = as.numeric(Year),
+      FMSY = as.numeric(FMSY),
+      MSYBtrigger = as.numeric(MSYBtrigger)
+    ) %>%
+    dplyr::filter(Year %in% seq(year - 5, year - 1))
+
+  
   
   df2 <- tidyr::expand(df, Year, tidyr::nesting(StockKeyLabel, FisheriesGuild))
   df <- dplyr::left_join(df, df2, by = c("Year", "StockKeyLabel", "FisheriesGuild"))
