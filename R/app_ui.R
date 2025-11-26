@@ -147,7 +147,7 @@ golem_add_external_resources <- function() {
     tags$script(HTML("
       document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.collapse-toggle').forEach(btn => {
-          btn.setAttribute('title', 'Open/close sidebar for additional information');
+          btn.setAttribute('title', 'Open/close sidebar for figure captions and results description');
         });
       });
     ")),

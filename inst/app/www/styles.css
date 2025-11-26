@@ -1,10 +1,4 @@
-/* p {
-    font-size: 21px;
-}
 
-li {
-    font-size: 20px;
-} */
 /* Common layout for all overview text sections */
 .fx-section {
   font-size: 18px;           /* base size */
@@ -253,13 +247,12 @@ input[type=radio]:checked {
   visibility: hidden;
   opacity: 0;
   width: 140px;
-  background-color: rgb(189, 12, 12);
-  color: #fff;
+  background-color: #000000;
+  color: #ffffff;
   text-align: center;
   border-radius: 5px;
   padding: 5px 0;
   transition: opacity 0.5s ease-in-out;
-
   position: left;
   z-index: 1;
   /*left: 0;
@@ -443,24 +436,7 @@ caption {
 }
 
 
-.bslib-sidebar-layout>.collapse-toggle {
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      background-color: #00B6F1;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-.bslib-sidebar-layout>.collapse-toggle .collapse-icon {
-      width: 15px;
-      height: 15px;
-      stroke: white;
-    }
-.bslib-sidebar-layout>.collapse-toggle:hover {
-      background-color: #99AABF;
-    }
+
 
 @media (max-width: 500px) {
   .js-plotly-plot .xtick text,
@@ -888,3 +864,27 @@ details summary {
   margin-bottom: 0.35em;
   color: #002B5F;
 }
+
+
+
+
+
+.bslib-sidebar-layout> .collapse-toggle {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background-color: #00B6F1;
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+.bslib-sidebar-layout>.collapse-toggle .collapse-icon {
+      width: 15px;
+      height: 15px;
+      stroke: white;
+    }
+.bslib-sidebar-layout>.collapse-toggle:hover {
+      background-color: #002B5F;
+    }
