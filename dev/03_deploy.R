@@ -51,7 +51,7 @@ desc::desc_bump_version(which = "dev")
 rsconnect::deployApp(
   appName = desc::desc_get_field("Package"),
   appTitle = desc::desc_get_field("Package"),
-  account  = "ices-taf", #productiuon server or ices-tools-dev for testing
+  account  = "ices-tools-dev", #productiuon server or "ices-taf" for testing
   server   = "shinyapps.io",
   appFiles = c(
     # Add any additional files unique to your app here.
