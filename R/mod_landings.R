@@ -90,7 +90,7 @@ mod_landings_ui <- function(id) {
               ),
               downloadLink(
                 ns("download_landings_data"),
-                HTML(paste0("<span class='hovertext' data-hover='Download landings (csv) takes a few seconds'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                HTML(paste0("<span class='hovertext' data-hover='Landings csv files (takes a few seconds)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
               )
             ),
             card_body(
@@ -114,7 +114,7 @@ mod_landings_ui <- function(id) {
             card_header(
               "Discard trends",
               downloadLink(ns("download_discard_data"),
-                HTML(paste0("<span class='hovertext' data-hover='Download discards (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                HTML(paste0("<span class='hovertext' data-hover='Discards csv file'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
               )
             ),
             card_body(
