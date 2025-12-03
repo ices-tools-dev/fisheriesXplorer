@@ -247,8 +247,8 @@ input[type=radio]:checked {
   visibility: hidden;
   opacity: 0;
   width: 140px;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: #dbdbdb;
+  color: #000000;
   text-align: center;
   border-radius: 5px;
   padding: 5px 0;
@@ -365,8 +365,8 @@ caption {
 .tooltip {
   visibility: hidden;
   width: 160px;
-  background-color: black;
-  color: white;
+  background-color: #dbdbdb;
+  color: #000000;
   text-align: center;
   border-radius: 6px;
   padding: 5px;
@@ -396,8 +396,8 @@ caption {
   }
 .custom-tooltip {
   visibility: hidden;
-  background-color: #333;
-  color: #fff;
+  background-color: #dbdbdb;
+  color: #000000;
   text-align: left;
   border-radius: 6px;
   padding: 8px;
@@ -491,8 +491,8 @@ caption {
   bottom: auto;           
   left: 50%;
   transform: translate(-50%, 4px);  
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
+  background: #dbdbdb;
+  color: #000000;
   padding: 8px 10px;
   border-radius: 6px;
   white-space: normal;
@@ -888,3 +888,76 @@ details summary {
 .bslib-sidebar-layout>.collapse-toggle:hover {
       background-color: #002B5F;
     }
+
+
+
+
+
+/* Wrapper around glossary link + tooltip */
+.glossary-hover-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Tooltip bubble (hidden by default) */
+.glossary-hover-bubble {
+  /* position: absolute;
+  bottom: 140%;             
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 260px;
+
+  padding: 0.35rem 0.55rem;
+  background: #dbdbdb;      
+  color: #000000;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.18);
+  white-space: normal;
+  z-index: 2500;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out, visibility 0.15s ease-out; */
+  position: absolute;
+  top: calc(100% + 8px);  
+  bottom: auto;           
+  left: 50%;
+  transform: translate(-50%, 4px);  
+  background: #dbdbdb;
+  color: #000000;
+  padding: 8px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  width: min(82vw, 240px);
+  max-width: 240px;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+}
+
+/* Little arrow under the bubble */
+.glossary-hover-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #dbdbdb transparent transparent transparent;
+}
+
+/* Show on hover/focus */
+.glossary-hover-wrap:hover .glossary-hover-bubble,
+.glossary-hover-wrap:focus-within .glossary-hover-bubble {
+  opacity: 1;
+  visibility: visible;
+}
