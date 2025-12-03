@@ -62,8 +62,20 @@ mod_glossary_float_ui <- function(id, link_text = "Glossary", panel_title = "Glo
   ns <- NS(id)
 
   tagList(
-    actionLink(ns("open"), label = tagList(icon("book"), link_text),
-               class = "glossary-link", style = "margin-left:.5rem;"),
+    tags$span(
+      class = "glossary-hover-wrap",
+
+    actionLink(ns("open"),
+      label = tagList(icon("book"), link_text),
+      class = "glossary-link",
+      style = "margin-left:.5rem;"
+    ),
+    tags$span(
+        class = "glossary-hover-bubble",
+        HTML("Definitions of key terms used across the app.</br>
+              The panel can be left open and moved around the page.")
+      )
+    ),
 
     # Panel starts hidden; external CSS (.glossary-float) handles size/looks
     tags$div(
@@ -73,14 +85,14 @@ mod_glossary_float_ui <- function(id, link_text = "Glossary", panel_title = "Glo
       div(
         class = "g-header",
         span(class = "g-title", panel_title),
-        tags$button(type = "button", class = "g-close-btn",
-                    onclick = paste0("document.getElementById('", ns("panel"), "').style.display='none';"),
-                    HTML("&times;"))
+        tags$button(
+          type = "button", class = "g-close-btn",
+          onclick = paste0("document.getElementById('", ns("panel"), "').style.display='none';"),
+          HTML("&times;")
+        )
       ),
       div(class = "g-body", reactable::reactableOutput(ns("tbl")))
     ),
-
-    
     tags$script(HTML(paste0("
       (function(){
         var openEl  = document.getElementById('", ns("open"), "');

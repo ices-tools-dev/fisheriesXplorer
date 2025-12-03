@@ -78,9 +78,8 @@ mod_navigation_page_ui <- function(id) {
                     class = "image-button-wrap",
                     actionLink(
                       ns("overviewBtn"),
-                      label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/overview.svg');",
-                      title = "Overview", `aria-label` = "Overview"
+                      label = NULL, class = "image-button-link",  `aria-label` = "Overview",
+                      style = "background-image: url('www/icons/overview.svg');"
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Overview</strong><br><br>Key signals and detailed <br>catch-by-country information"))
                   )
@@ -92,9 +91,8 @@ mod_navigation_page_ui <- function(id) {
                     class = "image-button-wrap",
                     actionLink(
                       ns("landingsBtn"),
-                      label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/landings.svg');",
-                      title = "Landings", `aria-label` = "Landings"
+                      label = NULL, class = "image-button-link", `aria-label` = "Landings",
+                      style = "background-image: url('www/icons/landings.svg');"
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Landings</strong><br><br>Landings over time:<br>by country, species, fish guild, and gear type"))
                   )
@@ -106,9 +104,8 @@ mod_navigation_page_ui <- function(id) {
                     class = "image-button-wrap",
                     actionLink(
                       ns("stockStatusBtn"),
-                      label = NULL, class = "image-button-link",
-                      style = "background-image: url('www/icons/Stock Status.svg');",
-                      title = "Stock status", `aria-label` = "Stock status"
+                      label = NULL, class = "image-button-link", `aria-label` = "Stock status",
+                      style = "background-image: url('www/icons/Stock Status.svg');"
                     ),
                     div(class = "fx-tooltip", HTML("<strong>Stock status</strong><br><br>Relative to MSY &amp; PA reference points, and MSFD descriptors"))
                   )
