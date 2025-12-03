@@ -43,7 +43,7 @@ app_ui <- function(request) {
     # External resources
     golem_add_external_resources(),
     title_html <- tags$a(
-      href = "https://ices-taf.shinyapps.io/fisheriesXplorer/",
+      href = "https://www.ices.dk/Pages/default.aspx",
       tags$img(
         src = "www/negative_ices_logo.png",
         style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
