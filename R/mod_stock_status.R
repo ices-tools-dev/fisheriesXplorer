@@ -96,7 +96,7 @@ mod_stock_status_ui <- function(id) {
                 card_header(
                   "MSY & Precautionary Approach",
                   downloadLink(ns("download_clean_status_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Status cvs file & plot images'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
@@ -113,7 +113,7 @@ mod_stock_status_ui <- function(id) {
                 card_header(
                   "Catches in relation to MSY status",
                   downloadLink(ns("download_status_catch_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Status cvs file & plot images'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
@@ -151,7 +151,7 @@ mod_stock_status_ui <- function(id) {
                   )
                 ),
                 downloadLink(ns("download_trends_data"),
-                  HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                  HTML(paste0("<span class='hovertext' data-hover='Status trends csv file'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                 )
               ),
               card_body(withSpinner(plotlyOutput(ns("status_trends"))))#, height = "68vh"
@@ -193,7 +193,7 @@ mod_stock_status_ui <- function(id) {
                   style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
                   uiOutput(ns("kobe_cld_slider")),
                   downloadLink(ns("download_CLD_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + graphs'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Status cvs file & plot images'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 )
               )
@@ -226,7 +226,7 @@ mod_stock_status_ui <- function(id) {
             card_header(
               "Stock status table",
               downloadLink(ns("download_status_table"),
-                HTML(paste0("<span class='hovertext' data-hover='Download table (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                HTML(paste0("<span class='hovertext' data-hover='Stock status list csv file'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
               )
             ),
             card_body(withSpinner(reactableOutput(ns("stock_status_table_reactable"))))
