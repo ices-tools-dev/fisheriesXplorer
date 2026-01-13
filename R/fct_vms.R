@@ -95,22 +95,22 @@ plot_sar_map_app <- function (sar_data,  ecoregion_name, ecoregion_shape, land_s
   p
 }
 
-vms_bundle_filename <- function(selected_ecoregion, what) {
+vms_bundle_filename <- function(selected_ecoregion, sar_layer) {
   function() {
     ecoregion <- selected_ecoregion()
     acronym  <- get_ecoregion_acronym(ecoregion)
     date_tag <- format(Sys.Date(), "%d-%b-%y")
-    paste0("vms_", what, "_data_bundle_", acronym, "_", date_tag, ".zip")
+    paste0("vms_", sar_layer, "_data_bundle_", acronym, "_", date_tag, ".zip")
   }
 }
 
 #' Title Bundle vms content for download, either effort or sar data
 #'
 #' @param selected_ecoregion reactive value
-#' @param what character, either "sar" or "effort 
+#' @param sar_layer character, either "sar" or "effort 
 #'
 #' @importFrom zip zip zipr
-vms_bundle_content <- function(selected_ecoregion, what) {
+vms_bundle_content <- function(selected_ecoregion, sar_layer) {
 
     function(file) {
     
@@ -120,7 +120,7 @@ vms_bundle_content <- function(selected_ecoregion, what) {
     # date_tag <- format(Sys.Date(), "%d-%b-%y")
     
     # --- 1) zipped shapefiles (with acronym + date)
-    shp_zip_path <- file.path("data/", paste0("vms_", what ,"_", acronym, ".zip"))
+    shp_zip_path <- file.path("data/", paste0("vms_", sar_layer ,"_", acronym, ".zip"))
     
     
     # --- 2) Disclaimer.txt (fixed name; no acronym/date)
@@ -151,7 +151,7 @@ vms_bundle_content <- function(selected_ecoregion, what) {
     }
     
     # --- 3) Plot image (PNG) of the static pies
-    match_pattern <- paste0(acronym, "_", what, "_")
+    match_pattern <- paste0(acronym, "_", sar_layer, "_")
     image_path <- app_sys(paste0("app/www/vms"))
     vms_files <- list.files(image_path)
     required_files <- vms_files[str_starts(vms_files, pattern = match_pattern)]
@@ -171,12 +171,12 @@ vms_bundle_content <- function(selected_ecoregion, what) {
 }
 
 
-render_vms <- function(ecoregion, gear, what, ns){
+render_vms <- function(ecoregion, gear, sar_layer, ns){
 
   
   eco_acronym <- get_ecoregion_acronym(ecoregion)
   gear_name <- str_replace_all(tolower(gear), " ", "_")
-  file_name <- paste0(eco_acronym, "_", what, "_", gear_name, ".png")
+  file_name <- paste0(eco_acronym, "_", sar_layer, "_", gear_name, ".png")
   
   # Web path used by img tag
   webpath <- file.path("www/vms", file_name)
@@ -192,7 +192,7 @@ render_vms <- function(ecoregion, gear, what, ns){
   )
   
   tags$img(
-    id = ns(paste0("vms_", what, "_layer")),
+    id = ns(paste0("vms_", sar_layer, "_layer")),
     src = webpath,
     style = "width: 100%; cursor: pointer;",
     onclick = "toggleFullScreen(this)"

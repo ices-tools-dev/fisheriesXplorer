@@ -74,8 +74,7 @@ mod_vms_ui <- function(id) {
 #' @noRd 
 mod_vms_server <- function(id, 
     selected_ecoregion,
-    bookmark_qs = reactive(NULL),
-    set_subtab = function(...) {}){
+    bookmark_qs = reactive(NULL)){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
@@ -131,7 +130,7 @@ mod_vms_server <- function(id,
       req(selected_ecoregion, input$fishing_cat_selector)
       render_vms(ecoregion = selected_ecoregion(),
                  gear = input$fishing_cat_selector,
-                 what = "effort",
+                 sar_layer = "effort",
                  ns = ns)
     })
     
@@ -140,19 +139,19 @@ mod_vms_server <- function(id,
       
       render_vms(ecoregion = selected_ecoregion(),
                  gear = input$sar_layer_selector,
-                 what = "sar",
+                 sar_layer = "sar",
                  ns = ns)
     })
     
     output$download_effort_data <- downloadHandler(
-      filename = vms_bundle_filename(selected_ecoregion, what = "effort"),
-      content  = vms_bundle_content(selected_ecoregion, what = "effort"),
+      filename = vms_bundle_filename(selected_ecoregion, sar_layer = "effort"),
+      content  = vms_bundle_content(selected_ecoregion, sar_layer = "effort"),
       contentType = "application/zip"
     )
     
     output$download_sar_data <- downloadHandler(
-      filename = vms_bundle_filename(selected_ecoregion, what = "sar"),
-      content  = vms_bundle_content(selected_ecoregion, what = "sar"),
+      filename = vms_bundle_filename(selected_ecoregion, sar_layer = "sar"),
+      content  = vms_bundle_content(selected_ecoregion, sar_layer = "sar"),
       contentType = "application/zip"
     )
     
