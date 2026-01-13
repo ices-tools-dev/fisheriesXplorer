@@ -693,4 +693,203 @@ add_keys <- function(df, stock_label, keys, key_col = "AssessmentKey") {
           additions <- template[rep(1, length(keys)), ]
           additions[[key_col]] <- keys
           dplyr::bind_rows(df, additions)
+}
+
+
+
+
+zip_item_ggplot_png <- function(plot_fun,
+                                width_px  = 2200,
+                                height_px = 1400,
+                                dpi       = 144,
+                                label     = NULL) {
+  function(path) {
+    lbl <- if (is.null(label)) path else paste0(label, " [", path, "]")
+    
+    # --- 1) Generate plot
+    p <- tryCatch(
+      plot_fun(),
+      error = function(e) {
+        warning("zip_item_ggplot_png: plot_fun() failed for ", lbl,
+                " – ", conditionMessage(e))
+        return(e)
+      }
+    )
+    
+    if (inherits(p, "error")) return(FALSE)
+    
+    if (!inherits(p, "ggplot")) {
+      warning("zip_item_ggplot_png: plot_fun() did not return a ggplot for ",
+              lbl, " (class: ", paste(class(p), collapse = ", "), ")")
+      return(FALSE)
+    }
+    
+    # --- 2) Save PNG
+    ok <- FALSE
+    if (requireNamespace("ragg", quietly = TRUE)) {
+      ok <- tryCatch(
+        {
+          ragg::agg_png(
+            filename = path,
+            width    = width_px,
+            height   = height_px,
+            units    = "px",
+            res      = dpi
+          )
+          print(p)
+          grDevices::dev.off()
+          file.exists(path) && file.info(path)$size > 0
+        },
+        error = function(e) {
+          warning("zip_item_ggplot_png: failed to save PNG for ", lbl,
+                  " – ", conditionMessage(e))
+          FALSE
+        },
+        finally = {
+          if (names(grDevices::dev.cur()) != "null device") {
+            grDevices::dev.off()
+          }
         }
+      )
+    } else {
+      inch_w <- width_px  / dpi
+      inch_h <- height_px / dpi
+      
+      ok <- tryCatch(
+        {
+          ggplot2::ggsave(
+            filename  = path,
+            plot      = p,
+            width     = inch_w,
+            height    = inch_h,
+            dpi       = dpi,
+            limitsize = FALSE
+          )
+          file.exists(path) && file.info(path)$size > 0
+        },
+        error = function(e) {
+          warning("zip_item_ggplot_png: failed to save PNG for ", lbl,
+                  " – ", conditionMessage(e))
+          FALSE
+        }
+      )
+    }
+    
+    ok
+  }
+}
+
+zip_item_conditional_text <- function(lines, condition) {
+  function(path) {
+    dir <- dirname(path)
+    if (!isTRUE(condition(dir))) return(FALSE)
+    
+    text <- as.character(unlist(lines, recursive = TRUE, use.names = FALSE))
+    writeLines(text, con = path)
+    TRUE
+  }
+}
+
+zip_item_ggplot_with_failure <- function(png_filename,
+                                          failure_txt_filename,
+                                          plot_fun,
+                                          failure_lines,
+                                          width_px  = 2200,
+                                          height_px = 1400,
+                                          dpi       = 144,
+                                          label     = NULL) {
+  
+  list(
+    # PNG item
+    list(
+      filename = png_filename,
+      item     = zip_item_ggplot_png(
+        plot_fun = plot_fun,
+        width_px = width_px,
+        height_px = height_px,
+        dpi       = dpi,
+        label     = label
+      )
+    ),
+    
+    # Failure text, only created if PNG is missing
+    list(
+      filename = failure_txt_filename,
+      item     = zip_item_conditional_text(
+        lines = failure_lines,
+        condition = function(dir) {
+          !file.exists(file.path(dir, png_filename))
+        }
+      )
+    )
+  )
+}
+
+
+zip_item_csv <- function(data, ...) {
+  function(path) {
+    utils::write.csv(data, path, row.names = FALSE, ...)
+    TRUE
+  }
+}
+
+zip_item_disclaimer <- function(url, fallback_lines = NULL) {
+
+  if(is.null(fallback_lines)){
+    fallback_lines <-  c("The official disclaimer could not be fetched automatically.", paste("Please see:", url))
+  }
+  
+  function(path) {
+    ok <- isTRUE(safe_download(url, path))
+    
+    if (!ok) {
+      writeLines(as.character(fallback_lines), path)
+    }
+    
+    file.exists(path) && file.info(path)$size > 0
+  }
+}
+
+zip_bundle <- function(zipfile, items, tmp_prefix = "bundle_") {
+  # Temp workspace
+  td <- tempfile(tmp_prefix)
+  dir.create(td, showWarnings = FALSE)
+  on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
+  
+  created_paths <- character()
+  
+  for (it in items) {
+    stopifnot(
+      is.list(it),
+      !is.null(it$filename),
+      !is.null(it$item),
+      is.function(it$item)
+    )
+    
+    path <- file.path(td, it$filename)
+    
+    ok <- isTRUE(it$item(path))  # call the writer function
+    
+    if (ok && file.exists(path) && file.info(path)$size > 0) {
+      created_paths <- c(created_paths, path)
+    }
+  }
+  
+  if (!length(created_paths)) {
+    stop("No files were generated for the bundle.")
+  }
+  
+  # Zip from inside temp dir so only filenames (no temp paths) are in the zip
+  rel_paths <- basename(created_paths)
+  owd <- setwd(td)
+  on.exit(setwd(owd), add = TRUE)
+  
+  if (requireNamespace("zip", quietly = TRUE) &&
+      "zipr" %in% getNamespaceExports("zip")) {
+    zip::zipr(zipfile = zipfile, files = rel_paths)
+  } else {
+    utils::zip(zipfile = zipfile, files = rel_paths)
+  }
+  
+  invisible(zipfile)
+}

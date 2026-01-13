@@ -545,7 +545,88 @@ mod_stock_status_server <- function(
       plot_GES_pies(shared$clean_status, catch_current(), width_px = w, return_data = FALSE)
     })
 
-    ############################### GES download ##################################################
+    # ############################### GES download ##################################################
+    # output$download_status_catch_data <- downloadHandler(
+    #   filename = function() {
+    #     ecoregion <- selected_ecoregion()
+    #     acronym <- get_ecoregion_acronym(ecoregion)
+    #     date_tag <- format(Sys.Date(), "%d-%b-%y")
+    #     paste0("status_catch_data_bundle_", acronym, "_", date_tag, ".zip")
+    #   },
+    #   content = function(file) {
+    #     # Temp workspace
+    #     td <- tempfile("status_catch_bundle_")
+    #     dir.create(td, showWarnings = FALSE)
+    #     on.exit(unlink(td, recursive = TRUE, force = TRUE), add = TRUE)
+    # 
+    #     
+    # 
+    #     # Naming tokens
+    #     ecoregion <- selected_ecoregion()
+    #     acronym <- get_ecoregion_acronym(ecoregion)
+    #     date_tag <- format(Sys.Date(), "%d-%b-%y")
+    # 
+    #     # 1) CSV (includes acronym + date)
+    #     dat <- plot_GES_pies(shared$clean_status, catch_current(), return_data = TRUE)
+    #     csv_name <- paste0("status_catch_data_", acronym, "_", date_tag, ".csv")
+    #     csv_path <- file.path(td, csv_name)
+    #     utils::write.csv(dat, csv_path, row.names = FALSE)
+    # 
+    #     # 2) Disclaimer.txt (fixed name)
+    #     disc_path <- file.path(td, "Disclaimer.txt")
+    #     disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
+    #     if (!safe_download(disc_url, disc_path)) {
+    #       writeLines(c(
+    #         "Disclaimer for fisheriesXplorer status & catch data.",
+    #         "The official disclaimer could not be fetched automatically.",
+    #         paste("Please see:", disc_url)
+    #       ), con = disc_path)
+    #     }
+    # 
+    #     # 3) PNG plot image
+    #     png_name <- paste0("status_catch_pie_plot_", acronym, "_", date_tag, ".png")
+    #     png_path <- file.path(td, png_name)
+    #     plot_ok <- FALSE
+    #     try(
+    #       {
+    #         p <- plot_GES_pies(shared$clean_status, catch_current(), return_data = FALSE)
+    #         if (inherits(p, "ggplot")) {
+    #           if (requireNamespace("ragg", quietly = TRUE)) {
+    #             ragg::agg_png(filename = png_path, width = 2200, height = 1400, units = "px", res = 144)
+    #             print(p)
+    #             grDevices::dev.off()
+    #           } else {
+    #             ggplot2::ggsave(filename = png_path, plot = p, width = 14, height = 9, dpi = 150, limitsize = FALSE)
+    #           }
+    #           plot_ok <- file.exists(png_path) && file.info(png_path)$size > 0
+    #         }
+    #       },
+    #       silent = TRUE
+    #     )
+    # 
+    #     if (!plot_ok) {
+    #       writeLines(
+    #         c(
+    #           "Plot image could not be generated.",
+    #           "Check that 'plot_GES_pies' returns a ggplot object when return_data = FALSE."
+    #         ),
+    #         con = file.path(td, "PLOT_GENERATION_FAILED.txt")
+    #       )
+    #     }
+    # 
+    #     # Zip bundle
+    #     files_to_zip <- c(csv_path, disc_path, if (plot_ok) png_path)
+    #     if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
+    #       zip::zipr(zipfile = file, files = files_to_zip, root = td)
+    #     } else {
+    #       owd <- setwd(td)
+    #       on.exit(setwd(owd), add = TRUE)
+    #       zip::zip(zipfile = file, files = basename(files_to_zip))
+    #     }
+    #   },
+    #   contentType = "application/zip"
+    # )
+    ############################### GES download test ##################################################
     output$download_status_catch_data <- downloadHandler(
       filename = function() {
         ecoregion <- selected_ecoregion()
@@ -566,67 +647,41 @@ mod_stock_status_server <- function(
         acronym <- get_ecoregion_acronym(ecoregion)
         date_tag <- format(Sys.Date(), "%d-%b-%y")
 
-        # 1) CSV (includes acronym + date)
-        dat <- plot_GES_pies(shared$clean_status, catch_current(), return_data = TRUE)
-        csv_name <- paste0("status_catch_data_", acronym, "_", date_tag, ".csv")
-        csv_path <- file.path(td, csv_name)
-        utils::write.csv(dat, csv_path, row.names = FALSE)
-
-        # 2) Disclaimer.txt (fixed name)
-        disc_path <- file.path(td, "Disclaimer.txt")
-        disc_url <- "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt"
-        if (!safe_download(disc_url, disc_path)) {
-          writeLines(c(
-            "Disclaimer for fisheriesXplorer status & catch data.",
-            "The official disclaimer could not be fetched automatically.",
-            paste("Please see:", disc_url)
-          ), con = disc_path)
-        }
-
-        # 3) PNG plot image
-        png_name <- paste0("status_catch_pie_plot_", acronym, "_", date_tag, ".png")
-        png_path <- file.path(td, png_name)
-        plot_ok <- FALSE
-        try(
-          {
-            p <- plot_GES_pies(shared$clean_status, catch_current(), return_data = FALSE)
-            if (inherits(p, "ggplot")) {
-              if (requireNamespace("ragg", quietly = TRUE)) {
-                ragg::agg_png(filename = png_path, width = 2200, height = 1400, units = "px", res = 144)
-                print(p)
-                grDevices::dev.off()
-              } else {
-                ggplot2::ggsave(filename = png_path, plot = p, width = 14, height = 9, dpi = 150, limitsize = FALSE)
-              }
-              plot_ok <- file.exists(png_path) && file.info(png_path)$size > 0
-            }
-          },
-          silent = TRUE
-        )
-
-        if (!plot_ok) {
-          writeLines(
-            c(
-              "Plot image could not be generated.",
-              "Check that 'plot_GES_pies' returns a ggplot object when return_data = FALSE."
-            ),
-            con = file.path(td, "PLOT_GENERATION_FAILED.txt")
+        GES_pie_data <- plot_GES_pies(shared$clean_status, catch_current(), return_data = TRUE)
+        
+        zip_items <- c(list(
+          # 1) CSV GES Pie data
+          list(
+            filename = paste0("status_catch_data_", acronym, "_", date_tag, ".csv"),
+            item     = zip_item_csv(GES_pie_data)
+          ),
+          # 2) Disclaimers
+          list(
+            filename = "Disclaimer_fisheriesXplorer.txt",
+            item     = zip_item_disclaimer(
+              url            = "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_fisheriesXplorer.txt")
+          ),
+          list(
+            filename = "Disclaimer_Stock_Database.txt",
+            item     = zip_item_disclaimer(
+              url            = "https://raw.githubusercontent.com/ices-tools-prod/disclaimers/master/Disclaimer_Stock_Database.txt")
           )
-        }
-
+          ),
+          # PNG
+            zip_item_ggplot_with_failure(
+              png_filename          = paste0("status_catch_pie_plot_", acronym, "_", date_tag, ".png"),
+              failure_txt_filename  = "status_catch_pie_plot_failed.txt",
+              plot_fun              = function() plot_GES_pies(shared$clean_status, catch_current(), return_data = FALSE),
+              failure_lines         = "Plot production failed during download. Please contact the ICES Secretariat about the problem",
+              label                 = "status pies"
+          )
+        )
         # Zip bundle
-        files_to_zip <- c(csv_path, disc_path, if (plot_ok) png_path)
-        if (requireNamespace("zip", quietly = TRUE) && "zipr" %in% getNamespaceExports("zip")) {
-          zip::zipr(zipfile = file, files = files_to_zip, root = td)
-        } else {
-          owd <- setwd(td)
-          on.exit(setwd(owd), add = TRUE)
-          zip::zip(zipfile = file, files = basename(files_to_zip))
-        }
+        zip_bundle(zipfile = file, items = zip_items)
       },
       contentType = "application/zip"
     )
-
+       
 
     ##################### Stock trends tab ###############################################
     trends_data <- reactive({
