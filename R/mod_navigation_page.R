@@ -125,7 +125,7 @@ mod_navigation_page_ui <- function(id) {
                       style = "background-image: url('www/icons/vms.svg');",
                       title = "VMS", `aria-label` = "VMS"
                     ),
-                    div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Fishing Effort &amp Benthic Impact"))
+                    div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Fishing Effort &amp; Benthic Impact"))
                   )
                 )
               )
