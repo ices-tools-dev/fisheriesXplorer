@@ -1,11 +1,14 @@
 #' Plot effort layer with ecoregion outline and land. plot has data update date stamp
 #'
 #' @param effort sf spatial object giving fishing effort
-#' @param ecoregion sf spatial object with ecoregion polygon
 #' @param land_shape sf spatial object of land
-#' @param fishing_category 
-#' @param crs 
-#' @param data_update 
+#' @param fishing_category character vector given by user input. Should be a gear type or "all"
+#' @param crs a valid crs string
+#' @param ecoregion_name character name of ecoregion
+#' @param ecoregion_shape sf spatial object of ecoregion polygon
+#' @param yr numeric giving Year of vms data update
+#' @param data_update_date character -month and year or more specific to include in plot
+#'
 #' @import ggplot2
 #' @importFrom sf st_transform st_bbox
 #' @importFrom dplyr filter
@@ -46,10 +49,14 @@ plot_effort_map_app <- function (effort, ecoregion_name, ecoregion_shape, land_s
 #' Plot sar layer with ecoregion outline and land. plot has data update date stamp
 #'
 #' @param sar_data sf spatial object giving benthic impact of fishing
-#' @param ecoregion character
-#' @param land_shape 
-#' @param sar_layer 
-#' @param crs 
+#' @param land_shape sf spatial object of land
+#' @param sar_layer character vector given by user input. Should be a "surface", "subsurface" or "all"
+#' @param crs a valid crs string
+#' @param ecoregion_name character name of ecoregion
+#' @param ecoregion_shape sf spatial object of ecoregion polygon
+#' @param yr numeric giving Year of vms data update
+#' @param data_update_date character -month and year or more specific to include in plot
+#'
 #' @import ggplot2
 #' @importFrom sf st_transform st_bbox
 #' @importFrom dplyr filter
@@ -182,10 +189,10 @@ vms_bundle_content <- function(selected_ecoregion, vms_layer) {
 
 #' Function to find and display vms images from www/vms folder
 #'
-#' @param ecoregion 
-#' @param gear 
-#' @param vms_layer 
-#' @param ns 
+#' @param ecoregion character
+#' @param gear fishing gear, character, given by input$fishing_cat_selector
+#' @param vms_layer character "sar" or "effort"
+#' @param ns namespace from server definition
 render_vms <- function(ecoregion, gear, vms_layer, ns){
 
   

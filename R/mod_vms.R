@@ -61,7 +61,7 @@ mod_vms_ui <- function(id) {
                 selected = "Surface"
               ),
               tags$style(type = "text/css", "#vms_sar_layer {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
-              suppressWarnings(withSpinner(suppressWarnings(uiOutput(ns("vms_sar_layer"), height = "65vh", width = "100%", fill = TRUE))))
+              withSpinner(suppressWarnings(uiOutput(ns("vms_sar_layer"), height = "65vh", width = "100%", fill = TRUE)))
               )
             )
           )
