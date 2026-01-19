@@ -81,7 +81,7 @@ mod_stock_status_ui <- function(id) {
       id = ns("main_tabset"),   
 
       nav_panel(
-        "Status Summary", value = "status_summary",   
+        "Summary", value = "status_summary",   
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -96,7 +96,7 @@ mod_stock_status_ui <- function(id) {
                 card_header(
                   "MSY & Precautionary Approach",
                   downloadLink(ns("download_clean_status_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Status cvs file & plot images'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
@@ -113,7 +113,7 @@ mod_stock_status_ui <- function(id) {
                 card_header(
                   "Catches in relation to MSY status",
                   downloadLink(ns("download_status_catch_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + graph'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Status cvs file & plot images'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 ),
                 card_body(
@@ -128,7 +128,7 @@ mod_stock_status_ui <- function(id) {
       ),
 
       nav_panel(
-        "Trends by group", value = "trends_by_group",   
+        "Trends", value = "trends_by_group",   
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -138,7 +138,7 @@ mod_stock_status_ui <- function(id) {
           column(
             12,
             card(
-              height = "85vh", full_screen = TRUE,
+              height = "100vh", full_screen = TRUE,
               card_header(
                 radioButtons(ns("status_trend_selector"), "Select a fisheries guild:",
                   inline = TRUE,
@@ -151,17 +151,17 @@ mod_stock_status_ui <- function(id) {
                   )
                 ),
                 downloadLink(ns("download_trends_data"),
-                  HTML(paste0("<span class='hovertext' data-hover='Download stock status trends (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                  HTML(paste0("<span class='hovertext' data-hover='Status trends csv file'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                 )
               ),
-              card_body(withSpinner(plotlyOutput(ns("status_trends"), height = "68vh")))
+              card_body(withSpinner(plotlyOutput(ns("status_trends"))))#, height = "68vh"
             )
           )
         )
       ),
 
       nav_panel(
-        "Kobe-CLD", value = "kobe_cld",  
+        "Catch & Kobe plot", value = "kobe_cld",  
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black", open = FALSE,
@@ -193,7 +193,7 @@ mod_stock_status_ui <- function(id) {
                   style = "display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 16px;",
                   uiOutput(ns("kobe_cld_slider")),
                   downloadLink(ns("download_CLD_data"),
-                    HTML(paste0("<span class='hovertext' data-hover='Data + graphs'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                    HTML(paste0("<span class='hovertext' data-hover='Status cvs file & plot images'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
                   )
                 )
               )
@@ -215,7 +215,7 @@ mod_stock_status_ui <- function(id) {
       ),
 
       nav_panel(
-        "Stock status Lookup", value = "status_lookup",   # <-- NEW value
+        "Stock list", value = "status_lookup",   # <-- NEW value
         layout_sidebar(
           sidebar = sidebar(
             width = "33vw", bg = "white", fg = "black",
@@ -226,7 +226,7 @@ mod_stock_status_ui <- function(id) {
             card_header(
               "Stock status table",
               downloadLink(ns("download_status_table"),
-                HTML(paste0("<span class='hovertext' data-hover='Download table (csv)'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
+                HTML(paste0("<span class='hovertext' data-hover='Stock status list csv file'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
               )
             ),
             card_body(withSpinner(reactableOutput(ns("stock_status_table_reactable"))))
@@ -408,7 +408,7 @@ mod_stock_status_server <- function(
     ################################## header + glossary #########################################
     output$ecoregion_label <- renderUI({
       req(selected_ecoregion())
-      tags$span(tags$b("Ecoregion:"), " ", paste0(selected_ecoregion(), " (", get_ecoregion_acronym(selected_ecoregion()), ")"))
+      tags$span(tags$b("ICES ecoregion:"), " ", paste0(selected_ecoregion(), " (", get_ecoregion_acronym(selected_ecoregion()), ")"))
     })
 
     

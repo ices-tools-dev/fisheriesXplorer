@@ -1,10 +1,4 @@
-/* p {
-    font-size: 21px;
-}
 
-li {
-    font-size: 20px;
-} */
 /* Common layout for all overview text sections */
 .fx-section {
   font-size: 18px;           /* base size */
@@ -250,22 +244,25 @@ input[type=radio]:checked {
 
 .hovertext:before {
   content: attr(data-hover);
-  visibility: hidden;
+  position: absolute;
+  top: calc(90% + 1px);  
+  bottom: auto;           
+  left: 10%;
+  transform: translate(-50%, 4px);  
+  background: #dbdbdb;
+  color: #000000;
+  padding: 8px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  width: min(82vw, 240px);
+  max-width: 240px;
+  font-size: 1.5rem;
+  line-height: 1.25;
   opacity: 0;
-  width: 140px;
-  background-color: rgb(189, 12, 12);
-  color: #fff;
-  text-align: center;
-  border-radius: 5px;
-  padding: 5px 0;
-  transition: opacity 0.5s ease-in-out;
-
-  position: left;
-  z-index: 1;
-  /*left: 0;
-  top: 110%;*/
-  top: -5px;
-  left: 105%;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
 }
 
 .hovertext:hover:before {
@@ -332,7 +329,7 @@ caption {
   background-color: #ffffff;
   border-color: rgb(194, 194, 194);
   border-width: 1px 1px 1px 1px;
-  border-radius: 30px;
+  border-radius: 15px 15px 15px 15px;
 } 
 
 .card-header {
@@ -372,8 +369,8 @@ caption {
 .tooltip {
   visibility: hidden;
   width: 160px;
-  background-color: black;
-  color: white;
+  background-color: #dbdbdb;
+  color: #000000;
   text-align: center;
   border-radius: 6px;
   padding: 5px;
@@ -403,8 +400,8 @@ caption {
   }
 .custom-tooltip {
   visibility: hidden;
-  background-color: #333;
-  color: #fff;
+  background-color: #dbdbdb;
+  color: #000000;
   text-align: left;
   border-radius: 6px;
   padding: 8px;
@@ -443,24 +440,7 @@ caption {
 }
 
 
-.bslib-sidebar-layout>.collapse-toggle {
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      background-color: #00B6F1;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-.bslib-sidebar-layout>.collapse-toggle .collapse-icon {
-      width: 15px;
-      height: 15px;
-      stroke: white;
-    }
-.bslib-sidebar-layout>.collapse-toggle:hover {
-      background-color: #99AABF;
-    }
+
 
 @media (max-width: 500px) {
   .js-plotly-plot .xtick text,
@@ -515,8 +495,8 @@ caption {
   bottom: auto;           
   left: 50%;
   transform: translate(-50%, 4px);  
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
+  background: #dbdbdb;
+  color: #000000;
   padding: 8px 10px;
   border-radius: 6px;
   white-space: normal;
@@ -887,4 +867,81 @@ details summary {
   margin-top: 1.2em;
   margin-bottom: 0.35em;
   color: #002B5F;
+}
+
+
+
+
+
+.bslib-sidebar-layout> .collapse-toggle {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background-color: #00B6F1;
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+.bslib-sidebar-layout>.collapse-toggle .collapse-icon {
+      width: 15px;
+      height: 15px;
+      stroke: white;
+    }
+.bslib-sidebar-layout>.collapse-toggle:hover {
+      background-color: #002B5F;
+    }
+
+
+
+
+
+/* Wrapper around glossary link + tooltip */
+.glossary-hover-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+
+.glossary-hover-bubble {
+  position: absolute;
+  top: calc(100% + 8px);  
+  bottom: auto;           
+  left: 50%;
+  transform: translate(-50%, 4px);  
+  background: #dbdbdb;
+  color: #000000;
+  padding: 8px 10px;
+  border-radius: 6px;
+  white-space: normal;
+  width: min(82vw, 240px);
+  max-width: 240px;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+}
+
+/* Little arrow under the bubble */
+.glossary-hover-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #dbdbdb transparent transparent transparent;
+}
+
+/* Show on hover/focus */
+.glossary-hover-wrap:hover .glossary-hover-bubble,
+.glossary-hover-wrap:focus-within .glossary-hover-bubble {
+  opacity: 1;
+  visibility: visible;
 }

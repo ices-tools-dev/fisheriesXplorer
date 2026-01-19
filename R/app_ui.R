@@ -43,7 +43,7 @@ app_ui <- function(request) {
     # External resources
     golem_add_external_resources(),
     title_html <- tags$a(
-      href = "https://ices-tools-dev.shinyapps.io/fisheriesXplorer/",
+      href = "https://www.ices.dk/Pages/default.aspx",
       tags$img(
         src = "www/negative_ices_logo.png",
         style = "margin-top: -15px; margin-bottom: 0px; padding-right:10px;",
@@ -148,7 +148,7 @@ golem_add_external_resources <- function() {
     tags$script(HTML("
       document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.collapse-toggle').forEach(btn => {
-          btn.setAttribute('title', 'Open/close sidebar for additional information');
+          btn.setAttribute('title', 'Open/close sidebar for figure captions and results description');
         });
       });
     ")),
