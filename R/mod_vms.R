@@ -29,7 +29,7 @@ mod_vms_ui <- function(id) {
         column(
           6,
           card(
-            height = "82vh",
+            # height = "82vh",
             card_header("Fishing Effort",
                         downloadLink(ns("download_effort_data"),
                                     HTML(paste0("<span class='hovertext' data-hover='Data & Plot image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
@@ -48,7 +48,7 @@ mod_vms_ui <- function(id) {
       column(
         6,
           card(
-            height = "85vh",
+            # height = "85vh",
             card_header("Swept Area Ratio",
                         downloadLink(ns("download_sar_data"),
                                      HTML(paste0("<span class='hovertext' data-hover='Data & Plot image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))

@@ -72,7 +72,7 @@ mod_navigation_page_ui <- function(id) {
               style = "overflow: visible;",
               fluidRow(
                 column(
-                  4,
+                  6,
                   align = "center",
                   div(
                     class = "image-button-wrap",
@@ -86,7 +86,7 @@ mod_navigation_page_ui <- function(id) {
                   )
                 ),
                 column(
-                  4,
+                  6,
                   align = "center",
                   div(
                     class = "image-button-wrap",
@@ -101,7 +101,7 @@ mod_navigation_page_ui <- function(id) {
                 )),
               fluidRow(
                 column(
-                  4,
+                  6,
                   align = "center",
                   div(
                     class = "image-button-wrap",
@@ -115,7 +115,7 @@ mod_navigation_page_ui <- function(id) {
                   )
                 ),
                 column(
-                  4,
+                  6,
                   align = "center",
                   div(
                     class = "image-button-wrap",
@@ -125,7 +125,7 @@ mod_navigation_page_ui <- function(id) {
                       style = "background-image: url('www/icons/vms.svg');",
                       title = "VMS", `aria-label` = "VMS"
                     ),
-                    div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Fishing Effort &amp; Benthic Impact"))
+                    div(class = "fx-tooltip", HTML("<strong>VMS</strong><br><br>Fishing Effort &amp; Swept Area Ratio (SAR)"))
                   )
                 )
               )
