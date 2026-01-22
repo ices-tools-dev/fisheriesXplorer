@@ -94,9 +94,9 @@ sar_maps <- map(sar_maps, ~ {if(!is.null(.)) mutate(., geometry = st_as_sfc(wkt,
                   st_sf}) 
 
 sar_maps <- purrr::map(.x = sar_maps, .f = function(.x) tidyr::pivot_longer(.x, cols = c(surface_sar, subsurface_sar), values_to = "sar", names_to = "layer"))
-sar_maps <- purrr::map(.x = sar_maps, .f = function(.x) dplyr::mutate(.x, layer = dplyr::recode(layer, 
+sar_maps <- purrr::map(.x = sar_maps, .f = function(.x) dplyr::mutate(.x, layer = factor(dplyr::recode(layer, 
                                                                                                 surface_sar = "Surface",
-                                                                                                subsurface_sar = "Subsurface")))
+                                                                                                subsurface_sar = "Subsurface"), levels = c("Surface", "Subsurface"))))
 
 usethis::use_data(sar_maps, overwrite = TRUE)
 

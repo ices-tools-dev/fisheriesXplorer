@@ -31,7 +31,7 @@ plot_effort_map_app <- function (effort, ecoregion_name, ecoregion_shape, land_s
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank()) + 
     coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
-    labs(caption = paste0("Made with Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date))+
+    labs(caption = paste0("Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date))+
     ggtitle(paste0("Average MW Fishing hours ", paste(yr-3, yr, sep = "-")),
             subtitle = paste0(ecoregion_name, ": ", fishing_category))
   
@@ -88,7 +88,7 @@ plot_sar_map_app <- function (sar_data,  ecoregion_name, ecoregion_shape, land_s
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank()) + 
     coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
-    labs(caption = paste0("Made with Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date)) + 
+    labs(caption = paste0("Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date)) + 
     ggtitle(paste0("Swept Area Ratio ", paste(yr-3, yr, sep = "-")),
           subtitle = paste0(ecoregion_name, ": ", stringr::str_to_title(sar_layer), " layer"))
   
