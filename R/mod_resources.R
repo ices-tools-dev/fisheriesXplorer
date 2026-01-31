@@ -137,15 +137,15 @@ bslib::nav_panel(
             notes = "See dataset page for data access and conditions."
           ),
 
-          # # 5) VMS Data
-          # resource_card(
-          #   title = "VMS and Logbook dataset",
-          #   description = "Aggregated VMS-based effort and physical disturbance data used in the VMS results.",
-          #   dataset_url = "https://data.ices.dk/vms",
-          #   metadata_url = NULL,
-          #   services = list(APIs = "https://data.ices.dk/vms/webservices"),
-          #   notes = "See dataset page for data access and conditions."
-          # ),
+          # 5) VMS Data
+          resource_card(
+            title = "VMS and Logbook dataset",
+            description = "Aggregated VMS-based effort and physical disturbance data used in the VMS results.",
+            dataset_url = "https://data.ices.dk/vms",
+            metadata_url = "https://gis.ices.dk/geonetwork/srv/api/records/60d06467-7545-4a06-86ab-2a2ababd3e0a?language=all",
+            services = list(APIs = "https://data.ices.dk/vms/webservices"),
+            notes = "See dataset page for data access and conditions."
+          ),
 
           # 6) Application source code (not a dataset, but important for reuse)
           resource_card(

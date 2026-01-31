@@ -4,7 +4,7 @@ username: ices-tools-dev
 account: ices-tools-dev
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 11999380
-bundleId: 11009005
+appId: 16494860
+bundleId: 11485143
 url: https://ices-tools-dev.shinyapps.io/fisheriesXplorer/
 version: 1

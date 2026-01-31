@@ -22,14 +22,14 @@ mod_vms_ui <- function(id) {
       sidebar = sidebar(
         width = "33vw", bg = "white", fg = "black",
         open = FALSE,
-        uiOutput(ns("effort_text")),
-        uiOutput(ns("sar_text"))
+        uiOutput(ns("effort_sar_text")),
+        # uiOutput(ns("sar_text"))
       ),
       fluidRow(
         column(
           6,
           card(
-            height = "82vh",
+            # height = "82vh",
             card_header("Fishing Effort",
                         downloadLink(ns("download_effort_data"),
                                     HTML(paste0("<span class='hovertext' data-hover='Data & Plot image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
@@ -41,14 +41,14 @@ mod_vms_ui <- function(id) {
                 selected = "All"
               ),
               tags$style(type = "text/css", "#vms_effort_layer {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
-              withSpinner(suppressWarnings(uiOutput(ns("vms_effort_layer"), width = "100%", fill = T)))
+              withSpinner(suppressWarnings(uiOutput(ns("vms_effort_layer"), width = "100%", fill = TRUE)))
             )
           )
       ),
       column(
         6,
           card(
-            height = "85vh",
+            # height = "85vh",
             card_header("Swept Area Ratio",
                         downloadLink(ns("download_sar_data"),
                                      HTML(paste0("<span class='hovertext' data-hover='Data & Plot image'><font size= 4>Download data <i class='fa-solid fa-cloud-arrow-down'></i></font></span>"))
@@ -61,7 +61,7 @@ mod_vms_ui <- function(id) {
                 selected = "Surface"
               ),
               tags$style(type = "text/css", "#vms_sar_layer {margin-left: auto; margin-right: auto; margin-bottom: auto;  max-width: 97%; height: auto;}"),
-              suppressWarnings(withSpinner(suppressWarnings(uiOutput(ns("vms_sar_layer"), height = "65vh", width = "100%", fill = T))))
+              withSpinner(suppressWarnings(uiOutput(ns("vms_sar_layer"), height = "65vh", width = "100%", fill = TRUE)))
               )
             )
           )
@@ -74,8 +74,7 @@ mod_vms_ui <- function(id) {
 #' @noRd 
 mod_vms_server <- function(id, 
     selected_ecoregion,
-    bookmark_qs = reactive(NULL),
-    set_subtab = function(...) {}){
+    bookmark_qs = reactive(NULL)){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
@@ -131,7 +130,7 @@ mod_vms_server <- function(id,
       req(selected_ecoregion, input$fishing_cat_selector)
       render_vms(ecoregion = selected_ecoregion(),
                  gear = input$fishing_cat_selector,
-                 what = "effort",
+                 vms_layer = "effort",
                  ns = ns)
     })
     
@@ -140,28 +139,34 @@ mod_vms_server <- function(id,
       
       render_vms(ecoregion = selected_ecoregion(),
                  gear = input$sar_layer_selector,
-                 what = "sar",
+                 vms_layer = "sar",
                  ns = ns)
     })
     
     output$download_effort_data <- downloadHandler(
-      filename = vms_bundle_filename(selected_ecoregion, what = "effort"),
-      content  = vms_bundle_content(selected_ecoregion, what = "effort"),
+      filename = vms_bundle_filename(selected_ecoregion, vms_layer = "effort"),
+      content  = vms_bundle_content(selected_ecoregion, vms_layer = "effort"),
       contentType = "application/zip"
     )
     
     output$download_sar_data <- downloadHandler(
-      filename = vms_bundle_filename(selected_ecoregion, what = "sar"),
-      content  = vms_bundle_content(selected_ecoregion, what = "sar"),
+      filename = vms_bundle_filename(selected_ecoregion, vms_layer = "sar"),
+      content  = vms_bundle_content(selected_ecoregion, vms_layer = "sar"),
       contentType = "application/zip"
     )
     
-    output$effort_text <- renderUI({
-      HTML(select_text(texts, "vms", "effort_sidebar"))
-    })
+    # output$effort_text <- renderUI({
+    #   HTML(select_text(texts, "vms", "effort_sidebar"))
+    # })
     
-    output$sar_text <- renderUI({
-      HTML(select_text(texts, "status", "sar_sidebar"))
+    # output$sar_text <- renderUI({
+    #   HTML(select_text(texts, "status", "sar_sidebar"))
+    # })
+    output$effort_sar_text <- renderUI({
+      div(
+        class = "sidebar-text",
+      HTML(select_text(texts, paste0("vms_", get_ecoregion_acronym(selected_ecoregion())), "effort_SAR"))    
+      )
     })
   })
 }
