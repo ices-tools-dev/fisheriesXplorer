@@ -1,11 +1,14 @@
-#' Title
+#' Plot effort layer with ecoregion outline and land. plot has data update date stamp
 #'
-#' @param effort 
-#' @param ecoregion 
-#' @param land_shape 
-#' @param fishing_category 
-#' @param crs 
-#' @param data_update 
+#' @param effort sf spatial object giving fishing effort
+#' @param land_shape sf spatial object of land
+#' @param fishing_category character vector given by user input. Should be a gear type or "all"
+#' @param crs a valid crs string
+#' @param ecoregion_name character name of ecoregion
+#' @param ecoregion_shape sf spatial object of ecoregion polygon
+#' @param yr numeric giving Year of vms data update
+#' @param data_update_date character -month and year or more specific to include in plot
+#'
 #' @import ggplot2
 #' @importFrom sf st_transform st_bbox
 #' @importFrom dplyr filter
@@ -28,7 +31,7 @@ plot_effort_map_app <- function (effort, ecoregion_name, ecoregion_shape, land_s
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank()) + 
     coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
-    labs(caption = paste0("Made with Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date))+
+    labs(caption = paste0("Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date))+
     ggtitle(paste0("Average MW Fishing hours ", paste(yr-3, yr, sep = "-")),
             subtitle = paste0(ecoregion_name, ": ", fishing_category))
   
@@ -43,13 +46,17 @@ plot_effort_map_app <- function (effort, ecoregion_name, ecoregion_shape, land_s
 
 
 
-#' Title
+#' Plot sar layer with ecoregion outline and land. plot has data update date stamp
 #'
-#' @param sar_data 
-#' @param ecoregion 
-#' @param land_shape 
-#' @param sar_layer 
-#' @param crs 
+#' @param sar_data sf spatial object giving benthic impact of fishing
+#' @param land_shape sf spatial object of land
+#' @param sar_layer character vector given by user input. Should be a "surface", "subsurface" or "all"
+#' @param crs a valid crs string
+#' @param ecoregion_name character name of ecoregion
+#' @param ecoregion_shape sf spatial object of ecoregion polygon
+#' @param yr numeric giving Year of vms data update
+#' @param data_update_date character -month and year or more specific to include in plot
+#'
 #' @import ggplot2
 #' @importFrom sf st_transform st_bbox
 #' @importFrom dplyr filter
@@ -81,7 +88,7 @@ plot_sar_map_app <- function (sar_data,  ecoregion_name, ecoregion_shape, land_s
     theme(axis.title.x = element_blank(), 
           axis.title.y = element_blank()) + 
     coord_sf(crs = crs, xlim = xlims, ylim = ylims) + 
-    labs(caption = paste0("Made with Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date)) + 
+    labs(caption = paste0("Natural Earth and ICES VMS Data \nVMS data updated ", data_update_date)) + 
     ggtitle(paste0("Swept Area Ratio ", paste(yr-3, yr, sep = "-")),
           subtitle = paste0(ecoregion_name, ": ", stringr::str_to_title(sar_layer), " layer"))
   
@@ -95,22 +102,31 @@ plot_sar_map_app <- function (sar_data,  ecoregion_name, ecoregion_shape, land_s
   p
 }
 
-vms_bundle_filename <- function(selected_ecoregion, what) {
+#' Generate filename for vms download bundle
+#'
+#' @param selected_ecoregion 
+#' @param vms_layer 
+#'
+#' @returns character
+#'
+#' @examples
+#' vms_bundle_filename("Greater North Sea", "effort")
+vms_bundle_filename <- function(selected_ecoregion, vms_layer) {
   function() {
     ecoregion <- selected_ecoregion()
     acronym  <- get_ecoregion_acronym(ecoregion)
     date_tag <- format(Sys.Date(), "%d-%b-%y")
-    paste0("vms_", what, "_data_bundle_", acronym, "_", date_tag, ".zip")
+    paste0("vms_", vms_layer, "_data_bundle_", acronym, "_", date_tag, ".zip")
   }
 }
 
-#' Title Bundle vms content for download, either effort or sar data
+#' Bundle vms content for download, either effort or sar data
 #'
 #' @param selected_ecoregion reactive value
-#' @param what character, either "sar" or "effort 
+#' @param vms_layer character, either "sar" or "effort"
 #'
 #' @importFrom zip zip zipr
-vms_bundle_content <- function(selected_ecoregion, what) {
+vms_bundle_content <- function(selected_ecoregion, vms_layer) {
 
     function(file) {
     
@@ -120,7 +136,7 @@ vms_bundle_content <- function(selected_ecoregion, what) {
     # date_tag <- format(Sys.Date(), "%d-%b-%y")
     
     # --- 1) zipped shapefiles (with acronym + date)
-    shp_zip_path <- file.path("data/", paste0("vms_", what ,"_", acronym, ".zip"))
+    shp_zip_path <- file.path("data/", paste0("vms_", vms_layer ,"_", acronym, ".zip"))
     
     
     # --- 2) Disclaimer.txt (fixed name; no acronym/date)
@@ -151,7 +167,7 @@ vms_bundle_content <- function(selected_ecoregion, what) {
     }
     
     # --- 3) Plot image (PNG) of the static pies
-    match_pattern <- paste0(acronym, "_", what, "_")
+    match_pattern <- paste0(acronym, "_", vms_layer, "_")
     image_path <- app_sys(paste0("app/www/vms"))
     vms_files <- list.files(image_path)
     required_files <- vms_files[str_starts(vms_files, pattern = match_pattern)]
@@ -171,12 +187,18 @@ vms_bundle_content <- function(selected_ecoregion, what) {
 }
 
 
-render_vms <- function(ecoregion, gear, what, ns){
+#' Function to find and display vms images from www/vms folder
+#'
+#' @param ecoregion character
+#' @param gear fishing gear, character, given by input$fishing_cat_selector
+#' @param vms_layer character "sar" or "effort"
+#' @param ns namespace from server definition
+render_vms <- function(ecoregion, gear, vms_layer, ns){
 
   
   eco_acronym <- get_ecoregion_acronym(ecoregion)
   gear_name <- str_replace_all(tolower(gear), " ", "_")
-  file_name <- paste0(eco_acronym, "_", what, "_", gear_name, ".png")
+  file_name <- paste0(eco_acronym, "_", vms_layer, "_", gear_name, ".png")
   
   # Web path used by img tag
   webpath <- file.path("www/vms", file_name)
@@ -192,7 +214,7 @@ render_vms <- function(ecoregion, gear, what, ns){
   )
   
   tags$img(
-    id = ns(paste0("vms_", what, "_layer")),
+    id = ns(paste0("vms_", vms_layer, "_layer")),
     src = webpath,
     style = "width: 100%; cursor: pointer;",
     onclick = "toggleFullScreen(this)"
